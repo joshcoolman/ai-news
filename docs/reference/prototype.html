@@ -1,0 +1,304 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  Reference prototype for the feed page. Open this file in a browser.
+  It is a static mock: the cards are hard-coded, and the remove and magnifier
+  buttons only copy text to the clipboard (in the prototype that text was pasted
+  into a chat, where the search was done by hand). The app replaces both with
+  real server calls. Match its layout, card anatomy and behaviour, not its code.
+-->
+<style>body{margin:0}</style>
+<title>AI Feed Picker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap">
+<style>
+/* Layout: a video-site home grid, newest batch first; each card can be removed, a fixed tray at the bottom lists what was removed and mirrors the clipboard. */
+:root {
+  --bg: #ffffff;
+  --fg: #0f0f0f;
+  --muted: #606060;
+  --thumb-ink: #ffffff;
+  --chip: #f2f2f2;
+  --line: #e5e5e5;
+  --pick: #cc0000;
+  --tray: #ffffff;
+  --font: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Roboto Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0f; --fg: #f1f1f1; --muted: #aaaaaa; --thumb-ink: #ffffff;
+    --chip: #272727; --line: #303030; --pick: #ff4e45; --tray: #181818;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0f; --fg: #f1f1f1; --muted: #aaaaaa; --thumb-ink: #ffffff;
+  --chip: #272727; --line: #303030; --pick: #ff4e45; --tray: #181818;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font); }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 170px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 18px; }
+h1 { font-size: 20px; font-weight: 700; margin: 0; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px 16px; }
+.card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.thumb {
+  position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(135deg, hsl(var(--h) 55% 34%), hsl(calc(var(--h) + 40) 60% 18%));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--thumb-ink); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; text-align: center; padding: 12px;
+}
+.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hit { position: absolute; inset: 0; }
+.hit:focus-visible { outline: 3px solid var(--thumb-ink); outline-offset: -3px; }
+.thumb:hover { filter: brightness(1.12); }
+.badge {
+  pointer-events: none; position: absolute; right: 6px; bottom: 6px; background: rgba(0,0,0,.8); color: #fff;
+  font: 500 12px var(--mono); padding: 2px 5px; border-radius: 4px;
+}
+.new-tag {
+  pointer-events: none; position: absolute; left: 6px; top: 6px; background: var(--pick); color: #fff;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px;
+}
+.remove {
+  position: absolute; right: 6px; top: 6px; width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: rgba(0,0,0,.7); color: #fff; font: 500 18px/1 var(--font); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.remove:hover { background: var(--pick); }
+.more {
+  position: absolute; left: 6px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: rgba(0,0,0,.7); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.more:hover { background: #fff; color: #0f0f0f; }
+.more:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.remove:focus-visible, .restore:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.title { font-size: 16px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
+.title a { color: inherit; text-decoration: none; }
+.title a:hover, .title a:focus-visible { text-decoration: underline; }
+.meta { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.empty { color: var(--muted); font-size: 14px; }
+.tray {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--tray); border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.tray-in { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.status { font-size: 13px; color: var(--muted); }
+.status b { color: var(--fg); font-weight: 500; }
+.restore {
+  background: var(--chip); color: var(--fg); border: 1px solid var(--line); border-radius: 16px;
+  font: 500 13px var(--font); padding: 5px 12px; cursor: pointer;
+}
+textarea {
+  width: 100%; box-sizing: border-box; height: 72px; resize: none; background: var(--chip); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 500 12px/1.5 var(--mono);
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>AI this week</h1>
+    <p>Newest batch first. Remove what you do not want; each removal copies the removed list to the clipboard.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty" hidden>Everything is removed. Restore all to bring the cards back.</p>
+</div>
+
+<div class="tray">
+  <div class="tray-in">
+    <div class="row">
+      <div class="status" id="status"><b>Nothing removed yet.</b></div>
+      <button class="restore" id="restore" type="button" hidden>Restore all</button>
+    </div>
+    <textarea id="out" readonly aria-label="Removed stories" placeholder="Removed stories appear here."></textarea>
+  </div>
+</div>
+
+<script>
+/* Newest batch goes at the top of this list. id is permanent; batch marks which refresh a story arrived in. */
+const LATEST = 6;
+const items = [
+  /* "More like this" results: `after` names the card they were searched from, and they render straight after it. */
+  { id: "yt-parrot-demo", after: "parrot", batch: 6, thumb: "Parrot demo", title: "Parrot: a meeting recorder for Mac that helps during the call", meta: "Parrot · Sep 29", len: "1:14", url: "https://www.youtube.com/watch?v=GQjuN3kEv3Y" },
+  { id: "yt-scripta", after: "parrot", batch: 6, thumb: "Scripta", title: "Scripta — 100% Local Meeting Transcription with Gemma 4 (macOS, MIT Licensed)", meta: "Tech Marvels · May 17", len: "1:22", url: "https://www.youtube.com/watch?v=owW2F3VU_n0" },
+  { id: "yt-memosa", after: "parrot", batch: 6, thumb: "Memosa", title: "Memosa App: Private, Local Voice Records + Transcribe for Mac | Memosa.dev", meta: "Fru Dev · Mar 17", len: "8:24", url: "https://www.youtube.com/watch?v=rSZXks7BkHk" },
+  { id: "yt-note-takers-2026", after: "parrot", batch: 6, thumb: "AI note takers", title: "5 Best AI Note Taker Apps for Meetings in 2026", meta: "Joseph Chandler · Mar 3", len: "8:58", url: "https://www.youtube.com/watch?v=Hg5jMlhfxlY" },
+
+  /* Batch 5: the official OpenAI and Anthropic channels, added as sources. Product videos only; customer stories and brand films left out. */
+  { id: "yt-openai-dots", batch: 5, thumb: "Dots", title: "Introducing dots, always-on agents built to handle everything.", meta: "OpenAI · Sep 29", len: "2:28", url: "https://www.youtube.com/watch?v=uXspbC2srEQ" },
+  { id: "yt-openai-codex-cloud", batch: 5, thumb: "Codex Cloud", title: "Meet the all new Codex Cloud", meta: "OpenAI · Sep 29", len: "3:24", url: "https://www.youtube.com/watch?v=7Bv68f5szSU" },
+  { id: "yt-openai-ultrafast", batch: 5, thumb: "Ultrafast", title: "Build faster with Ultrafast", meta: "OpenAI · Sep 29", len: "0:45", url: "https://www.youtube.com/watch?v=sKltfHvsDQM" },
+  { id: "yt-openai-astra-practice", batch: 5, thumb: "Astra in practice", title: "GPT-6 Astra in practice: Turning ideas into projects", meta: "OpenAI · Sep 28", len: "2:29", url: "https://www.youtube.com/watch?v=6wNqpZdHE_s" },
+  { id: "yt-anthropic-bio-lab", batch: 5, thumb: "Biology lab", title: "Inside Anthropic's molecular biology lab", meta: "Anthropic · Sep 23", len: "1:16", url: "https://www.youtube.com/watch?v=DdCEmlAydcw" },
+  { id: "yt-anthropic-fable-51", batch: 5, thumb: "Fable 5.1", title: "Introducing Claude Fable 5.1", meta: "Anthropic · Sep 1", len: "1:26", url: "https://www.youtube.com/watch?v=ROF2Nv_KjOM" },
+  /* Batch 4: the next creator videos back (no newer uploads), then more stories found through the same lens. */
+  { id: "yt-berman-jev-uses", batch: 4, thumb: "Jev use cases", title: "8 Jev Use Cases That Feel Like Cheating", meta: "Matthew Berman · Sep 24", len: "10:38", url: "https://www.youtube.com/watch?v=jGD_UR4wMJc" },
+  { id: "yt-riley-muse", batch: 4, thumb: "Muse vs Opus 5.5", title: "Claude Opus 5.5 Is Insane… But Muse is EVEN Bigger", meta: "Riley Brown · Sep 25", len: "25:21", url: "https://www.youtube.com/watch?v=_NRuT_d1PZE" },
+  { id: "yt-riley-projects", batch: 4, thumb: "Claude Projects", title: "NEW Claude Projects Changes Everything (with Opus 5.5)", meta: "Riley Brown · Sep 21", len: "24:07", url: "https://www.youtube.com/watch?v=NDTbUObZTlM" },
+  { id: "yt-fasthours-ep83", batch: 4, thumb: "Ingi Erlingsson", title: "20 Year Creative Vet Sold Golden Wolf to Doodles, Then Went All-In on AI (Ep. 83 / Ingi Erlingsson)", meta: "Fast Hours · Sep 20", len: "1:38:35", url: "https://www.youtube.com/watch?v=ktSEt_8T9MA" },
+  { id: "opus-55", batch: 4, thumb: "Opus 5.5", title: "Opus 5.5 is Anthropic's new flagship for long coding and knowledge work", meta: "Anthropic · Sep 22", len: "12:20", src: "https://platform.claude.com/docs/en/models/opus-5-5/overview" },
+  { id: "images-25-sketch", batch: 4, thumb: "Images 2.5 Sketch", title: "ChatGPT Images 2.5 lets you sketch a reference and pin comments on an image to edit it", meta: "OpenAI · images", len: "6:48", src: "https://openai.com/index/introducing-chatgpt-images-2-5/" },
+  { id: "details-dictation", batch: 4, thumb: "Detta", title: "Detta is a Mac dictation app that runs the Phonon-2 speech model on your machine", meta: "Fermion · dictation", len: "4:10", src: "https://www.fermionresearch.com/products/detta/" },
+  { id: "agents-api", batch: 4, thumb: "Agents API", title: "OpenAI opens the harness behind Codex to developers as the Agents API", meta: "OpenAI · public beta", len: "9:02", src: "https://runtimewire.com/article/everything-openai-announced-at-the-devday-2026-keynote" },
+  { id: "gemini-voices", batch: 4, thumb: "Gemini voices", title: "Gemini 3.8 Flash TTS ships 2,000 ready voices plus voice cloning", meta: "Google · speech", len: "5:26", src: "https://thenextweb.com/news/gemini-tts-3-8-flash-voice-design-cloning" },
+  { id: "gitbot", batch: 4, thumb: "GitBot", title: "GitBot turns a Claude Code job you keep repeating into a reusable local bot", meta: "Open source · MIT", len: "6:35", src: "https://github.com/gitbot-hq/GitBot" },
+  { id: "chart-prompts", batch: 4, thumb: "Chart prompts", title: "A free library of 1,337 chart styles you paste into a coding agent", meta: "Free library", len: "3:14", src: "https://www.emergentmind.com/chart-prompts" },
+  { id: "parrot", batch: 4, thumb: "Parrot", title: "Parrot records meetings on your Mac and answers from your own documents mid-call", meta: "Open source · Mac", len: "5:57", src: "https://github.com/turantekin/Parrot" },
+
+  /* Batch 3: real videos from followed creators (their titles, our thumbs), then stories found through the same lens. */
+  { id: "yt-berman-devday", batch: 3, thumb: "DevDay recap", title: "OpenAI's Dev Day 2026 in exactly 10 minutes", meta: "Matthew Berman · Sep 30", len: "10:01", url: "https://www.youtube.com/watch?v=Xc6ERvZM1NY" },
+  { id: "yt-berman-sonnet55", batch: 3, thumb: "Sonnet 5.5 builds", title: "Sonnet 5.5 Is Here. Look What It Can Build.", meta: "Matthew Berman · Sep 29", len: "17:00", url: "https://www.youtube.com/watch?v=T-E7rmD6rh4" },
+  { id: "yt-riley-windows", batch: 3, thumb: "Windows AI setup", title: "How to Set Up Your Windows PC for AI (Full Guide)", meta: "Riley Brown · Sep 29", len: "20:26", url: "https://www.youtube.com/watch?v=A8ptWsvM3cw" },
+  { id: "yt-riley-opus55", batch: 3, thumb: "After Opus 5.5", title: "Opus 5.5 Is JUST the Beginning. Everything Is About to Change.", meta: "Riley Brown · Sep 27", len: "22:28", url: "https://www.youtube.com/watch?v=959RFRspIIc" },
+  { id: "yt-fasthours-ep84", batch: 3, thumb: "Editable AI video", title: "Opus 5.5 Is Cracked! AI Videos You Can Actually Edit (Ep. 84)", meta: "Fast Hours · Sep 27", len: "1:28:01", url: "https://www.youtube.com/watch?v=tlqnW1sp5X4" },
+  { id: "yt-fasthours-comfy-nodes", batch: 3, thumb: "ComfyUI nodes", title: "How to Build ComfyUI Custom Nodes With Claude", meta: "Fast Hours · Sep 26", len: "7:02", url: "https://www.youtube.com/watch?v=1wvCOgiv-d8" },
+  { id: "claude-projects", batch: 3, thumb: "Claude Projects", title: "Claude Projects now splits one goal across parallel cloud sessions and assembles the result", meta: "Anthropic · beta", len: "11:12", src: "https://www.itechpost.com/articles/237367/20260918/claude-code-projects-gets-major-relaunch-managing-parallel-ai-agents-cloud.htm" },
+  { id: "meta-muse", batch: 3, thumb: "Meta Muse", title: "Meta's Muse agent books, shops and schedules for you from its own browser", meta: "Meta · personal agent", len: "9:46", src: "https://techcrunch.com/2026/09/23/everything-new-coming-to-metas-ai-agent-muse/" },
+  { id: "seedance-25", batch: 3, thumb: "Seedance 2.5", title: "Seedance 2.5 makes 30-second 4K clips from a stack of reference images", meta: "ByteDance · video", len: "6:14", src: "https://www.krea.ai/blog/what-is-seedance-2-5" },
+  { id: "comfy-api", batch: 3, thumb: "Comfy API", title: "ComfyUI turns any workflow into a hosted endpoint that scales to zero", meta: "ComfyUI", len: "5:39", src: "https://blog.comfy.org/p/comfy-api-is-live-deploy-comfyui" },
+  { id: "vidu-live-restyle", batch: 3, thumb: "Live video restyle", title: "Vidu S2 restyles your webcam in real time: outfits, characters, backgrounds", meta: "Reactor · Vidu", len: "4:22", src: "https://www.vidu.com/vidu-stream" },
+  { id: "codex-cloud", batch: 3, thumb: "Codex Cloud", title: "Codex now runs in the cloud, so a task carries on across desktop, web and phone", meta: "OpenAI · Codex", len: "8:05", src: "https://runtimewire.com/article/everything-openai-announced-at-the-devday-2026-keynote" },
+  { id: "jambuild", batch: 3, thumb: "jambuild", title: "jambuild lets two people build one web app together by talking and pointing", meta: "Multiplayer vibe coding", len: "3:51", src: "https://jambuild.dev/" },
+  { id: "pexo", batch: 3, thumb: "Pexo", title: "Pexo turns a URL or a PDF into a finished launch video", meta: "Pexo · video", len: "4:58", src: "https://www.producthunt.com/products/pexo-2" },
+
+  { id: "sandbox-escape-2", batch: 2, thumb: "Sandbox escape", title: "An OpenAI model escaped its sandbox again, and training is paused", meta: "OpenAI · safety", len: "12:44", src: "https://fortune.com/2026/09/26/openai-ai-agents-secure-sandbox-escape-training-pause-second-time-hugging-face-hack/" },
+  { id: "ember-1", batch: 2, thumb: "Ember-1", title: "Fireworks' Ember-1 is Kimi K3 retrained to reason in fewer tokens", meta: "Fireworks AI · research preview", len: "9:08", src: "https://www.digitalapplied.com/blog/fireworks-ember-1-kimi-k3-fewer-reasoning-tokens" },
+  { id: "jev-backlash", batch: 2, thumb: "Jev backlash", title: "r/LocalLLaMA says Jev is a classifier with good marketing", meta: "Reddit · Jev", len: "7:51", src: "https://jev-ai.org/blog/jev-reddit" },
+  { id: "world-labs-amd", batch: 2, thumb: "World Labs", title: "AMD buys Fei-Fei Li's World Labs", meta: "AMD · acquisition", len: "6:20", src: "https://github.com/duanyytop/agents-radar/issues/3532" },
+  { id: "ftc-probe", batch: 2, thumb: "FTC probe", title: "The FTC opens an investigation into OpenAI, Anthropic and METR", meta: "Regulation", len: "8:37", src: "https://theneuron.ai/digest/everything-that-happened-in-ai-today-wednesday-september-30-2026" },
+  { id: "reddit-api", batch: 2, thumb: "Reddit API", title: "Reddit ends RSS in November and shuts its public API in March", meta: "Reddit · scraping", len: "5:02", src: "https://github.com/diclogic/ai-daily-digest/issues/169" },
+  { id: "claude-mem", batch: 2, thumb: "claude-mem", title: "claude-mem gives coding agents memory that lasts across sessions", meta: "Open source · trending", len: "10:16", src: "https://github.com/thedotmack/claude-mem" },
+  { id: "fal-agent", batch: 2, thumb: "fal Agent", title: "fal Agent picks the right model for each step of an image, video or 3D job", meta: "fal", len: "4:49", src: "https://fal.ai/docs/documentation/agent" },
+  { id: "watchdog-chip", batch: 2, thumb: "Watchdog chip", title: "Nvidia wants a watchdog chip next to every AI agent", meta: "Nvidia · agent safety", len: "7:03", src: "https://www.securityweek.com/nvidia-unveils-ai-agent-safety-platform-with-hardware-based-watchdog/" },
+  { id: "microllm-lab", batch: 2, thumb: "MicroLLM Lab", title: "Try seven tiny language models right in your browser", meta: "Show HN", len: "3:27", src: "https://stateofutopia.com/experiments/microllmlab/" },
+  { id: "praxis-1", batch: 2, thumb: "Praxis-1", title: "Runway releases Praxis-1, one model that controls different robots", meta: "Runway · robotics", len: "6:41", src: "https://runway.com/research/introducing-praxis-1" },
+  { id: "livenerf", batch: 2, thumb: "Opus drift check", title: "A new benchmark watches whether Opus 5.5 gets worse after launch", meta: "Livenerf · benchmark", len: "5:33", src: "https://blog.lyubo.dev/posts/ai-morning-briefing-september-30th-2026" },
+
+  { id: "decisions-api", batch: 1, thumb: "Decisions API", title: "OpenAI ships fast decisions, like Jev", meta: "OpenAI · limited preview", len: "8:12", src: "https://www.progressiverobot.com/2026/10/01/decisions-api-openai-jev-clone-agent-monitoring/" },
+  { id: "agent-monitoring", batch: 1, thumb: "Agent monitoring", title: "Jev makes it cheap to check every action an agent takes", meta: "Jev · System One models", len: "11:40", src: "https://www.progressiverobot.com/2026/10/01/decisions-api-openai-jev-clone-agent-monitoring/" },
+  { id: "local-jev", batch: 1, thumb: "Local Jev", title: "Ollaya runs Jev-style decision models on your own machine", meta: "Ollaya · open source", len: "6:03", src: "https://github.com/ollaya-dev/ollaya/wiki" },
+  { id: "dots", batch: 1, thumb: "Dots", title: "OpenAI introduces Dots, agents that keep working between chats", meta: "OpenAI DevDay", len: "14:27", src: "https://runtimewire.com/article/everything-openai-announced-at-the-devday-2026-keynote" },
+  { id: "dots-clone", batch: 1, thumb: "Dots clone", title: "Open-Dots is a free, self-hosted take on OpenAI's Dots", meta: "MIT · early prototype", len: "5:48", src: "https://github.com/Anil-matcha/Open-Dots" },
+  { id: "astra-pulled", batch: 1, thumb: "Astra pulled", title: "OpenAI shelves GPT-6.1 Astra the night before DevDay", meta: "OpenAI · safety", len: "9:31", src: "https://amdatalakehouse.substack.com/p/sonnet-gpt-sol-and-a-shelved-astra" },
+  { id: "gpt-61-sol", batch: 1, thumb: "GPT-6.1 Sol", title: "OpenAI's GPT-6.1 Sol codes near Astra level for a fifth of the price", meta: "OpenAI · Codex and API", len: "7:19", src: "https://runtimewire.com/article/everything-openai-announced-at-the-devday-2026-keynote" },
+  { id: "sonnet-55", batch: 1, thumb: "Sonnet 5.5", title: "Anthropic releases Sonnet 5.5, faster and cheaper per task", meta: "Anthropic", len: "6:55", src: "https://amdatalakehouse.substack.com/p/sonnet-gpt-sol-and-a-shelved-astra" },
+  { id: "gemini-4", batch: 1, thumb: "Gemini 4", title: "Google's first Gemini 4 model, Argon, hallucinates far less than Astra", meta: "Google · testers only", len: "10:02", src: "https://curatedaitools.substack.com/p/gemini-4-argon-gets-a-1m-token-output" },
+  { id: "phonon-2", batch: 1, thumb: "Local transcription", title: "Phonon-2, a tiny open model, beats Whisper on a MacBook Air", meta: "Fermion · open weights", len: "4:36", src: "https://www.fermionresearch.com/research/phonon-2/" },
+  { id: "heygen-video", batch: 1, thumb: "HeyGen Video", title: "HeyGen Video 1.0 generates a full scene in seconds from one API call", meta: "HeyGen", len: "3:58", src: "https://developers.heygen.com/docs/models/heygen-video" },
+  { id: "ideogram-45", batch: 1, thumb: "Ideogram 4.5", title: "Ideogram 4.5 edits one part of an image and leaves the rest alone", meta: "Ideogram · image editing", len: "5:15", src: "https://ideogram.ai/models/4.5/" },
+];
+
+const KEY = "ai-feed-removed";
+let removed = [];
+try { removed = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { removed = []; }
+if (!Array.isArray(removed)) removed = [];
+
+const grid = document.getElementById("grid");
+const out = document.getElementById("out");
+const status = document.getElementById("status");
+const restore = document.getElementById("restore");
+const empty = document.getElementById("empty");
+
+function hue(id) { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(removed)); } catch (e) {} }
+function removedText() {
+  return removed.map(id => items.find(x => x.id === id)).filter(Boolean)
+    .map(x => "- [" + x.thumb + "] " + x.title).join("\n");
+}
+
+function render() {
+  grid.textContent = "";
+  const visible = items.filter(x => !removed.includes(x.id));
+  const shown = [];
+  items.filter(x => !x.after).forEach(x => {
+    if (visible.includes(x)) shown.push(x);
+    visible.filter(c => c.after === x.id).forEach(c => shown.push(c));
+  });
+  shown.forEach(x => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="thumb" style="--h:' + hue(x.id) + '">' +
+        (x.batch === LATEST ? '<span class="new-tag">New</span>' : "") +
+        '<span class="label"></span>' +
+        '<button class="remove" type="button">&times;</button>' +
+        '<button class="more" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button>' +
+        '<span class="badge"></span></div>' +
+      '<div class="title"></div><div class="meta"></div>';
+    /* A real video shows its own YouTube thumbnail and no label text. */
+    const vid = x.url && x.url.split("v=")[1];
+    const thumbEl = card.querySelector(".thumb");
+    if (vid) {
+      const img = document.createElement("img");
+      img.src = "https://i.ytimg.com/vi/" + vid + "/mqdefault.jpg";
+      img.alt = "";
+      thumbEl.prepend(img);
+    } else card.querySelector(".label").textContent = x.thumb;
+    card.querySelector(".badge").textContent = x.len;
+    /* A video opens on YouTube; every other card opens its source. Both open in a new tab. */
+    const link = x.url || x.src;
+    const titleEl = card.querySelector(".title");
+    if (link) {
+      const hit = document.createElement("a");
+      hit.className = "hit"; hit.href = link; hit.target = "_blank"; hit.rel = "noopener";
+      hit.setAttribute("aria-label", "Open: " + x.title);
+      thumbEl.insertBefore(hit, thumbEl.querySelector(".remove"));
+      const a = document.createElement("a");
+      a.href = link; a.target = "_blank"; a.rel = "noopener"; a.textContent = x.title;
+      titleEl.appendChild(a);
+    } else titleEl.textContent = x.title;
+    let host = "";
+    if (x.src) { try { host = new URL(x.src).hostname.replace(/^www\./, ""); } catch (e) {} }
+    const parent = x.after && items.find(p => p.id === x.after);
+    card.querySelector(".meta").textContent =
+      (parent ? "More like " + parent.thumb + " · " : "") + x.meta + (host ? " · " + host : "");
+    /* The magnifier copies a "more like this" request; pasted into the chat, it gets up to four results inserted after this card. */
+    const more = card.querySelector(".more");
+    more.setAttribute("aria-label", "More like this: " + x.title);
+    more.title = "More like this";
+    more.addEventListener("click", () => {
+      const req = "More like this (4 from YouTube, insert after it):\n[" + x.thumb + "] " + x.title + "\nid: " + x.id + (link ? "\n" + link : "");
+      const done = ok => {
+        status.innerHTML = ok
+          ? "<b>Copied a request for more like " + x.thumb.replace(/[<&]/g, "") + ".</b> Paste it in the chat."
+          : "<b>Copy was blocked here.</b> The request below is selected, press Cmd+C.";
+        if (!ok) { out.value = req; out.focus(); out.select(); }
+      };
+      try { navigator.clipboard.writeText(req).then(() => done(true), () => done(false)); }
+      catch (e) { done(false); }
+    });
+    const btn = card.querySelector(".remove");
+    btn.setAttribute("aria-label", "Remove: " + x.title);
+    btn.title = "Remove";
+    btn.addEventListener("click", () => { removed.push(x.id); save(); render(); copy(); });
+    grid.appendChild(card);
+  });
+  empty.hidden = shown.length > 0;
+  const text = removedText();
+  out.value = text ? "Removed:\n" + text : "";
+  restore.hidden = removed.length === 0;
+  if (!removed.length) status.innerHTML = "<b>Nothing removed.</b>";
+  else status.innerHTML = "<b>" + removed.length + " removed.</b>";
+}
+
+function copy() {
+  const n = removed.length;
+  const done = ok => {
+    if (!n) return;
+    status.innerHTML = ok
+      ? "<b>" + n + " removed</b>, list copied to clipboard."
+      : "<b>" + n + " removed.</b> Copy was blocked here; the text below is selected, press Cmd+C.";
+    if (!ok) { out.focus(); out.select(); }
+  };
+  try { navigator.clipboard.writeText(out.value || " ").then(() => done(true), () => done(false)); }
+  catch (e) { done(false); }
+}
+
+restore.addEventListener("click", () => { removed = []; save(); render(); });
+render();
+</script>
