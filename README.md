@@ -11,7 +11,7 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 
 ## Status
 
-**Focus:** tune story quality. Prompts are now files in `prompts/` (start with `stories.md` and `stories-lane.md`); judge changes against captured lane outputs, not one run. File an issue for it first if none exists.
+**Focus:** open issue #8 (general search on home) and build it on a new branch from `main`; the issue is the spec, including the "Decided" calls. After that: tune story quality (prompts in `prompts/`; file an issue first).
 
 **Last shipped**
 - Favorites (#6): star copies a card to `/favorites` (popup offers delete-from-home; `/settings` holds the choice); "more like this" on a favorite adds to Favorites only.
