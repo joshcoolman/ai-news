@@ -96,3 +96,16 @@ export async function searchElsewhere(query: string) {
   }
   set({ searching: false });
 }
+
+/*
+  A search the Creators page hands to home. Home opens at once and runs it
+  behind placeholders, rather than Creators waiting on it and then navigating.
+*/
+export type VideoSearch = { title: string; channel: string };
+let handoff: VideoSearch | null = null;
+export const handToHome = (video: VideoSearch) => void (handoff = video);
+export function takeHandoff(): VideoSearch | null {
+  const v = handoff;
+  handoff = null;
+  return v;
+}

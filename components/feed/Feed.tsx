@@ -6,7 +6,7 @@ import type { RefreshEvent } from "@/lib/refresh/events";
 import type { Settings } from "@/lib/store/types";
 import { apply, optimistic, tiles, type Live, type Summary } from "@/lib/refresh/live";
 import { TopBar } from "../TopBar";
-import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, setRefreshing } from "../actions/store";
+import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, setRefreshing, takeHandoff, type VideoSearch } from "../actions/store";
 import { Card } from "./Card";
 import { FavoritePrompt } from "./FavoritePrompt";
 import { ProgressLine } from "./ProgressLine";
@@ -16,24 +16,24 @@ import { SummaryLine } from "./SummaryLine";
 type Initial = FeedView & { refresh: { running: boolean } };
 type CreatorRef = { id: string; name: string };
 
+/** A search adds up to this many cards, so this many placeholders hold their place. */
+const SEARCH_SLOTS = 8;
+
 export function Feed({
   initial,
   creators,
   settings,
-  query,
-  nothingNew,
 }: {
   initial: Initial;
   creators: CreatorRef[];
   settings: Settings;
-  /** A search the Creators page already ran: shown in the box, and the status line says if it found nothing. */
-  query?: string;
-  nothingNew?: boolean;
 }) {
   const [view, setView] = useState<FeedView>(initial);
   const [live, setLive] = useState<Live | null>(initial.refresh.running ? optimistic(creators) : null);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [notice, setNotice] = useState(nothingNew ? `Nothing new in the last month for ${query}` : "");
+  const [notice, setNotice] = useState("");
+  /** What a running search is doing; while set, placeholders sit where its cards will land. */
+  const [pending, setPending] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [searching, setSearching] = useState<Set<string>>(new Set());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
@@ -150,23 +150,38 @@ export function Feed({
     if (note) setNotes((n) => ({ ...n, [card.id]: note }));
   }
 
-  async function search(query: string) {
+  /** Runs a search behind placeholders: `run` returns the notice to show (empty when cards were added). */
+  async function runSearch(what: string, run: () => Promise<string>) {
     setSummary(null);
-    setNotice(`Searching for ${query}`);
+    setNotice("");
+    setPending(what);
+    let note: string;
     try {
-      const res = await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
-      const data = await res.json();
-      if (!res.ok) return setNotice(data.error ?? "Search failed");
-      setNotice(data.added ? "" : data.message ?? "Nothing found");
+      note = await run();
       await reload();
     } catch {
-      setNotice("Search failed");
+      note = "Search failed";
     }
+    setPending(null);
+    setNotice(note);
   }
+
+  async function post(url: string, payload: unknown): Promise<string> {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (res.status === 409) return "A refresh is running. Search again when it finishes.";
+    if (!res.ok) return data.error ?? "Search failed";
+    return data.added ? "" : (data.message ?? "Nothing found");
+  }
+
+  const search = (query: string) => runSearch(`Searching for ${query}`, () => post("/api/search", { query }));
+  const searchVideo = (v: VideoSearch) => runSearch(`Finding more on: ${v.title}`, () => post("/api/search/video", v));
+
+  // A search handed over by the Creators page: the page is already up, so run it here.
+  useEffect(() => {
+    const v = takeHandoff();
+    if (v) void searchVideo(v);
+  }, []);
 
   // The header's buttons hand their work to the feed when you are on home.
   const latest = useRef({ refresh, search });
@@ -211,13 +226,25 @@ export function Feed({
 
 
       <div className="status" role="status">
-        {live ? <ProgressLine live={live} onCancel={cancel} /> : summary ? <SummaryLine s={summary} /> : notice}
+        {live ? (
+          <ProgressLine live={live} onCancel={cancel} />
+        ) : pending ? (
+          <span className="progress">
+            <span className="pulse" />
+            {pending}
+          </span>
+        ) : summary ? (
+          <SummaryLine s={summary} />
+        ) : (
+          notice
+        )}
       </div>
 
-      {front.length === 0 && rest.length === 0 ? (
+      {front.length === 0 && rest.length === 0 && !pending ? (
         <p className="empty">Nothing here yet. Press Refresh to fetch the latest from your creators and the web.</p>
       ) : (
         <div className="grid">
+          {pending && !live && Array.from({ length: SEARCH_SLOTS }, (_, n) => <Slot key={`search-${n}`} label="" />)}
           {front.map((t) =>
             t.kind === "slot" ? (
               <Slot key={t.key} label={t.label} activity={t.activity} />

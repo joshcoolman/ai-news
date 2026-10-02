@@ -203,7 +203,11 @@ button, input { font: inherit; color: inherit; }
 .creator-pick[aria-pressed="true"] { background: var(--chip); }
 .creator-pick .avatar { width: 32px; height: 32px; }
 .topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
-.topics-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+/* Placeholders while videos and topics load: same box sizes as the real things, so nothing jumps when they land. */
+.topics { min-height: 32px; }
+.topic-ghost { height: 32px; border-radius: 18px; }
+.count-ghost { width: 26px; height: 18px; }
+.creators-status { margin: 0 0 12px; }
 /* Each topic: a deep fill, a slightly hue-shifted border, and a near-white tint of the same hue for text. Fixed colours, like the icon buttons. */
 .topic {
   --fill: hsl(var(--h) 42% 24%); --edge: hsl(calc(var(--h) + 14) 48% 40%); --ink: hsl(var(--h) 80% 94%);
