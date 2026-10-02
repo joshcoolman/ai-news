@@ -11,15 +11,15 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 
 ## Status
 
-**Focus:** more tuning from daily use; open the next issue (`gh issue list`). Story quality (prompts in `prompts/`) needs an issue first.
+**Focus:** use the player window (phase 1) for a day or two, then open #14 (own /player page). Otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
+- Thumbnails play in one reusable window (`ainews-player`), first opened on the right half of the screen; later clicks load into it.
 - Searches feel instant: the Creators magnifier and header search/refresh from any page go home at once and run there; searches show placeholders where results land (8 at top, 4 after a "more like this" card, also on Favorites) and new cards animate in.
 - Creators page opens instantly: creators from the store, videos/topics/counts as same-size placeholders that fill in. Feeds cached for the day; the tab keeps the last result; reloading /creators fetches fresh.
 - Creators page topic badges (`prompts/topics.md`): one small-model call groups the 28 days into named products, each badge its own colour; click to filter, combines with the creator sidebar.
 - Header is icons only (home, favorites, creators | refresh, add creator, search | settings). Refresh, add and search work from every page; off home they report with a toast that links home (contract in `components/actions/store.ts`).
 - Creators page: recent videos from your creators (5-28 day slider, default 7) with a creator sidebar, per-creator counts and a toggle filter; the magnifier on a video searches its topic on home.
-- Add creator is a popup that confirms who it found, then grabs their recent videos.
 
 **Up next**
 - Open issues.
