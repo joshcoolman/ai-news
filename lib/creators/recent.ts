@@ -15,22 +15,24 @@ export type FeedReach = { channelId: string; full: boolean; oldest?: string };
 export type Recent = { cards: RecentCard[]; reach: FeedReach[] };
 
 /*
-  Channel feeds are cached for a few minutes and durations for good (a video's
-  length never changes), so moving around the page does not re-fetch everything.
+  Channel feeds are cached for the day and durations for good (a video's length
+  never changes), so coming back to the page does not re-fetch everything. A
+  reload of the Creators page asks for fresh feeds.
 */
-const FEED_TTL = 5 * 60_000;
 const g = globalThis as typeof globalThis & {
-  __feeds?: Map<string, { at: number; videos: Promise<FeedVideo[]> }>;
+  __feeds?: Map<string, { day: string; videos: Promise<FeedVideo[]> }>;
   __durations?: Map<string, number | undefined>;
 };
 const feeds = (g.__feeds ??= new Map());
 const durations = (g.__durations ??= new Map());
 
-function feedOf(channelId: string): Promise<FeedVideo[]> {
+const today = () => new Date().toDateString();
+
+function feedOf(channelId: string, fresh: boolean): Promise<FeedVideo[]> {
   const hit = feeds.get(channelId);
-  if (hit && Date.now() - hit.at < FEED_TTL) return hit.videos;
+  if (hit && !fresh && hit.day === today()) return hit.videos;
   const videos = listChannelVideos(channelId);
-  feeds.set(channelId, { at: Date.now(), videos });
+  feeds.set(channelId, { day: today(), videos });
   videos.catch(() => feeds.delete(channelId));
   return videos;
 }
@@ -47,8 +49,8 @@ async function durationOf(videoId: string): Promise<number | undefined> {
  * live from the channel feeds. The page narrows it to the chosen window. Not
  * stored: nothing here is managed. A channel whose feed fails is skipped.
  */
-export async function recentVideos(creators: Creator[]): Promise<Recent> {
-  const { entries, reach } = await recentEntries(creators);
+export async function recentVideos(creators: Creator[], fresh = false): Promise<Recent> {
+  const { entries, reach } = await recentEntries(creators, fresh);
   const found: (number | undefined)[] = [];
   for (let n = 0; n < entries.length; n += 10) {
     found.push(...(await Promise.all(entries.slice(n, n + 10).map((r) => durationOf(r.video.videoId)))));
@@ -62,12 +64,12 @@ export async function recentVideos(creators: Creator[]): Promise<Recent> {
 }
 
 /** The raw videos behind the page, newest first, and how far each channel feed reached. */
-export async function recentEntries(creators: Creator[]) {
+export async function recentEntries(creators: Creator[], fresh = false) {
   const reach: FeedReach[] = [];
   const perCreator = await Promise.all(
     creators.map(async (c) => {
       try {
-        const videos = await feedOf(c.channelId);
+        const videos = await feedOf(c.channelId, fresh);
         reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
         return videos.filter((v) => withinDays(v.publishedAt, MAX_DAYS)).map((video) => ({ c, video }));
       } catch (err) {

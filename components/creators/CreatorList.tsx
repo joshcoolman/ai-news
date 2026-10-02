@@ -9,6 +9,8 @@ import type { FeedReach, RecentCard } from "@/lib/creators/recent";
 import { FEED_CAP, MAX_DAYS, MIN_DAYS } from "@/lib/creators/window";
 import { TopBar } from "../TopBar";
 import { Card } from "../feed/Card";
+import { Slot } from "../feed/Slot";
+import { handToHome } from "../actions/store";
 import { AddCreatorForm } from "./AddCreatorForm";
 
 const DAY = 86_400_000;
@@ -20,34 +22,77 @@ function hueOf(name: string): number {
   return h;
 }
 
-export function CreatorList({
-  initial,
-  recent,
-  reach,
-  days: savedDays,
-}: {
-  initial: Creator[];
-  recent: RecentCard[];
-  reach: FeedReach[];
-  days: number;
-}) {
+/*
+  The page renders before its videos: they load here, behind placeholders. The
+  last result stays in memory for the tab, so moving between pages shows it at
+  once; a reload of this page is the ask for fresh feeds.
+*/
+type Recent = { cards: RecentCard[]; reach: FeedReach[] };
+let kept: { key: string; recent: Recent; topics?: PageTopic[] } | null = null;
+/** The request under way, shared so a remount (React's dev double-run) does not read every feed twice. */
+let inflight: { key: string; recent: Promise<Recent> } | null = null;
+
+function load(key: string): Promise<Recent> {
+  if (inflight?.key === key) return inflight.recent;
+  const fresh = !kept && reloadedHere();
+  const recent = fetch(`/api/creators/recent${fresh ? "?fresh=1" : ""}`).then((res) => (res.ok ? res.json() : Promise.reject()));
+  inflight = { key, recent };
+  recent.then(
+    (r) => (kept = { key, recent: r }),
+    () => {},
+  ).finally(() => inflight?.recent === recent && (inflight = null));
+  return recent;
+}
+
+/** Whether this document was loaded by reloading /creators. Only the tab's first fetch acts on it: after that, `kept` is set. */
+function reloadedHere(): boolean {
+  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  return nav?.type === "reload" && new URL(nav.name).pathname === "/creators";
+}
+
+const PLACEHOLDERS = 8;
+
+export function CreatorList({ initial, days: savedDays }: { initial: Creator[]; days: number }) {
   const router = useRouter();
   const [creators, setCreators] = useState(initial);
   const [selected, setSelected] = useState<string | null>(null);
-  const [topics, setTopics] = useState<PageTopic[] | null>(null);
+  const creatorKey = initial.map((c) => c.channelId).sort().join();
+  const [recent, setRecent] = useState<Recent | null>(kept?.key === creatorKey ? kept.recent : null);
+  const [failed, setFailed] = useState(false);
+  const [topics, setTopics] = useState<PageTopic[] | null>(kept?.key === creatorKey ? (kept.topics ?? null) : null);
   const [topic, setTopic] = useState<string | null>(null);
   const [days, setDays] = useState(savedDays);
-  const [searching, setSearching] = useState<Set<string>>(new Set());
-  const [notes, setNotes] = useState<Record<string, string>>({});
   useEffect(() => setCreators(initial), [initial]);
 
-  // Topics take a model call the first time, so they arrive after the page.
-  const videoKey = recent.map((r) => r.card.id).join();
+  // Videos: from memory when this tab already has them for these creators, otherwise from the server's day cache.
   useEffect(() => {
+    if (kept?.key === creatorKey) return;
+    let stale = false;
+    setFailed(false);
+    load(creatorKey)
+      .then((d) => {
+        if (stale) return;
+        setRecent(d);
+        setTopics(null);
+      })
+      .catch(() => !stale && setFailed(true));
+    return () => {
+      stale = true;
+    };
+  }, [creatorKey]);
+
+  // Topics take a model call the first time, so they arrive after the videos.
+  const videoKey = recent?.cards.map((r) => r.card.id).join();
+  useEffect(() => {
+    if (videoKey === undefined || kept?.topics) return;
     let stale = false;
     fetch("/api/creators/topics")
       .then((res) => (res.ok ? res.json() : { topics: [] }))
-      .then((d) => !stale && setTopics(d.topics))
+      .then((d) => {
+        if (stale) return;
+        if (kept) kept.topics = d.topics;
+        setTopics(d.topics);
+      })
       .catch(() => !stale && setTopics([]));
     return () => {
       stale = true;
@@ -60,29 +105,10 @@ export function CreatorList({
     await fetch(`/api/creators/${c.channelId}`, { method: "DELETE" });
   }
 
-  /** Search the video's topic from home: run it, then go there. Creators stays untouched. */
-  async function explore(card: CardData) {
-    setSearching((s) => new Set(s).add(card.id));
-    setNotes(({ [card.id]: _, ...rest }) => rest);
-    let note = "";
-    try {
-      const res = await fetch("/api/search/video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: card.title, channel: card.meta.split(" · ")[0] }),
-      });
-      const data = await res.json();
-      if (res.ok) return router.push(`/?q=${encodeURIComponent(data.query)}${data.added ? "" : "&none=1"}`);
-      note = res.status === 409 ? "Refresh running" : "Search failed";
-    } catch {
-      note = "Search failed";
-    }
-    setSearching((s) => {
-      const next = new Set(s);
-      next.delete(card.id);
-      return next;
-    });
-    setNotes((n) => ({ ...n, [card.id]: note }));
+  /** Search the video's topic on home: go there now, and home runs it behind placeholders. Creators stays untouched. */
+  function explore(card: CardData) {
+    handToHome({ title: card.title, channel: card.meta.split(" · ")[0] });
+    router.push("/");
   }
 
   function saveDays() {
@@ -94,7 +120,9 @@ export function CreatorList({
   }
 
   const cutoff = Date.now() - days * DAY;
-  const inWindow = recent.filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
+  const loading = recent === null;
+  const reach = recent?.reach ?? [];
+  const inWindow = (recent?.cards ?? []).filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
   const listed = inWindow.filter((r) => creators.some((c) => c.channelId === r.channelId));
   const topicIds = new Set(topics?.find((t) => t.name === topic)?.ids);
   const inTopic = (r: RecentCard) => !topic || topicIds.has(r.card.id);
@@ -137,8 +165,28 @@ export function CreatorList({
       </label>
       <div className="creators-layout">
         <section>
-          {topics === null && <p className="topics-note">Finding topics</p>}
-          {badges.length > 0 && (
+          <p className="status creators-status" aria-live="polite">
+            {loading ? (
+              <span className="progress">
+                <span className="pulse" />
+                {failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`}
+              </span>
+            ) : topics === null ? (
+              <span className="progress">
+                <span className="pulse" />
+                {listed.length} videos · grouping topics
+              </span>
+            ) : (
+              `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`
+            )}
+          </p>
+          {topics === null ? (
+            <div className="topics" aria-hidden="true">
+              {[96, 132, 84, 150, 110].map((w, n) => (
+                <span key={n} className="topic-ghost skeleton" style={{ width: w }} />
+              ))}
+            </div>
+          ) : badges.length > 0 && (
             <div className="topics" role="group" aria-label="Topics">
               {badges.map((b) => (
                 <button
@@ -156,10 +204,16 @@ export function CreatorList({
               ))}
             </div>
           )}
-          {shown.length ? (
+          {loading ? (
+            <div className="grid">
+              {Array.from({ length: PLACEHOLDERS }, (_, n) => (
+                <Slot key={n} label="" />
+              ))}
+            </div>
+          ) : shown.length ? (
             <div className="grid">
               {shown.map((r) => (
-                <Card key={r.card.id} card={r.card} note={notes[r.card.id]} searching={searching.has(r.card.id)} onMore={() => explore(r.card)} />
+                <Card key={r.card.id} card={r.card} onMore={() => explore(r.card)} />
               ))}
             </div>
           ) : (
@@ -169,7 +223,7 @@ export function CreatorList({
         <aside>
           <ul className="rows">
             {creators.map((c) => (
-              <li key={c.channelId} className={`${selected === c.channelId ? "on" : ""}${count(c.channelId) ? "" : " none"}`}>
+              <li key={c.channelId} className={`${selected === c.channelId ? "on" : ""}${loading || count(c.channelId) ? "" : " none"}`}>
                 <button
                   className="creator-pick"
                   type="button"
@@ -178,10 +232,14 @@ export function CreatorList({
                 >
                   {c.avatarUrl ? <img className="avatar" src={c.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span className="avatar" />}
                   <span className="name">{c.name}</span>
-                  <span className="count" title={capped(c.channelId) ? `Feed shows only the newest ${FEED_CAP}` : undefined}>
-                    {count(c.channelId)}
-                    {capped(c.channelId) ? "+" : ""}
-                  </span>
+                  {loading ? (
+                    <span className="count count-ghost skeleton" />
+                  ) : (
+                    <span className="count" title={capped(c.channelId) ? `Feed shows only the newest ${FEED_CAP}` : undefined}>
+                      {count(c.channelId)}
+                      {capped(c.channelId) ? "+" : ""}
+                    </span>
+                  )}
                 </button>
                 {selected === c.channelId && (
                   <div className="row-main">
