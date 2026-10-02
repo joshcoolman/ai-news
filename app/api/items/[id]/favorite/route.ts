@@ -8,8 +8,8 @@ export async function POST(_req: Request, { params }: Ctx) {
     const item = d.items.find((i) => i.id === id);
     if (!item) return false;
     if (d.favorites.some((f) => f.item.id === id)) return true;
-    const { batch, after, removedAt, hiddenBy, moreQuery, moreSeen, ...copy } = item;
-    void [batch, after, removedAt, hiddenBy, moreQuery, moreSeen];
+    const { batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery, ...copy } = item;
+    void [batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery];
     d.favorites.push({ item: copy, favoritedAt: new Date().toISOString() });
     return true;
   });

@@ -37,7 +37,7 @@ describe("live refresh", () => {
   });
 
   it("drops every remaining slot when the refresh is done", () => {
-    const done = apply(replay(log), { type: "done", videos: 1, stories: 1, hidden: 1, failed: ["Beta"], seconds: 40, usd: 1, cancelled: true });
+    const done = apply(replay(log), { type: "done", videos: 1, stories: 1, failed: ["Beta"], seconds: 40, usd: 1, cancelled: true });
     expect(shape(done)).toEqual(["v1", "s1"]);
   });
 });

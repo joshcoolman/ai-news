@@ -6,10 +6,9 @@ import type { RefreshEvent } from "@/lib/refresh/events";
 import type { Settings } from "@/lib/store/types";
 import { apply, optimistic, tiles, type Live, type Summary } from "@/lib/refresh/live";
 import { TopBar } from "../TopBar";
-import { AddCreatorForm } from "../creators/AddCreatorForm";
+import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, setRefreshing } from "../actions/store";
 import { Card } from "./Card";
 import { FavoritePrompt } from "./FavoritePrompt";
-import { HiddenPanel } from "./HiddenPanel";
 import { ProgressLine } from "./ProgressLine";
 import { Slot } from "./Slot";
 import { SummaryLine } from "./SummaryLine";
@@ -17,12 +16,24 @@ import { SummaryLine } from "./SummaryLine";
 type Initial = FeedView & { refresh: { running: boolean } };
 type CreatorRef = { id: string; name: string };
 
-export function Feed({ initial, creators, settings }: { initial: Initial; creators: CreatorRef[]; settings: Settings }) {
+export function Feed({
+  initial,
+  creators,
+  settings,
+  query,
+  nothingNew,
+}: {
+  initial: Initial;
+  creators: CreatorRef[];
+  settings: Settings;
+  /** A search the Creators page already ran: shown in the box, and the status line says if it found nothing. */
+  query?: string;
+  nothingNew?: boolean;
+}) {
   const [view, setView] = useState<FeedView>(initial);
   const [live, setLive] = useState<Live | null>(initial.refresh.running ? optimistic(creators) : null);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [notice, setNotice] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState(nothingNew ? `Nothing new in the last month for ${query}` : "");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [searching, setSearching] = useState<Set<string>>(new Set());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
@@ -139,10 +150,45 @@ export function Feed({ initial, creators, settings }: { initial: Initial; creato
     if (note) setNotes((n) => ({ ...n, [card.id]: note }));
   }
 
-  async function showAnyway(id: string) {
-    await fetch(`/api/items/${encodeURIComponent(id)}/show`, { method: "POST" });
-    await reload();
+  async function search(query: string) {
+    setSummary(null);
+    setNotice(`Searching for ${query}`);
+    try {
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setNotice(data.error ?? "Search failed");
+      setNotice(data.added ? "" : data.message ?? "Nothing found");
+      await reload();
+    } catch {
+      setNotice("Search failed");
+    }
   }
+
+  // The header's buttons hand their work to the feed when you are on home.
+  const latest = useRef({ refresh, search });
+  latest.current = { refresh, search };
+  useEffect(() => setRefreshing(!!live), [live]);
+  useEffect(() => {
+    const onRefresh = () => void latest.current.refresh();
+    const onSearch = (e: Event) => void latest.current.search((e as CustomEvent<{ query: string }>).detail.query);
+    const onChanged = async (e: Event) => {
+      setSummary(null);
+      setNotice((e as CustomEvent<{ notice?: string }>).detail?.notice ?? "");
+      await reload();
+    };
+    window.addEventListener(REFRESH_EVENT, onRefresh);
+    window.addEventListener(SEARCH_EVENT, onSearch);
+    window.addEventListener(FEED_CHANGED_EVENT, onChanged);
+    return () => {
+      window.removeEventListener(REFRESH_EVENT, onRefresh);
+      window.removeEventListener(SEARCH_EVENT, onSearch);
+      window.removeEventListener(FEED_CHANGED_EVENT, onChanged);
+    };
+  }, [reload]);
 
   const front = live ? tiles(live, removed) : [];
   const frontIds = new Set(front.flatMap((t) => (t.kind === "card" ? [t.card.id] : [])));
@@ -161,24 +207,12 @@ export function Feed({ initial, creators, settings }: { initial: Initial; creato
 
   return (
     <div className="wrap">
-      <TopBar>
-        <button className="btn primary" type="button" onClick={refresh} disabled={!!live}>
-          {live ? "Refreshing" : "Refresh"}
-        </button>
-        <button className="btn" type="button" onClick={() => setAdding((a) => !a)} aria-expanded={adding}>
-          Add creator
-        </button>
-      </TopBar>
+      <TopBar />
 
-      {adding && <AddCreatorForm autoFocus />}
 
       <div className="status" role="status">
         {live ? <ProgressLine live={live} onCancel={cancel} /> : summary ? <SummaryLine s={summary} /> : notice}
       </div>
-
-      {!live && view.hidden.length > 0 && (
-        <HiddenPanel hidden={view.hidden} onShow={showAnyway} />
-      )}
 
       {front.length === 0 && rest.length === 0 ? (
         <p className="empty">Nothing here yet. Press Refresh to fetch the latest from your creators and the web.</p>

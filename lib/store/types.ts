@@ -8,18 +8,8 @@ export type Creator = {
   newestSeen?: string;
 };
 
-export type AvoidEntry = {
-  id: string;
-  reason: string;
-  fromItemId: string;
-  fromTitle: string;
-  addedAt: string;
-};
-
-/** Why a refresh held an item back: an avoid entry, or the creator's guidance. */
-export type HiddenBy =
-  | { kind: "avoid"; avoidId: string; text: string }
-  | { kind: "guidance"; text: string };
+/** Why a refresh held an item back: it did not fit the creator's guidance. Held items are stored, never shown. */
+export type HiddenBy = { kind: "guidance"; text: string };
 
 type ItemBase = {
   id: string;
@@ -28,6 +18,8 @@ type ItemBase = {
   createdAt: string;
   title: string;
   link: string;
+  /** Set on cards a home-page search added: the query as typed. Feed-only; a favorite drops it. */
+  searchQuery?: string;
   /** The card a "more like this" result belongs to. */
   after?: string;
   removedAt?: string;
@@ -63,12 +55,13 @@ export type Favorite = { item: Item; favoritedAt: string };
 export type Settings = {
   /** What favoriting does to the card in the feed. */
   onFavorite: "ask" | "remove" | "keep";
+  /** Days of recent videos the Creators page shows. Absent until first changed: DEFAULT_DAYS. */
+  creatorsWindowDays?: number;
 };
 
 export type Data = {
   creators: Creator[];
   items: Item[];
-  avoid: AvoidEntry[];
   favorites: Favorite[];
   settings: Settings;
 };

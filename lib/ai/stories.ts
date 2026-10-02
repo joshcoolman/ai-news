@@ -5,7 +5,6 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, ask, STORIES_MODEL, type Usage } from "./client";
 import { prompt } from "./prompts";
 import { domainOf, normalizeUrl } from "../feed/rules";
-import type { AvoidEntry } from "../store/types";
 import { LANES, STORIES_PER_LANE } from "../refresh/events";
 
 /*
@@ -26,7 +25,6 @@ const SEARCHES_PER_LANE = 4;
 const MAX_CONTINUATIONS = 8;
 
 export type StoriesInput = {
-  avoid: AvoidEntry[];
   /** Titles of creator videos from the last 7 days, read from the channel feeds. */
   creatorTitles: { channel: string; title: string; publishedAt: string }[];
   /** Cards from the last 30 days, removed ones included. */
@@ -48,17 +46,11 @@ function context(input: StoriesInput): Promise<string> {
   });
 }
 
-/** The avoid list, word for word, or "" when it is empty. */
-async function avoidText(avoid: AvoidEntry[]): Promise<string> {
-  if (!avoid.length) return "";
-  return prompt("avoid", { entries: avoid.map((a) => `- "${a.reason}" (said about: ${a.fromTitle})`).join("\n") });
-}
-
 /** Split this week's ground into non-overlapping lanes for the parallel agents. */
 export async function planLanes(input: StoriesInput): Promise<Lane[]> {
   const out = await ask(
     z.object({ lanes: z.array(z.object({ name: z.string(), brief: z.string() })) }),
-    await prompt("plan-lanes", { lanes: LANES, avoid: await avoidText(input.avoid) }),
+    await prompt("plan-lanes", { lanes: LANES }),
     await context(input),
   );
   return out.lanes.slice(0, LANES).map((l, i) => ({ id: `lane-${i}`, name: l.name.trim(), brief: l.brief.trim() }));
@@ -83,7 +75,6 @@ export async function runLane(
   const system = [
     await prompt("stories"),
     await prompt("stories-lane", {
-      avoid: await avoidText(input.avoid),
       count: others.length + 1,
       name: lane.name,
       brief: lane.brief,

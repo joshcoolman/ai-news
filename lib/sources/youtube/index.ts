@@ -114,11 +114,15 @@ function innertube(): Promise<Innertube> {
 
 /**
  * Keyless YouTube search, long-form videos only. Returns results `skip` through
- * `skip + count`, paging further down the results as needed.
+ * `skip + count`, paging further down the results as needed. `pastMonth` uses
+ * YouTube's own upload-date filter.
  */
-export async function search(query: string, { skip = 0, count = 20 } = {}): Promise<SearchResult[]> {
+export async function search(
+  query: string,
+  { skip = 0, count = 20, pastMonth = false } = {},
+): Promise<SearchResult[]> {
   const yt = await innertube();
-  let page = await yt.search(query, { type: "video" });
+  let page = await yt.search(query, { type: "video", ...(pastMonth ? { upload_date: "month" as const } : {}) });
   const out: SearchResult[] = [];
   for (let pages = 0; pages < 6; pages++) {
     for (const v of page.videos) {

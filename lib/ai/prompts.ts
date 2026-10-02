@@ -6,7 +6,7 @@ import path from "node:path";
   Every prompt the app sends lives in prompts/<name>.md. Files are read at call
   time, so an edit takes effect on the next call without a restart. `{{name}}`
   is replaced with vars[name]; a paragraph whose variables are all empty is
-  dropped, which is how optional blocks (the avoid list, the other lanes)
+  dropped, which is how optional blocks (the other lanes)
   disappear when there is nothing to say.
 */
 

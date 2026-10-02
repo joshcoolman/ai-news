@@ -11,6 +11,19 @@ export function maxBatch(items: Item[]): number {
   return items.reduce((m, i) => (i.batch !== undefined && i.batch > m ? i.batch : m), 0);
 }
 
+/** The first `count` results whose video is not already stored. Removed cards stay stored, so they never come back. */
+export function firstUnstored<T extends { videoId: string }>(items: Item[], results: T[], count: number): T[] {
+  const have = new Set(items.flatMap((i) => (i.kind === "video" ? [i.videoId] : [])));
+  const out: T[] = [];
+  for (const r of results) {
+    if (have.has(r.videoId)) continue;
+    have.add(r.videoId);
+    out.push(r);
+    if (out.length === count) break;
+  }
+  return out;
+}
+
 /** The batch whose cards carry the New tag: the newest batch that put something in the feed. */
 export function latestBatch(items: Item[]): number | undefined {
   let latest: number | undefined;

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Data, Item } from "../store/types";
-import { displayOrder, latestBatch, maxBatch, treeOrder } from "./rules";
+import { displayOrder, latestBatch, treeOrder } from "./rules";
 import { thumbnailUrl } from "../sources/youtube";
 
 /** What the browser needs to draw one card. */
@@ -19,9 +19,7 @@ export type Card = {
   favorited?: boolean;
 };
 
-export type HiddenCard = { id: string; title: string; channel: string; why: string };
-
-export type FeedView = { cards: Card[]; hidden: HiddenCard[] };
+export type FeedView = { cards: Card[] };
 
 export function buildFeed(data: Data): FeedView {
   const latest = latestBatch(data.items);
@@ -32,18 +30,7 @@ export function buildFeed(data: Data): FeedView {
     favorited: favorited.has(item.id),
   }));
 
-  // Hidden items from the most recent refresh that produced anything.
-  const last = maxBatch(data.items);
-  const hidden = data.items
-    .filter((i) => i.hiddenBy && i.batch === last && !i.removedAt)
-    .map((i) => ({
-      id: i.id,
-      title: i.title,
-      channel: i.kind === "video" ? i.channel : i.sourceDomain,
-      why: i.hiddenBy!.kind === "guidance" ? `Guidance: ${i.hiddenBy!.text}` : `Avoid: ${i.hiddenBy!.text}`,
-    }));
-
-  return { cards, hidden };
+  return { cards };
 }
 
 /** Favorites, newest first, each followed by its "more like this" results. */
@@ -58,7 +45,7 @@ export function favoriteCards(data: Data): Card[] {
 
 /** One card as the browser draws it. */
 export function toCard(item: Item, parent: Item | undefined, isNew: boolean): Card {
-  const prefix = parent ? `More like ${nameOf(parent)} · ` : "";
+  const prefix = parent ? `More like ${nameOf(parent)} · ` : item.searchQuery ? `Search: ${item.searchQuery} · ` : "";
   const base = { id: item.id, kind: item.kind, title: item.title, link: item.link, isNew };
   if (item.kind === "video") {
     return {

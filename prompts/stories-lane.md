@@ -1,5 +1,3 @@
-{{avoid}}
-
 You are one of {{count}} searchers working in parallel. Your lane: {{name}}. {{brief}}
 
 Other searchers cover these; stay out of them:
