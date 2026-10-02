@@ -1,6 +1,6 @@
 import "server-only";
 import type { Data, Item } from "../store/types";
-import { displayOrder, latestBatch, maxBatch } from "./rules";
+import { displayOrder, latestBatch, maxBatch, treeOrder } from "./rules";
 import { thumbnailUrl } from "../sources/youtube";
 
 /** What the browser needs to draw one card. */
@@ -15,6 +15,8 @@ export type Card = {
   meta: string;
   duration?: string;
   isNew: boolean;
+  /** A copy is in Favorites. */
+  favorited?: boolean;
 };
 
 export type HiddenCard = { id: string; title: string; channel: string; why: string };
@@ -24,9 +26,11 @@ export type FeedView = { cards: Card[]; hidden: HiddenCard[] };
 export function buildFeed(data: Data): FeedView {
   const latest = latestBatch(data.items);
   const byId = new Map(data.items.map((i) => [i.id, i]));
-  const cards = displayOrder(data.items).map((item) =>
-    toCard(item, item.after ? byId.get(item.after) : undefined, item.batch !== undefined && item.batch === latest),
-  );
+  const favorited = new Set(data.favorites.map((f) => f.item.id));
+  const cards = displayOrder(data.items).map((item) => ({
+    ...toCard(item, item.after ? byId.get(item.after) : undefined, item.batch !== undefined && item.batch === latest),
+    favorited: favorited.has(item.id),
+  }));
 
   // Hidden items from the most recent refresh that produced anything.
   const last = maxBatch(data.items);
@@ -40,6 +44,16 @@ export function buildFeed(data: Data): FeedView {
     }));
 
   return { cards, hidden };
+}
+
+/** Favorites, newest first, each followed by its "more like this" results. */
+export function favoriteCards(data: Data): Card[] {
+  const items = data.favorites.map((f) => f.item);
+  const at = new Map(data.favorites.map((f) => [f.item.id, f.favoritedAt]));
+  const byId = new Map(items.map((i) => [i.id, i]));
+  return treeOrder(items, (a, b) => at.get(b.id)!.localeCompare(at.get(a.id)!)).map((item) =>
+    toCard(item, item.after ? byId.get(item.after) : undefined, false),
+  );
 }
 
 /** One card as the browser draws it. */

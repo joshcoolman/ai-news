@@ -11,6 +11,7 @@ export default async function Home() {
     <Feed
       initial={{ ...buildFeed(data), refresh: { running: refreshRunning() } }}
       creators={data.creators.map((c) => ({ id: c.channelId, name: c.name }))}
+      settings={data.settings}
     />
   );
 }

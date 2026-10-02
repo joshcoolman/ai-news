@@ -1,7 +1,7 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AvoidEntry, Creator, Data, Item } from "./types";
+import type { Data } from "./types";
 
 export type * from "./types";
 
@@ -14,7 +14,7 @@ export type * from "./types";
 
 const DIR = path.join(process.cwd(), "data");
 
-const DEFAULT_CREATORS: Creator[] = [
+const DEFAULT_CREATORS: Data["creators"] = [
   ["Matthew Berman", "UCawZsQWqfGSbCI5yjkdVkTA", ""],
   ["Riley Brown", "UCMcoud_ZW7cfxeIugBflSBw", ""],
   ["Fast Hours", "UCxkOnB_ojDRWywB2W1fGCdg", ""],
@@ -49,13 +49,19 @@ async function writeJson(file: string, value: unknown) {
   await fs.rename(tmp, target);
 }
 
+/** One JSON file per key of Data, with what a missing file starts as. */
+const FILES: { [K in keyof Data]: () => Data[K] } = {
+  creators: () => DEFAULT_CREATORS,
+  items: () => [],
+  avoid: () => [],
+  favorites: () => [],
+  settings: () => ({ onFavorite: "ask" }),
+};
+const KEYS = Object.keys(FILES) as (keyof Data)[];
+
 async function load(): Promise<Data> {
-  const [creators, items, avoid] = await Promise.all([
-    readJson<Creator[]>("creators.json", () => DEFAULT_CREATORS),
-    readJson<Item[]>("items.json", () => []),
-    readJson<AvoidEntry[]>("avoid.json", () => []),
-  ]);
-  return { creators, items, avoid };
+  const values = await Promise.all(KEYS.map((k) => readJson<unknown>(`${k}.json`, FILES[k])));
+  return Object.fromEntries(KEYS.map((k, i) => [k, values[i]])) as unknown as Data;
 }
 
 function enqueue<T>(job: () => Promise<T>): Promise<T> {
@@ -76,15 +82,11 @@ export function read(): Promise<Data> {
 export function mutate<T>(fn: (data: Data) => T | Promise<T>): Promise<T> {
   return enqueue(async () => {
     const data = await load();
-    const before = {
-      creators: JSON.stringify(data.creators),
-      items: JSON.stringify(data.items),
-      avoid: JSON.stringify(data.avoid),
-    };
+    const before = KEYS.map((k) => JSON.stringify(data[k]));
     const result = await fn(data);
-    if (JSON.stringify(data.creators) !== before.creators) await writeJson("creators.json", data.creators);
-    if (JSON.stringify(data.items) !== before.items) await writeJson("items.json", data.items);
-    if (JSON.stringify(data.avoid) !== before.avoid) await writeJson("avoid.json", data.avoid);
+    for (const [i, k] of KEYS.entries()) {
+      if (JSON.stringify(data[k]) !== before[i]) await writeJson(`${k}.json`, data[k]);
+    }
     return result;
   });
 }
