@@ -4,6 +4,7 @@ import type { Data, Settings, VideoItem } from "../store/types";
 import { cachedVideo } from "../creators/recent";
 import { favoriteCopy } from "../feed/rules";
 import { videoItem, videoItemId } from "../refresh/save";
+import { thumbnailUrl } from "../sources/youtube";
 
 /** What the player window's bar needs about the video it is playing. */
 export type PlayerVideo = {
@@ -11,6 +12,7 @@ export type PlayerVideo = {
   videoId: string;
   title: string;
   link: string;
+  thumbUrl: string;
   /** Unknown only for a video found nowhere in the app. */
   channel?: string;
   /** The saved creator behind this video, when there is one. */
@@ -47,6 +49,7 @@ export async function playerVideo(videoId: string, title = ""): Promise<PlayerVi
     videoId,
     title: stored?.title ?? cached?.video.title ?? title,
     link: `https://www.youtube.com/watch?v=${videoId}`,
+    thumbUrl: thumbnailUrl(videoId),
     channel,
     creator: creator && { name: creator.name, avatarUrl: creator.avatarUrl },
     inFeed: !!item,
