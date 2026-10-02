@@ -107,7 +107,7 @@ export function CreatorList({ initial, days: savedDays }: { initial: Creator[]; 
 
   /** Search the video's topic on home: go there now, and home runs it behind placeholders. Creators stays untouched. */
   function explore(card: CardData) {
-    handToHome({ title: card.title, channel: card.meta.split(" · ")[0] });
+    handToHome({ kind: "video", title: card.title, channel: card.meta.split(" · ")[0] });
     router.push("/");
   }
 

@@ -16,8 +16,9 @@ import { SummaryLine } from "./SummaryLine";
 type Initial = FeedView & { refresh: { running: boolean } };
 type CreatorRef = { id: string; name: string };
 
-/** A search adds up to this many cards, so this many placeholders hold their place. */
+/** The most cards a search (top) or "more like this" (after its card) adds, so this many placeholders hold their place. */
 const SEARCH_SLOTS = 8;
+const MORE_SLOTS = 4;
 
 export function Feed({
   initial,
@@ -38,6 +39,8 @@ export function Feed({
   const [searching, setSearching] = useState<Set<string>>(new Set());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [faved, setFaved] = useState<Set<string>>(new Set());
+  /** Cards the last search added: they animate in where the placeholders were. */
+  const [arrived, setArrived] = useState<Set<string>>(new Set());
   const [onFavorite, setOnFavorite] = useState(settings.onFavorite);
   const [asking, setAsking] = useState<CardData | null>(null);
   const source = useRef<EventSource | null>(null);
@@ -46,6 +49,18 @@ export function Feed({
     const res = await fetch("/api/feed", { cache: "no-store" });
     if (res.ok) setView(await res.json());
   }, []);
+
+  /** Reload after a search, marking the cards it added so they animate in. */
+  const ids = useRef(new Set<string>());
+  ids.current = new Set(view.cards.map((c) => c.id));
+  async function reloadArriving() {
+    const before = ids.current;
+    const res = await fetch("/api/feed", { cache: "no-store" });
+    if (!res.ok) return;
+    const next: FeedView = await res.json();
+    setArrived(new Set(next.cards.filter((c) => !before.has(c.id)).map((c) => c.id)));
+    setView(next);
+  }
 
   /** Follow the running refresh. The server replays its whole log first, so this also re-attaches after a reload. */
   const follow = useCallback(() => {
@@ -138,7 +153,7 @@ export function Feed({
       const data = await res.json();
       if (!res.ok) note = "Search failed";
       else if (!data.added) note = data.message ?? "Nothing found";
-      await reload();
+      await reloadArriving();
     } catch {
       note = "Search failed";
     }
@@ -158,7 +173,7 @@ export function Feed({
     let note: string;
     try {
       note = await run();
-      await reload();
+      await reloadArriving();
     } catch {
       note = "Search failed";
     }
@@ -177,10 +192,12 @@ export function Feed({
   const search = (query: string) => runSearch(`Searching for ${query}`, () => post("/api/search", { query }));
   const searchVideo = (v: VideoSearch) => runSearch(`Finding more on: ${v.title}`, () => post("/api/search/video", v));
 
-  // A search handed over by the Creators page: the page is already up, so run it here.
+  // Work handed over by another page: home is already up, so run it here.
   useEffect(() => {
-    const v = takeHandoff();
-    if (v) void searchVideo(v);
+    const task = takeHandoff();
+    if (task?.kind === "refresh") void refresh();
+    else if (task?.kind === "search") void search(task.query);
+    else if (task?.kind === "video") void searchVideo(task);
   }, []);
 
   // The header's buttons hand their work to the feed when you are on home.
@@ -252,9 +269,10 @@ export function Feed({
               <Card key={t.card.id} {...cardProps(t.card)} checking={t.checking} arriving />
             ),
           )}
-          {rest.map((card) => (
-            <Card key={card.id} {...cardProps(card)} />
-          ))}
+          {rest.map((card) => [
+            <Card key={card.id} {...cardProps(card)} arriving={arrived.has(card.id)} />,
+            ...(searching.has(card.id) ? Array.from({ length: MORE_SLOTS }, (_, n) => <Slot key={`${card.id}-more-${n}`} label="" />) : []),
+          ])}
         </div>
       )}
 
