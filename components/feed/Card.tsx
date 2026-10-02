@@ -31,10 +31,10 @@ export function Card({
           target="_blank"
           rel="noopener"
           onClick={(e) => {
-            // A plain click on the thumbnail opens a separate window; modified clicks keep the browser's own behaviour.
+            // A plain click on the thumbnail plays in the player window; modified clicks keep the browser's own behaviour.
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
             e.preventDefault();
-            window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
+            openInPlayer(card.link);
           }}
           aria-label={`Open: ${card.title}`} />
         {card.isNew && <span className="new-tag">New</span>}
@@ -89,6 +89,20 @@ export function Card({
       <div className="meta">{card.meta}</div>
     </div>
   );
+}
+
+/*
+  One named window for watching: the first click opens it on the right half of
+  the screen, later clicks load into it wherever you have put it (the browser
+  ignores size and position for a window that already exists). No noopener: it
+  would stop the name from finding the open window.
+*/
+function openInPlayer(link: string) {
+  const s = screen as Screen & { availLeft?: number; availTop?: number };
+  const width = Math.round(s.availWidth / 2);
+  const left = (s.availLeft ?? 0) + s.availWidth - width;
+  const features = `popup,left=${left},top=${s.availTop ?? 0},width=${width},height=${s.availHeight}`;
+  window.open(link, "ainews-player", features)?.focus();
 }
 
 function hue(id: string): number {
