@@ -1,3 +1,4 @@
+import "server-only";
 export type ParsedYouTubeUrl =
   | { kind: "video"; videoId: string; url: string }
   | { kind: "handle"; handle: string }

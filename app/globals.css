@@ -106,16 +106,6 @@ button, input { font: inherit; color: inherit; }
 .meta { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .empty { color: var(--muted); font-size: 15px; }
 
-/* "Why?" box after a removal */
-.why-box {
-  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(520px, calc(100% - 32px));
-  background: var(--tray); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 8px;
-}
-.why-box label { font-size: 13px; color: var(--muted); }
-.why-box label b { color: var(--fg); font-weight: 500; }
-.why-box .hint { font-size: 12px; color: var(--muted); }
-
 /* Forms */
 .field {
   width: 100%; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px;

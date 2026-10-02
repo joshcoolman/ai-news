@@ -1,6 +1,6 @@
 import { read } from "@/lib/store";
-import { buildFeed } from "@/lib/view";
-import { refreshRunning } from "@/lib/refresh";
+import { buildFeed } from "@/lib/feed/cards";
+import { refreshRunning } from "@/lib/refresh/run";
 import { json } from "@/lib/http";
 
 export const dynamic = "force-dynamic";

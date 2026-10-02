@@ -1,5 +1,5 @@
 import { mutate } from "@/lib/store";
-import { resolveCreator, UserInputError } from "@/lib/youtube";
+import { resolveCreator, UserInputError } from "@/lib/sources/youtube";
 import { body, fail, json } from "@/lib/http";
 
 export async function POST(req: Request) {

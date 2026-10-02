@@ -1,5 +1,5 @@
-import type { Card } from "./view";
-import { LANES, STORIES_PER_LANE, type RefreshEvent } from "./refresh-events";
+import type { Card } from "../feed/cards";
+import { LANES, STORIES_PER_LANE, type RefreshEvent } from "./events";
 
 /*
   The browser's view of a refresh in progress, built only from the event log so

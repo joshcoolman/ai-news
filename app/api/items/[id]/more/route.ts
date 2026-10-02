@@ -1,4 +1,4 @@
-import { moreLikeThis, NotFoundError } from "@/lib/more";
+import { moreLikeThis, NotFoundError } from "@/lib/more-like-this/run";
 import { fail, json, type Ctx } from "@/lib/http";
 
 export async function POST(_req: Request, { params }: Ctx) {

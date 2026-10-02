@@ -1,8 +1,9 @@
-import { mutate, read } from "./store";
-import type { VideoItem } from "./store/types";
-import { pickRelevant, writeQuery } from "./agent/small";
-import { search } from "./youtube";
-import { fillDurations, videoItem } from "./refresh";
+import "server-only";
+import { mutate, read } from "../store";
+import type { VideoItem } from "../store/types";
+import { pickRelevant, writeQuery } from "../ai/more-like-this";
+import { search } from "../sources/youtube";
+import { fillDurations, videoItem } from "../refresh/save";
 
 export type MoreResult = { added: number; message?: string };
 

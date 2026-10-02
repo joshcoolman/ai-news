@@ -1,9 +1,9 @@
 import { read } from "@/lib/store";
-import { Creators } from "@/components/Creators";
+import { CreatorList } from "@/components/creators/CreatorList";
 
 export const dynamic = "force-dynamic";
 
 export default async function CreatorsPage() {
   const { creators } = await read();
-  return <Creators initial={creators} />;
+  return <CreatorList initial={creators} />;
 }
