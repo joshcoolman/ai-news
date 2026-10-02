@@ -11,7 +11,7 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 
 ## Status
 
-**Focus:** use the player window from daily browsing; "Later" in #14 (now-playing highlight, next/previous, snap back) is next if it earns it. Otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
+**Focus:** use the player window from daily browsing; #17 (now-playing highlight, next/previous, snap back) is next if it earns it. Otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
 - Player window (#14): thumbnails play in our own `/player` page (one reused window, right half), with a bar for creator / Add creator, and a favorite star that follows settings and undoes its own removal, plus a History list that lives only as long as the window; Home and Favorites update live.
