@@ -202,6 +202,19 @@ button, input { font: inherit; color: inherit; }
 .creator-pick:hover { background: var(--chip); }
 .creator-pick[aria-pressed="true"] { background: var(--chip); }
 .creator-pick .avatar { width: 32px; height: 32px; }
+.topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.topics-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+/* Each topic: a deep fill, a slightly hue-shifted border, and a near-white tint of the same hue for text. Fixed colours, like the icon buttons. */
+.topic {
+  --fill: hsl(var(--h) 42% 24%); --edge: hsl(calc(var(--h) + 14) 48% 40%); --ink: hsl(var(--h) 80% 94%);
+  display: inline-flex; align-items: center; gap: 8px; background: var(--fill); border: 1px solid var(--edge); border-radius: 18px;
+  padding: 5px 12px; font: inherit; font-size: 14px; font-weight: 500; color: var(--ink); cursor: pointer;
+}
+.topic:hover { background: hsl(var(--h) 46% 29%); }
+.topic span { font-size: 12px; color: var(--ink); opacity: .7; }
+.topic.multi::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+.topic[aria-pressed="true"] { background: hsl(var(--h) 52% 33%); border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.topic:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 .window { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 14px; color: var(--muted); }
 .window input { width: 240px; max-width: 100%; accent-color: var(--fg); }
 .creator-pick .name { flex: 1; min-width: 0; }
