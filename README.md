@@ -14,6 +14,7 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 **Focus:** more tuning from daily use; open the next issue (`gh issue list`). Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
+- Creators page topic badges (`prompts/topics.md`): one small-model call groups the 28 days into named products, each badge its own colour; click to filter, combines with the creator sidebar.
 - Header is icons only (home, favorites, creators | refresh, add creator, search | settings). Refresh, add and search work from every page; off home they report with a toast that links home (contract in `components/actions/store.ts`).
 - Creators page: recent videos from your creators (5-28 day slider, default 7) with a creator sidebar, per-creator counts and a toggle filter; the magnifier on a video searches its topic on home.
 - Add creator is a popup that confirms who it found, then grabs their recent videos.

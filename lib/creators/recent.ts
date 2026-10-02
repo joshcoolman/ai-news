@@ -48,6 +48,21 @@ async function durationOf(videoId: string): Promise<number | undefined> {
  * stored: nothing here is managed. A channel whose feed fails is skipped.
  */
 export async function recentVideos(creators: Creator[]): Promise<Recent> {
+  const { entries, reach } = await recentEntries(creators);
+  const found: (number | undefined)[] = [];
+  for (let n = 0; n < entries.length; n += 10) {
+    found.push(...(await Promise.all(entries.slice(n, n + 10).map((r) => durationOf(r.video.videoId)))));
+  }
+  const cards = entries.map(({ c, video }, n) => ({
+    channelId: c.channelId,
+    publishedAt: video.publishedAt,
+    card: toCard(videoItem({ ...video, duration: found[n] }, video.publishedAt), undefined, false),
+  }));
+  return { cards, reach };
+}
+
+/** The raw videos behind the page, newest first, and how far each channel feed reached. */
+export async function recentEntries(creators: Creator[]) {
   const reach: FeedReach[] = [];
   const perCreator = await Promise.all(
     creators.map(async (c) => {
@@ -61,15 +76,6 @@ export async function recentVideos(creators: Creator[]): Promise<Recent> {
       }
     }),
   );
-  const recent = perCreator.flat().sort((a, b) => b.video.publishedAt.localeCompare(a.video.publishedAt));
-  const found: (number | undefined)[] = [];
-  for (let n = 0; n < recent.length; n += 10) {
-    found.push(...(await Promise.all(recent.slice(n, n + 10).map((r) => durationOf(r.video.videoId)))));
-  }
-  const cards = recent.map(({ c, video }, n) => ({
-    channelId: c.channelId,
-    publishedAt: video.publishedAt,
-    card: toCard(videoItem({ ...video, duration: found[n] }, video.publishedAt), undefined, false),
-  }));
-  return { cards, reach };
+  const entries = perCreator.flat().sort((x, y) => y.video.publishedAt.localeCompare(x.video.publishedAt));
+  return { entries, reach };
 }

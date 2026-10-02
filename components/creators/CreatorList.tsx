@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Creator } from "@/lib/store/types";
 import type { Card as CardData } from "@/lib/feed/cards";
+import type { PageTopic } from "@/lib/creators/topics";
 import type { FeedReach, RecentCard } from "@/lib/creators/recent";
 import { FEED_CAP, MAX_DAYS, MIN_DAYS } from "@/lib/creators/window";
 import { TopBar } from "../TopBar";
@@ -11,6 +12,13 @@ import { Card } from "../feed/Card";
 import { AddCreatorForm } from "./AddCreatorForm";
 
 const DAY = 86_400_000;
+
+/** A stable hue per topic name, so a topic keeps its colour from visit to visit. */
+function hueOf(name: string): number {
+  let h = 7;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
 
 export function CreatorList({
   initial,
@@ -26,10 +34,25 @@ export function CreatorList({
   const router = useRouter();
   const [creators, setCreators] = useState(initial);
   const [selected, setSelected] = useState<string | null>(null);
+  const [topics, setTopics] = useState<PageTopic[] | null>(null);
+  const [topic, setTopic] = useState<string | null>(null);
   const [days, setDays] = useState(savedDays);
   const [searching, setSearching] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   useEffect(() => setCreators(initial), [initial]);
+
+  // Topics take a model call the first time, so they arrive after the page.
+  const videoKey = recent.map((r) => r.card.id).join();
+  useEffect(() => {
+    let stale = false;
+    fetch("/api/creators/topics")
+      .then((res) => (res.ok ? res.json() : { topics: [] }))
+      .then((d) => !stale && setTopics(d.topics))
+      .catch(() => !stale && setTopics([]));
+    return () => {
+      stale = true;
+    };
+  }, [videoKey]);
 
   async function remove(c: Creator) {
     setCreators((list) => list.filter((x) => x.channelId !== c.channelId));
@@ -72,8 +95,21 @@ export function CreatorList({
 
   const cutoff = Date.now() - days * DAY;
   const inWindow = recent.filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
-  const shown = inWindow.filter((r) => (selected ? r.channelId === selected : creators.some((c) => c.channelId === r.channelId)));
-  const count = (id: string) => inWindow.filter((r) => r.channelId === id).length;
+  const listed = inWindow.filter((r) => creators.some((c) => c.channelId === r.channelId));
+  const topicIds = new Set(topics?.find((t) => t.name === topic)?.ids);
+  const inTopic = (r: RecentCard) => !topic || topicIds.has(r.card.id);
+  const shown = listed.filter((r) => (!selected || r.channelId === selected) && inTopic(r));
+  /** Sidebar counts follow the chosen topic; topic badges follow the chosen creator. */
+  const count = (id: string) => listed.filter((r) => r.channelId === id && inTopic(r)).length;
+  const badges = (topics ?? [])
+    .map((t) => {
+      const ids = new Set(t.ids);
+      const videos = listed.filter((r) => ids.has(r.card.id) && (!selected || r.channelId === selected));
+      return { name: t.name, videos: videos.length, creators: new Set(videos.map((r) => r.channelId)).size };
+    })
+    .filter((b) => b.name === topic || b.videos >= (selected ? 1 : 2))
+    .sort((a, b) => b.creators - a.creators || b.videos - a.videos)
+    .slice(0, 12);
   /** The feed may have been cut off inside the window, so the count is a floor. */
   const capped = (id: string) => {
     const r = reach.find((x) => x.channelId === id);
@@ -101,6 +137,25 @@ export function CreatorList({
       </label>
       <div className="creators-layout">
         <section>
+          {topics === null && <p className="topics-note">Finding topics</p>}
+          {badges.length > 0 && (
+            <div className="topics" role="group" aria-label="Topics">
+              {badges.map((b) => (
+                <button
+                  key={b.name}
+                  className={`topic${b.creators > 1 ? " multi" : ""}`}
+                  style={{ "--h": hueOf(b.name) } as React.CSSProperties}
+                  type="button"
+                  aria-pressed={topic === b.name}
+                  title={b.creators > 1 ? `${b.creators} creators` : undefined}
+                  onClick={() => setTopic((t) => (t === b.name ? null : b.name))}
+                >
+                  {b.name}
+                  <span>{b.videos}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {shown.length ? (
             <div className="grid">
               {shown.map((r) => (
@@ -108,7 +163,7 @@ export function CreatorList({
               ))}
             </div>
           ) : (
-            <p className="empty">Nothing in the last {days} days{selected ? " from this creator" : ""}.</p>
+            <p className="empty">Nothing in the last {days} days{topic ? ` on ${topic}` : ""}{selected ? " from this creator" : ""}.</p>
           )}
         </section>
         <aside>
