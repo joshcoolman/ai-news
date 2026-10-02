@@ -16,3 +16,4 @@
    - **Lane**: one parallel story search (the progress line calls them "searches").
    - **Search**: the home-page box; a YouTube search of the last month whose first 8 unseen results land at the top as a new batch (meta line `Search: <query> ·`).
    - **More like this**: a YouTube search seeded by one card, its results placed after it.
+   - **Player**: the one window thumbnails play in (`/player`, named `ainews-player`), with its bar: creator or Add creator, a favorite star that follows the on-favorite setting (unstar undoes its own removal), and a History list of what this window has played (sessionStorage, gone when it closes). Never loads youtube.com itself: that wipes the window name and the next click opens a second window. It tells open pages what it changed over a BroadcastChannel.

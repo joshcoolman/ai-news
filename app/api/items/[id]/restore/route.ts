@@ -1,15 +1,13 @@
 import { mutate } from "@/lib/store";
-import { favoriteCopy } from "@/lib/feed/rules";
 import { fail, json, type Ctx } from "@/lib/http";
 
-/** Copy a feed card into Favorites. Idempotent. The copy drops feed-only state, so it stands on its own. */
+/** Undo a removal: the player's star puts back a card its own favoriting removed. */
 export async function POST(_req: Request, { params }: Ctx) {
   const { id } = await params;
   const found = await mutate((d) => {
     const item = d.items.find((i) => i.id === id);
     if (!item) return false;
-    if (d.favorites.some((f) => f.item.id === id)) return true;
-    d.favorites.push({ item: favoriteCopy(item), favoritedAt: new Date().toISOString() });
+    delete item.removedAt;
     return true;
   });
   return found ? json({ ok: true }) : fail("No such card.", 404);

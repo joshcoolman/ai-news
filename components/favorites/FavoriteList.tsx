@@ -5,6 +5,7 @@ import type { Card as CardData } from "@/lib/feed/cards";
 import { TopBar } from "../TopBar";
 import { Card } from "../feed/Card";
 import { Slot } from "../feed/Slot";
+import { usePlayerMessages } from "../player/link";
 
 /** The most cards "more like this" adds, so this many placeholders sit after the card while it searches. */
 const MORE_SLOTS = 4;
@@ -15,6 +16,13 @@ export function FavoriteList({ initial }: { initial: CardData[] }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   /** Cards the last search added: they animate in where the placeholders were. */
   const [arrived, setArrived] = useState<Set<string>>(new Set());
+
+  // The player window starred or unstarred something.
+  usePlayerMessages(async (msg) => {
+    if (msg.type !== "card") return;
+    const list = await fetch("/api/favorites", { cache: "no-store" });
+    if (list.ok) setCards(await list.json());
+  });
 
   async function remove(id: string) {
     setCards((list) => list.filter((c) => c.id !== id));

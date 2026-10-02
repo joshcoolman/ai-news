@@ -6,6 +6,13 @@ import type { Item } from "../store/types";
 
 const DAY = 86_400_000;
 
+/** A card as Favorites keeps it: feed-only state dropped, so the copy stands on its own. */
+export function favoriteCopy(item: Item): Item {
+  const { batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery, ...copy } = item;
+  void [batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery];
+  return copy;
+}
+
 /** Highest batch number ever used, hidden items included, so numbers never collide. */
 export function maxBatch(items: Item[]): number {
   return items.reduce((m, i) => (i.batch !== undefined && i.batch > m ? i.batch : m), 0);

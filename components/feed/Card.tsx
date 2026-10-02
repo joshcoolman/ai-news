@@ -34,7 +34,8 @@ export function Card({
             // A plain click on the thumbnail plays in the player window; modified clicks keep the browser's own behaviour.
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
             e.preventDefault();
-            openInPlayer(card.link);
+            if (card.videoId) openInPlayer(`/player?${new URLSearchParams({ v: card.videoId, t: card.title })}`);
+            else window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
           }}
           aria-label={`Open: ${card.title}`} />
         {card.isNew && <span className="new-tag">New</span>}
@@ -94,8 +95,10 @@ export function Card({
 /*
   One named window for watching: the first click opens it on the right half of
   the screen, later clicks load into it wherever you have put it (the browser
-  ignores size and position for a window that already exists). No noopener: it
-  would stop the name from finding the open window.
+  ignores size and position for a window that already exists). It must stay on
+  our own /player page: youtube.com's opener policy (and Brave) wipe a window's
+  name once it lands there, and the next click opens a second window. No
+  noopener either, for the same reason.
 */
 function openInPlayer(link: string) {
   const s = screen as Screen & { availLeft?: number; availTop?: number };

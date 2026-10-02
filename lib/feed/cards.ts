@@ -9,6 +9,8 @@ export type Card = {
   kind: "video" | "story";
   title: string;
   link: string;
+  /** Video cards: plays in the app's player window. */
+  videoId?: string;
   /** Video cards: the real thumbnail. Story cards: a label drawn on a colour block. */
   thumbUrl?: string;
   label?: string;
@@ -50,6 +52,7 @@ export function toCard(item: Item, parent: Item | undefined, isNew: boolean): Ca
   if (item.kind === "video") {
     return {
       ...base,
+      videoId: item.videoId,
       thumbUrl: thumbnailUrl(item.videoId),
       meta: `${prefix}${item.channel} · ${shortDate(item.publishedAt)}`,
       duration: item.duration ? formatDuration(item.duration) : undefined,
