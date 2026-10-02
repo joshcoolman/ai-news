@@ -1,6 +1,7 @@
-import type { Data, Item } from "./store/types";
-import { displayOrder, latestBatch, maxBatch } from "./feed";
-import { thumbnailUrl } from "./youtube";
+import "server-only";
+import type { Data, Item } from "../store/types";
+import { displayOrder, latestBatch, maxBatch } from "./rules";
+import { thumbnailUrl } from "../sources/youtube";
 
 /** What the browser needs to draw one card. */
 export type Card = {

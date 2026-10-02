@@ -1,0 +1,1 @@
+Write one YouTube search query (2 to 6 words) that finds videos about the specific thing this card is about. Name the thing itself; no generic words like 'AI news'. Also give label: one to three words naming that thing, no numbers, no adjectives.

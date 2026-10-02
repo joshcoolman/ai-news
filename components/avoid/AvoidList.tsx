@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { AvoidEntry } from "@/lib/store/types";
-import { TopBar } from "./TopBar";
+import { TopBar } from "../TopBar";
 
 export function AvoidList({ initial }: { initial: AvoidEntry[] }) {
   const [entries, setEntries] = useState(initial);
@@ -20,7 +20,7 @@ export function AvoidList({ initial }: { initial: AvoidEntry[] }) {
         Reasons you gave when removing a card. Each one is passed to the model word for word on every refresh. Deleting one stops it applying from the next refresh; it does not bring back what it already hid.
       </p>
       {entries.length === 0 ? (
-        <p className="empty">Nothing yet. Remove a card and type a reason to add one.</p>
+        <p className="empty">Nothing on the avoid list.</p>
       ) : (
         <ul className="rows">
           {entries.map((e) => (

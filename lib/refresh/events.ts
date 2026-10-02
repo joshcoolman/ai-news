@@ -1,4 +1,4 @@
-import type { Card } from "./view";
+import type { Card } from "../feed/cards";
 
 /** Parallel story lanes per refresh, and story slots per lane. */
 export const LANES = 4;

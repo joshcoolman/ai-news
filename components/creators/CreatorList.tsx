@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Creator } from "@/lib/store/types";
-import { TopBar } from "./TopBar";
+import { TopBar } from "../TopBar";
 import { AddCreatorForm } from "./AddCreatorForm";
 
-export function Creators({ initial }: { initial: Creator[] }) {
+export function CreatorList({ initial }: { initial: Creator[] }) {
   const router = useRouter();
   const [creators, setCreators] = useState(initial);
   useEffect(() => setCreators(initial), [initial]);

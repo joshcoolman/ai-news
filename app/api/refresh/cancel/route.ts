@@ -1,4 +1,4 @@
-import { cancelRefresh } from "@/lib/refresh";
+import { cancelRefresh } from "@/lib/refresh/run";
 import { json } from "@/lib/http";
 
 /** Stop the story lanes that are still running. Everything already found is kept. */

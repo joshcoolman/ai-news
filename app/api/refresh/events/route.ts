@@ -1,5 +1,5 @@
-import { subscribe } from "@/lib/refresh";
-import type { RefreshEvent } from "@/lib/refresh-events";
+import { subscribe } from "@/lib/refresh/run";
+import type { RefreshEvent } from "@/lib/refresh/events";
 
 export const dynamic = "force-dynamic";
 

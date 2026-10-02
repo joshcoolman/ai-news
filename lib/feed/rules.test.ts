@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Item, StoryItem, VideoItem } from "./store/types";
-import { displayOrder, latestBatch, maxBatch, mergeBatch, normalizeUrl } from "./feed";
+import type { Item, StoryItem, VideoItem } from "../store/types";
+import { displayOrder, latestBatch, maxBatch, mergeBatch, normalizeUrl } from "./rules";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();

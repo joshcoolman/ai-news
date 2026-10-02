@@ -1,13 +1,14 @@
-import { createHash } from "node:crypto";
-import { mutate, read } from "./store";
-import type { Creator, HiddenBy, Item, StoryItem, VideoItem } from "./store/types";
-import { domainOf, maxBatch, mergeBatch, normalizeUrl, withinDays } from "./feed";
-import { channelInfo, listChannelVideos, videoDuration, type FeedVideo } from "./youtube";
-import { filterVideos } from "./agent/small";
-import { STORIES_MODEL } from "./agent/client";
-import { estimateCost, planLanes, runLane, STORIES_PER_LANE, type Lane, type StoriesInput, type Usage } from "./agent/stories";
-import { toCard } from "./view";
-import type { RefreshEvent } from "./refresh-events";
+import "server-only";
+import { read } from "../store";
+import type { Creator, HiddenBy, Item } from "../store/types";
+import { maxBatch, withinDays } from "../feed/rules";
+import { toCard } from "../feed/cards";
+import { listChannelVideos, type FeedVideo } from "../sources/youtube";
+import { estimateCost, STORIES_MODEL, type Usage } from "../ai/client";
+import { filterVideos } from "../ai/filter";
+import { planLanes, runLane, type Lane, type StoriesInput } from "../ai/stories";
+import { STORIES_PER_LANE, type RefreshEvent } from "./events";
+import { fillAvatars, saveStories, saveVideos, videoItem, videoItemId } from "./save";
 
 /*
   A refresh runs as one server-side job that outlives the request that started
@@ -231,109 +232,8 @@ async function runStories(
   );
 }
 
-/** Save one creator's videos (and its feed position). Returns what was actually added. */
-async function saveVideos(
-  batch: number,
-  channelId: string,
-  newestSeen: string | undefined,
-  entries: { video: FeedVideo; hiddenBy?: HiddenBy }[],
-): Promise<VideoItem[]> {
-  const now = new Date().toISOString();
-  const incoming = entries.map(({ video, hiddenBy }) => ({ ...videoItem(video, now), ...(hiddenBy ? { hiddenBy } : {}) }));
-  const added = (await mutate((d) => {
-    const c = d.creators.find((x) => x.channelId === channelId);
-    if (c && newestSeen && (!c.newestSeen || newestSeen > c.newestSeen)) c.newestSeen = newestSeen;
-    return mergeBatch(d.items, incoming, batch);
-  })) as VideoItem[];
-  void fillDurations(added);
-  return added;
-}
-
-/** Save one lane's stories, skipping any that duplicate a stored card or another lane's. */
-async function saveStories(batch: number, stories: { label: string; title: string; sourceUrl: string; topic: string }[]) {
-  const now = new Date().toISOString();
-  return (await mutate((d) => {
-    const links = new Set(d.items.map((i) => normalizeUrl(i.link)));
-    const labels = new Set(
-      d.items.filter((i): i is StoryItem => i.kind === "story" && withinDays(i.createdAt, 30)).map((i) => i.label.toLowerCase()),
-    );
-    const incoming: StoryItem[] = [];
-    for (const s of stories) {
-      const url = normalizeUrl(s.sourceUrl);
-      if (links.has(url) || labels.has(s.label.toLowerCase())) {
-        console.log(`[stories] skipped duplicate "${s.label}"`);
-        continue;
-      }
-      links.add(url);
-      labels.add(s.label.toLowerCase());
-      incoming.push({
-        id: `s-${createHash("sha1").update(url).digest("hex").slice(0, 12)}`,
-        kind: "story",
-        createdAt: now,
-        title: s.title,
-        link: s.sourceUrl,
-        label: s.label,
-        topic: s.topic,
-        sourceDomain: domainOf(s.sourceUrl),
-      });
-    }
-    return mergeBatch(d.items, incoming, batch);
-  })) as StoryItem[];
-}
-
 function recentCards(items: Item[]) {
   return items
     .filter((i) => withinDays(i.createdAt, 30))
     .map((i) => ({ label: i.kind === "story" ? i.label : i.moreLabel ?? "", title: i.title, link: i.link }));
-}
-
-export function videoItemId(videoId: string): string {
-  return `v-${videoId}`;
-}
-
-export function videoItem(
-  v: { videoId: string; title: string; channel: string; publishedAt?: string; duration?: number },
-  createdAt: string,
-): VideoItem {
-  return {
-    id: videoItemId(v.videoId),
-    kind: "video",
-    createdAt,
-    title: v.title,
-    link: `https://www.youtube.com/watch?v=${v.videoId}`,
-    videoId: v.videoId,
-    channel: v.channel,
-    publishedAt: v.publishedAt ?? createdAt,
-    ...(v.duration ? { duration: v.duration } : {}),
-  };
-}
-
-/** Durations are not in the feed XML. Fill them in afterwards; never block a refresh on it. */
-export async function fillDurations(items: Item[]) {
-  const todo = items.filter((i): i is VideoItem => i.kind === "video" && !i.duration);
-  for (let n = 0; n < todo.length; n += 4) {
-    const chunk = todo.slice(n, n + 4);
-    const found = await Promise.all(chunk.map((v) => videoDuration(v.videoId)));
-    await mutate((d) => {
-      chunk.forEach((v, k) => {
-        const item = d.items.find((i) => i.id === v.id);
-        if (item?.kind === "video" && found[k]) item.duration = found[k];
-      });
-    });
-  }
-}
-
-async function fillAvatars() {
-  const { creators } = await read();
-  for (const c of creators.filter((c) => !c.avatarUrl)) {
-    try {
-      const info = await channelInfo(c.channelId);
-      await mutate((d) => {
-        const target = d.creators.find((x) => x.channelId === c.channelId);
-        if (target && !target.avatarUrl) target.avatarUrl = info.avatarUrl;
-      });
-    } catch (err) {
-      console.log(`[refresh] avatar for ${c.name} failed: ${(err as Error).message}`);
-    }
-  }
 }

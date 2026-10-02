@@ -1,15 +1,12 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, STORIES_MODEL } from "./client";
-import { ask } from "./small";
-import { domainOf, normalizeUrl } from "../feed";
+import { anthropic, ask, STORIES_MODEL, type Usage } from "./client";
+import { prompt } from "./prompts";
+import { domainOf, normalizeUrl } from "../feed/rules";
 import type { AvoidEntry } from "../store/types";
-import { LANES, STORIES_PER_LANE } from "../refresh-events";
-
-export { STORIES_PER_LANE };
+import { LANES, STORIES_PER_LANE } from "../refresh/events";
 
 /*
   Stories come from parallel lanes. A small planner call splits this week's
@@ -38,51 +35,31 @@ export type StoriesInput = {
 
 export type Lane = { id: string; name: string; brief: string };
 
-export type Usage = { input: number; output: number; searches: number; fetches: number };
-
-/** Rough spend from usage. Web search is billed per search on top of tokens. */
-export function estimateCost(model: string, u: Usage): number {
-  const [inPrice, outPrice] = PRICES[model] ?? PRICES["claude-fable-5-1"];
-  return (u.input * inPrice + u.output * outPrice) / 1_000_000 + u.searches * 0.01;
-}
-const PRICES: Record<string, [number, number]> = {
-  "claude-fable-5-1": [10, 50],
-  "claude-opus-5-5": [4, 20],
-  "claude-sonnet-5-5": [2, 10],
-  "claude-haiku-4-5-20251001": [1, 5],
-};
-
-function context(input: StoriesInput): string {
-  return [
-    `Today is ${new Date().toISOString().slice(0, 10)}.`,
-    "Creator video titles from the last 7 days (the lens for what is worth covering):",
-    input.creatorTitles.length
+/** The user turn for the planner and every lane. */
+function context(input: StoriesInput): Promise<string> {
+  return prompt("stories-context", {
+    today: new Date().toISOString().slice(0, 10),
+    creatorTitles: input.creatorTitles.length
       ? input.creatorTitles.map((v) => `- ${v.channel} (${v.publishedAt.slice(0, 10)}): ${v.title}`).join("\n")
       : "- none",
-    "Cards already in the reader's feed from the last 30 days. Do not repeat these:",
-    input.recentCards.length
+    recentCards: input.recentCards.length
       ? input.recentCards.map((c) => `- [${c.label}] ${c.title} <${c.link}>`).join("\n")
       : "- none",
-  ].join("\n\n");
+  });
 }
 
-function avoidText(avoid: AvoidEntry[]): string {
-  return avoid.length
-    ? "The reader has asked not to see these. Do not write a card that matches any of them:\n" +
-        avoid.map((a) => `- "${a.reason}" (said about: ${a.fromTitle})`).join("\n")
-    : "";
+/** The avoid list, word for word, or "" when it is empty. */
+async function avoidText(avoid: AvoidEntry[]): Promise<string> {
+  if (!avoid.length) return "";
+  return prompt("avoid", { entries: avoid.map((a) => `- "${a.reason}" (said about: ${a.fromTitle})`).join("\n") });
 }
 
 /** Split this week's ground into non-overlapping lanes for the parallel agents. */
 export async function planLanes(input: StoriesInput): Promise<Lane[]> {
   const out = await ask(
     z.object({ lanes: z.array(z.object({ name: z.string(), brief: z.string() })) }),
-    `Plan ${LANES} search lanes for finding new things in AI that someone who builds with AI tools would want to click on: ` +
-      "models, tools, products, demos and open-source projects that now exist, days old. Use the creator video titles to see what is " +
-      "currently worth covering, including nearby things they have not covered. Lanes must not overlap. " +
-      "name: two or three words. brief: one sentence saying what to look for. " +
-      avoidText(input.avoid),
-    context(input),
+    await prompt("plan-lanes", { lanes: LANES, avoid: await avoidText(input.avoid) }),
+    await context(input),
   );
   return out.lanes.slice(0, LANES).map((l, i) => ({ id: `lane-${i}`, name: l.name.trim(), brief: l.brief.trim() }));
 }
@@ -103,20 +80,20 @@ export async function runLane(
   events: LaneEvents,
   signal: AbortSignal,
 ): Promise<Story[]> {
-  const guidelines = await fs.readFile(path.join(process.cwd(), "agent", "guidelines.md"), "utf8");
   const system = [
-    guidelines.trim(),
-    avoidText(input.avoid),
-    `You are one of ${others.length + 1} searchers working in parallel. Your lane: ${lane.name}. ${lane.brief}`,
-    others.length ? "Other searchers cover these; stay out of them:\n" + others.map((o) => `- ${o.name}: ${o.brief}`).join("\n") : "",
-    `Return at most ${STORIES_PER_LANE} stories. Fewer is fine; none is fine. Be quick: a few searches, open only the pages you will cite. ` +
-      "Every sourceUrl must be a page you saw in a web_search result or opened with web_fetch in this turn.",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+    await prompt("stories"),
+    await prompt("stories-lane", {
+      avoid: await avoidText(input.avoid),
+      count: others.length + 1,
+      name: lane.name,
+      brief: lane.brief,
+      others: others.map((o) => `- ${o.name}: ${o.brief}`).join("\n"),
+      max: STORIES_PER_LANE,
+    }),
+  ].join("\n\n");
 
   const Output = z.object({ stories: z.array(Story).max(STORIES_PER_LANE) });
-  const messages: Anthropic.MessageParam[] = [{ role: "user", content: context(input) }];
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: await context(input) }];
   const seen = new Set<string>();
   let final: Anthropic.Message | undefined;
 

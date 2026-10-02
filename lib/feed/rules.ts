@@ -1,4 +1,4 @@
-import type { Item } from "./store/types";
+import type { Item } from "../store/types";
 
 /*
   Pure feed rules, kept free of I/O so they can be tested directly.

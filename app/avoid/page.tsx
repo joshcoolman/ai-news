@@ -1,5 +1,5 @@
 import { read } from "@/lib/store";
-import { AvoidList } from "@/components/AvoidList";
+import { AvoidList } from "@/components/avoid/AvoidList";
 
 export const dynamic = "force-dynamic";
 

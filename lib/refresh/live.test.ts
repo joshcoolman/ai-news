@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Card } from "./view";
-import type { RefreshEvent } from "./refresh-events";
+import type { Card } from "../feed/cards";
+import type { RefreshEvent } from "./events";
 import { apply, optimistic, tiles, type Live } from "./live";
 
 const card = (id: string): Card => ({ id, kind: "video", title: id, link: "", meta: "", isNew: true });

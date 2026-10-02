@@ -31,7 +31,6 @@ type ItemBase = {
   /** The card a "more like this" result belongs to. */
   after?: string;
   removedAt?: string;
-  reason?: string;
   hiddenBy?: HiddenBy;
   /** "More like this" state for this card: the query used and how far down its results we have looked. */
   moreQuery?: string;

@@ -1,4 +1,4 @@
-import { RefreshBusyError, startRefresh } from "@/lib/refresh";
+import { RefreshBusyError, startRefresh } from "@/lib/refresh/run";
 import { fail, json } from "@/lib/http";
 
 /** Start a refresh. Progress arrives on /api/refresh/events. */
