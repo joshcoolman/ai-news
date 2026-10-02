@@ -63,6 +63,14 @@ export async function recentVideos(creators: Creator[], fresh = false): Promise<
   return { cards, reach };
 }
 
+/** A video from today's cached channel feeds (the Creators page's videos are not stored), with its channel. */
+export async function cachedVideo(videoId: string): Promise<{ channelId: string; video: FeedVideo } | undefined> {
+  for (const [channelId, hit] of feeds) {
+    const video = (await hit.videos.catch(() => [])).find((v: FeedVideo) => v.videoId === videoId);
+    if (video) return { channelId, video };
+  }
+}
+
 /** The raw videos behind the page, newest first, and how far each channel feed reached. */
 export async function recentEntries(creators: Creator[], fresh = false) {
   const reach: FeedReach[] = [];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Item, StoryItem, VideoItem } from "../store/types";
-import { displayOrder, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
+import { displayOrder, favoriteCopy, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -137,5 +137,15 @@ describe("firstUnstored", () => {
     const items: Item[] = [video("a"), video("b", { removedAt: at() })];
     const results = ["a", "b", "c", "c", "d", "e"].map((videoId) => ({ videoId }));
     expect(firstUnstored(items, results, 2).map((r) => r.videoId)).toEqual(["c", "d"]);
+  });
+});
+
+describe("favoriteCopy", () => {
+  it("drops feed-only state, so restoring or removing the feed card never touches the favorite", () => {
+    const copy = favoriteCopy(video("a", { batch: 3, after: "b", removedAt: at(), searchQuery: "q", moreQuery: "m", moreSeen: 20 }));
+    expect(copy).not.toHaveProperty("removedAt");
+    expect(copy).not.toHaveProperty("after");
+    expect(copy).not.toHaveProperty("batch");
+    expect(copy).toMatchObject({ id: "a", videoId: "a", channel: "c" });
   });
 });

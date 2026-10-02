@@ -7,6 +7,7 @@ import type { Settings } from "@/lib/store/types";
 import { apply, optimistic, tiles, type Live, type Summary } from "@/lib/refresh/live";
 import { TopBar } from "../TopBar";
 import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, setRefreshing, takeHandoff, type VideoSearch } from "../actions/store";
+import { usePlayerMessages } from "../player/link";
 import { Card } from "./Card";
 import { FavoritePrompt } from "./FavoritePrompt";
 import { ProgressLine } from "./ProgressLine";
@@ -191,6 +192,17 @@ export function Feed({
 
   const search = (query: string) => runSearch(`Searching for ${query}`, () => post("/api/search", { query }));
   const searchVideo = (v: VideoSearch) => runSearch(`Finding more on: ${v.title}`, () => post("/api/search/video", v));
+
+  // The player window favorited, removed or restored a card, or added a creator (whose videos land here).
+  usePlayerMessages((msg) => {
+    if (msg.type === "card")
+      setFaved((s) => {
+        const next = new Set(s);
+        next.delete(msg.id);
+        return next;
+      });
+    void reload();
+  });
 
   // Work handed over by another page: home is already up, so run it here.
   useEffect(() => {

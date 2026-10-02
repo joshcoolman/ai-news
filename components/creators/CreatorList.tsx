@@ -11,6 +11,7 @@ import { TopBar } from "../TopBar";
 import { Card } from "../feed/Card";
 import { Slot } from "../feed/Slot";
 import { handToHome } from "../actions/store";
+import { usePlayerMessages } from "../player/link";
 import { AddCreatorForm } from "./AddCreatorForm";
 
 const DAY = 86_400_000;
@@ -63,6 +64,7 @@ export function CreatorList({ initial, days: savedDays }: { initial: Creator[]; 
   const [topic, setTopic] = useState<string | null>(null);
   const [days, setDays] = useState(savedDays);
   useEffect(() => setCreators(initial), [initial]);
+  usePlayerMessages((msg) => msg.type === "creators" && router.refresh());
 
   // Videos: from memory when this tab already has them for these creators, otherwise from the server's day cache.
   useEffect(() => {
