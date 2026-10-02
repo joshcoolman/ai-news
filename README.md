@@ -14,7 +14,7 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 **Focus:** use the player window from daily browsing; "Later" in #14 (now-playing highlight, next/previous, snap back) is next if it earns it. Otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
-- Player window (#14): thumbnails play in our own `/player` page (one reused window, right half), with a bar for creator / Add creator, a favorite star that follows settings and undoes its own removal, and Open on YouTube; Home and Favorites update live.
+- Player window (#14): thumbnails play in our own `/player` page (one reused window, right half), with a bar for creator / Add creator, and a favorite star that follows settings and undoes its own removal; Home and Favorites update live.
 - Searches feel instant: the Creators magnifier and header search/refresh from any page go home at once and run there; searches show placeholders where results land (8 at top, 4 after a "more like this" card, also on Favorites) and new cards animate in.
 - Creators page opens instantly: creators from the store, videos/topics/counts as same-size placeholders that fill in. Feeds cached for the day; the tab keeps the last result; reloading /creators fetches fresh.
 - Creators page topic badges (`prompts/topics.md`): one small-model call groups the 28 days into named products, each badge its own colour; click to filter, combines with the creator sidebar.

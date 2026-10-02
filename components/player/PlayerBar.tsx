@@ -31,7 +31,11 @@ function setStarRemoved(id: string, on: boolean) {
 const post = (url: string, payload?: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload ? JSON.stringify(payload) : undefined });
 
-/** The player window's bar: who made it, the title, a favorite star that follows the "on favorite" setting, and a way out to YouTube. */
+/**
+ * The player window's bar: who made it, the title, and a favorite star that
+ * follows the "on favorite" setting. No link out to YouTube: loading youtube.com
+ * here wipes the window's name, and the next thumbnail opens a second window.
+ */
 export function PlayerBar({ video }: { video: PlayerVideo }) {
   const [creator, setCreator] = useState<Creator | undefined>(video.creator);
   const [adding, setAdding] = useState(false);
@@ -128,13 +132,6 @@ export function PlayerBar({ video }: { video: PlayerVideo }) {
             <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
           </svg>
         </button>
-        <a className="icon-btn" href={video.link} target="_blank" rel="noopener" aria-label="Open on YouTube" title="Open on YouTube">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M14 4h6v6" />
-            <path d="M20 4l-9 9" />
-            <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
-          </svg>
-        </a>
       </div>
     </div>
   );
