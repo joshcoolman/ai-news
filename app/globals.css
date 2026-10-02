@@ -268,7 +268,13 @@ button, input { font: inherit; color: inherit; }
 .player-star.on { color: #f5c518; }
 @media (max-width: 560px) { .player-title { display: none; } }
 .player-bar { position: relative; }
-.player-actions .icon-btn.on { background: var(--fg); color: var(--bg); }
+.history-btn {
+  height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px 0 11px; border: 0; border-radius: 18px;
+  background: #3a3a3c; color: #fff; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.history-btn:hover { background: #4a4a4c; }
+.history-btn.on { background: var(--fg); color: var(--bg); }
+.history-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 /* History: slides up from the bar's right end, over the video */
 .history {
   position: absolute; right: 8px; bottom: calc(100% + 8px); width: min(420px, calc(100% - 16px)); max-height: 70vh; overflow-y: auto;
