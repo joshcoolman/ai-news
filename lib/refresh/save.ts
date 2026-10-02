@@ -82,16 +82,16 @@ export function videoItem(
   };
 }
 
-/** Durations are not in the feed XML. Fill them in afterwards; never block a refresh on it. */
+/** Durations are not in the feed XML. Fill them in afterwards (feed or Favorites); never block a refresh on it. */
 export async function fillDurations(items: Item[]) {
   const todo = items.filter((i): i is VideoItem => i.kind === "video" && !i.duration);
   for (let n = 0; n < todo.length; n += 4) {
     const chunk = todo.slice(n, n + 4);
     const found = await Promise.all(chunk.map((v) => videoDuration(v.videoId)));
     await mutate((d) => {
+      const all = [...d.items, ...d.favorites.map((f) => f.item)];
       chunk.forEach((v, k) => {
-        const item = d.items.find((i) => i.id === v.id);
-        if (item?.kind === "video" && found[k]) item.duration = found[k];
+        for (const item of all) if (item.id === v.id && item.kind === "video" && found[k]) item.duration = found[k];
       });
     });
   }

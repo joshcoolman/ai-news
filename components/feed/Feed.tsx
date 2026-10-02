@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Card as CardData, FeedView } from "@/lib/feed/cards";
 import type { RefreshEvent } from "@/lib/refresh/events";
+import type { Settings } from "@/lib/store/types";
 import { apply, optimistic, tiles, type Live, type Summary } from "@/lib/refresh/live";
 import { TopBar } from "../TopBar";
 import { AddCreatorForm } from "../creators/AddCreatorForm";
 import { Card } from "./Card";
+import { FavoritePrompt } from "./FavoritePrompt";
 import { HiddenPanel } from "./HiddenPanel";
 import { ProgressLine } from "./ProgressLine";
 import { Slot } from "./Slot";
@@ -15,7 +17,7 @@ import { SummaryLine } from "./SummaryLine";
 type Initial = FeedView & { refresh: { running: boolean } };
 type CreatorRef = { id: string; name: string };
 
-export function Feed({ initial, creators }: { initial: Initial; creators: CreatorRef[] }) {
+export function Feed({ initial, creators, settings }: { initial: Initial; creators: CreatorRef[]; settings: Settings }) {
   const [view, setView] = useState<FeedView>(initial);
   const [live, setLive] = useState<Live | null>(initial.refresh.running ? optimistic(creators) : null);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -24,6 +26,9 @@ export function Feed({ initial, creators }: { initial: Initial; creators: Creato
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [searching, setSearching] = useState<Set<string>>(new Set());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const [faved, setFaved] = useState<Set<string>>(new Set());
+  const [onFavorite, setOnFavorite] = useState(settings.onFavorite);
+  const [asking, setAsking] = useState<CardData | null>(null);
   const source = useRef<EventSource | null>(null);
 
   const reload = useCallback(async () => {
@@ -84,6 +89,35 @@ export function Feed({ initial, creators }: { initial: Initial; creators: Creato
     await fetch(`/api/items/${encodeURIComponent(card.id)}/remove`, { method: "POST" });
   }
 
+  async function favorite(card: CardData) {
+    setFaved((s) => new Set(s).add(card.id));
+    const res = await fetch(`/api/items/${encodeURIComponent(card.id)}/favorite`, { method: "POST" });
+    if (!res.ok) {
+      setFaved((s) => {
+        const next = new Set(s);
+        next.delete(card.id);
+        return next;
+      });
+      return;
+    }
+    if (onFavorite === "remove") await remove(card);
+    else if (onFavorite === "ask") setAsking(card);
+  }
+
+  async function answerPrompt(card: CardData, removeFromHome: boolean, dontAsk: boolean) {
+    setAsking(null);
+    if (removeFromHome) await remove(card);
+    if (dontAsk) {
+      const next = removeFromHome ? "remove" : "keep";
+      setOnFavorite(next);
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onFavorite: next }),
+      });
+    }
+  }
+
   async function more(card: CardData) {
     setSearching((s) => new Set(s).add(card.id));
     setNotes(({ [card.id]: _, ...rest }) => rest);
@@ -117,11 +151,12 @@ export function Feed({ initial, creators }: { initial: Initial; creators: Creato
     .filter((c) => !frontIds.has(c.id) && !removed.has(c.id))
     .map((c) => (live ? { ...c, isNew: false } : c));
   const cardProps = (card: CardData) => ({
-    card,
+    card: faved.has(card.id) ? { ...card, favorited: true } : card,
     note: notes[card.id],
     searching: searching.has(card.id),
     onRemove: () => remove(card),
     onMore: () => more(card),
+    onFavorite: () => favorite(card),
   });
 
   return (
@@ -161,6 +196,8 @@ export function Feed({ initial, creators }: { initial: Initial; creators: Creato
           ))}
         </div>
       )}
+
+      {asking && <FavoritePrompt key={asking.id} title={asking.label ?? asking.title} onDone={(r, d) => answerPrompt(asking, r, d)} />}
     </div>
   );
 }

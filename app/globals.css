@@ -85,7 +85,7 @@ button, input { font: inherit; color: inherit; }
   pointer-events: none; position: absolute; left: 6px; top: 6px; background: var(--pick); color: #fff;
   font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
 }
-.remove, .more {
+.remove, .more, .fav {
   position: absolute; width: 30px; height: 30px; border-radius: 50%; border: 0;
   background: rgba(0,0,0,.7); color: #fff; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -95,7 +95,10 @@ button, input { font: inherit; color: inherit; }
 .more { left: 6px; bottom: 6px; }
 .more:hover { background: #fff; color: #0f0f0f; }
 .more:disabled { cursor: progress; opacity: .8; }
-.remove:focus-visible, .more:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.fav { right: 42px; top: 6px; }
+.fav:hover:not(:disabled) { background: #fff; color: #0f0f0f; }
+.fav.on { color: #f5c518; cursor: default; }
+.remove:focus-visible, .more:focus-visible, .fav:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .card-note {
   pointer-events: none; position: absolute; left: 42px; bottom: 9px; background: rgba(0,0,0,.8); color: #fff;
   font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 4px;
@@ -105,6 +108,18 @@ button, input { font: inherit; color: inherit; }
 .title a:hover, .title a:focus-visible { text-decoration: underline; }
 .meta { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .empty { color: var(--muted); font-size: 15px; }
+
+/* Favorite prompt and settings */
+.prompt {
+  margin: auto; width: min(420px, calc(100% - 32px)); background: var(--tray); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.35);
+}
+.prompt::backdrop { background: rgba(0,0,0,.5); }
+.prompt p { margin: 0 0 12px; font-size: 15px; line-height: 1.4; }
+.prompt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+.setting { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.setting legend { padding: 0 6px; font-size: 14px; }
 
 /* Forms */
 .field {

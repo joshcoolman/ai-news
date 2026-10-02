@@ -57,8 +57,18 @@ export type StoryItem = ItemBase & {
 
 export type Item = VideoItem | StoryItem;
 
+/** A copy of a card, independent of the feed: deleting one never touches the other. */
+export type Favorite = { item: Item; favoritedAt: string };
+
+export type Settings = {
+  /** What favoriting does to the card in the feed. */
+  onFavorite: "ask" | "remove" | "keep";
+};
+
 export type Data = {
   creators: Creator[];
   items: Item[];
   avoid: AvoidEntry[];
+  favorites: Favorite[];
+  settings: Settings;
 };

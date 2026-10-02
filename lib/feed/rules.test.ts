@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Item, StoryItem, VideoItem } from "../store/types";
-import { displayOrder, latestBatch, maxBatch, mergeBatch, normalizeUrl } from "./rules";
+import { displayOrder, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -120,5 +120,14 @@ describe("normalizeUrl", () => {
 
   it("keeps meaningful query parameters", () => {
     expect(normalizeUrl("https://example.com/p?id=1")).not.toBe(normalizeUrl("https://example.com/p?id=2"));
+  });
+});
+
+describe("treeOrder", () => {
+  it("keeps the results of a deleted parent, as top-level cards", () => {
+    // Favorites: "a" had results r1, r2, then "a" itself was deleted.
+    const items = [video("b"), video("r1", { after: "a" }), video("r2", { after: "a" })];
+    const newestFirst = (x: Item, y: Item) => y.createdAt.localeCompare(x.createdAt);
+    expect(ids(treeOrder(items, newestFirst))).toEqual(["r2", "r1", "b"]);
   });
 });

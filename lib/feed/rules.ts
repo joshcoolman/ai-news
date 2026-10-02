@@ -46,10 +46,22 @@ export function mergeBatch(items: Item[], incoming: Item[], batch: number): Item
  * skipped but their results keep their place. Hidden cards are never shown.
  */
 export function displayOrder(items: Item[]): Item[] {
+  const index = new Map(items.map((item, n) => [item.id, n]));
+  return treeOrder(items, (a, b) => (b.batch ?? 0) - (a.batch ?? 0) || index.get(a.id)! - index.get(b.id)!);
+}
+
+/**
+ * The tree walk behind both the feed and Favorites: top-level items in
+ * `compareTop` order, each followed by its results (oldest first), recursively.
+ * An item whose parent is gone counts as top-level, so deleting a favorite
+ * does not take its results with it.
+ */
+export function treeOrder(items: Item[], compareTop: (a: Item, b: Item) => number): Item[] {
+  const ids = new Set(items.map((i) => i.id));
   const children = new Map<string, Item[]>();
   const top: Item[] = [];
   for (const item of items) {
-    if (item.after) {
+    if (item.after && ids.has(item.after)) {
       const list = children.get(item.after) ?? [];
       list.push(item);
       children.set(item.after, list);
@@ -58,7 +70,7 @@ export function displayOrder(items: Item[]): Item[] {
     }
   }
   const index = new Map(items.map((item, n) => [item.id, n]));
-  top.sort((a, b) => (b.batch ?? 0) - (a.batch ?? 0) || index.get(a.id)! - index.get(b.id)!);
+  top.sort(compareTop);
   for (const list of children.values()) {
     list.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || index.get(a.id)! - index.get(b.id)!);
   }
