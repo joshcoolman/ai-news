@@ -69,7 +69,7 @@ export function startRefresh(): void {
 
 async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
   const started = Date.now();
-  const totals = { videos: 0, stories: 0, hidden: 0, usage: { input: 0, output: 0, searches: 0, fetches: 0 } as Usage };
+  const totals = { videos: 0, stories: 0, usage: { input: 0, output: 0, searches: 0, fetches: 0 } as Usage };
   const failed: string[] = [];
   const usd = () => estimateCost(STORIES_MODEL, totals.usage);
   const finish = (error?: string) =>
@@ -77,7 +77,6 @@ async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
       type: "done",
       videos: totals.videos,
       stories: totals.stories,
-      hidden: totals.hidden,
       failed,
       seconds: Math.round((Date.now() - started) / 1000),
       usd: usd(),
@@ -120,7 +119,7 @@ async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
         ).filter((v) => !stored.has(videoItemId(v.videoId)));
         const newestSeen = videos[0]?.publishedAt;
 
-        if (fresh.length && (creator.guidance.trim() || data.avoid.length)) {
+        if (fresh.length && creator.guidance.trim()) {
           // Show them now, marked as checking; the filter decides shortly.
           toFilter.push({ creator, videos: fresh, newestSeen });
           const now = new Date().toISOString();
@@ -135,8 +134,8 @@ async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
 
     // 2. The filter and the story lanes run side by side.
     await Promise.all([
-      runFilter(batch, toFilter, data.avoid, emit, totals),
-      runStories(batch, { avoid: data.avoid, creatorTitles, recentCards: recentCards(data.items) }, emit, signal, totals),
+      runFilter(batch, toFilter, emit, totals),
+      runStories(batch, { creatorTitles, recentCards: recentCards(data.items) }, emit, signal, totals),
     ]);
     finish();
   } catch (err) {
@@ -148,15 +147,14 @@ async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
 async function runFilter(
   batch: number,
   pending: { creator: Creator; videos: FeedVideo[]; newestSeen?: string }[],
-  avoid: StoriesInput["avoid"],
   emit: (e: RefreshEvent) => void,
-  totals: { videos: number; hidden: number },
+  totals: { videos: number },
 ) {
   if (!pending.length) return;
   const flat = pending.flatMap((p) => p.videos.map((video) => ({ video, creator: p.creator })));
   let held = new Map<number, HiddenBy>();
   try {
-    held = await filterVideos(flat.map((f) => ({ ...f.video, guidance: f.creator.guidance.trim() })), avoid);
+    held = await filterVideos(flat.map((f) => ({ ...f.video, guidance: f.creator.guidance.trim() })));
   } catch (err) {
     console.log(`[refresh] filter failed, letting every video through: ${(err as Error).message}`);
   }
@@ -169,7 +167,6 @@ async function runFilter(
       return { video, hiddenBy };
     });
     const added = await saveVideos(batch, p.creator.channelId, p.newestSeen, entries);
-    totals.hidden += added.filter((i) => i.hiddenBy).length;
     totals.videos += added.filter((i) => !i.hiddenBy).length;
   }
   emit({ type: "filtered", heldIds });

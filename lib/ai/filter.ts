@@ -2,11 +2,11 @@ import "server-only";
 import { z } from "zod";
 import { ask } from "./client";
 import { prompt } from "./prompts";
-import type { AvoidEntry, HiddenBy } from "../store/types";
+import type { HiddenBy } from "../store/types";
 
 /*
-  The creator-video filter. Guidance and avoid entries are passed word for
-  word; nothing rewrites them into rules.
+  The creator-video filter. Guidance is passed word for word; nothing rewrites
+  it into rules.
 */
 
 export type FilterVideo = { title: string; description: string; channel: string; guidance: string };
@@ -16,22 +16,18 @@ const FilterOutput = z.object({
   verdicts: z.array(
     z.object({
       index: z.number().int(),
-      reasoning: z.string().describe("One sentence: does this video fit its creator's guidance, and does it match any avoid entry?"),
+      reasoning: z.string().describe("One sentence: does this video fit its creator's guidance?"),
       hold: z.boolean(),
-      matched: z.string().describe("When hold is true: the avoid entry id (e.g. a1), or the word guidance. Otherwise empty."),
     }),
   ),
 });
 
 /**
  * Decide which new creator videos to hold back. Returns a map from video index
- * to what it matched. Callers skip this when there is no guidance and no avoid list.
+ * to the guidance it missed. Callers skip this when no creator has guidance.
  */
-export async function filterVideos(videos: FilterVideo[], avoid: AvoidEntry[]): Promise<Map<number, HiddenBy>> {
-  const avoidIds = new Map(avoid.map((a, n) => [`a${n + 1}`, a]));
+export async function filterVideos(videos: FilterVideo[]): Promise<Map<number, HiddenBy>> {
   const user = [
-    "Avoid list (applies to every video):",
-    avoid.length ? [...avoidIds].map(([id, a]) => `${id}: "${a.reason}"`).join("\n") : "(empty)",
     "New videos:",
     videos
       .map(
@@ -45,10 +41,7 @@ export async function filterVideos(videos: FilterVideo[], avoid: AvoidEntry[]): 
   const held = new Map<number, HiddenBy>();
   for (const h of out.verdicts) {
     const v = videos[h.index];
-    if (!v || !h.hold) continue;
-    const entry = avoidIds.get(h.matched.trim());
-    if (entry) held.set(h.index, { kind: "avoid", avoidId: entry.id, text: entry.reason });
-    else if (v.guidance) held.set(h.index, { kind: "guidance", text: v.guidance });
+    if (v?.guidance && h.hold) held.set(h.index, { kind: "guidance", text: v.guidance });
   }
   return held;
 }

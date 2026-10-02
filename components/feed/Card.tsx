@@ -15,7 +15,8 @@ export function Card({
   searching?: boolean;
   checking?: boolean;
   arriving?: boolean;
-  onRemove: () => void;
+  /** Absent on the Creators page, where cards are read-only. */
+  onRemove?: () => void;
   onMore?: () => void;
   /** Feed only; Favorites has no star. */
   onFavorite?: () => void;
@@ -24,15 +25,28 @@ export function Card({
     <div className={`card${arriving ? " arrive" : ""}${checking ? " checking" : ""}`}>
       <div className="thumb" style={{ "--h": hue(card.id) } as React.CSSProperties}>
         {card.thumbUrl ? <img src={card.thumbUrl} alt="" loading="lazy" /> : <span>{card.label}</span>}
-        <a className="hit" href={card.link} target="_blank" rel="noopener" aria-label={`Open: ${card.title}`} />
+        <a
+          className="hit"
+          href={card.link}
+          target="_blank"
+          rel="noopener"
+          onClick={(e) => {
+            // A plain click on the thumbnail opens a separate window; modified clicks keep the browser's own behaviour.
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            e.preventDefault();
+            window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
+          }}
+          aria-label={`Open: ${card.title}`} />
         {card.isNew && <span className="new-tag">New</span>}
         {checking ? (
           <span className="card-note checking-note">Checking guidance</span>
         ) : (
           <>
-            <button className="remove" type="button" onClick={onRemove} aria-label={`Remove: ${card.title}`} title="Remove">
-              &times;
-            </button>
+            {onRemove && (
+              <button className="remove" type="button" onClick={onRemove} aria-label={`Remove: ${card.title}`} title="Remove">
+                &times;
+              </button>
+            )}
             {onFavorite && (
               <button
                 className={`fav${card.favorited ? " on" : ""}`}

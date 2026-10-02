@@ -7,7 +7,6 @@ export function SummaryLine({ s }: { s: Summary }) {
   const head = added.length ? `Added ${added.join(" and ")}` : "Nothing new since the last refresh";
   const tail = [
     s.cancelled && "stopped early",
-    s.hidden && `${s.hidden} hidden`,
     s.failed.length && `could not fetch ${s.failed.join(", ")}`,
     s.error && "something failed; see the server log",
   ].filter(Boolean);

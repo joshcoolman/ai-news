@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Item, StoryItem, VideoItem } from "../store/types";
-import { displayOrder, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
+import { displayOrder, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -129,5 +129,13 @@ describe("treeOrder", () => {
     const items = [video("b"), video("r1", { after: "a" }), video("r2", { after: "a" })];
     const newestFirst = (x: Item, y: Item) => y.createdAt.localeCompare(x.createdAt);
     expect(ids(treeOrder(items, newestFirst))).toEqual(["r2", "r1", "b"]);
+  });
+});
+
+describe("firstUnstored", () => {
+  it("skips stored videos, removed ones included, and stops at the count", () => {
+    const items: Item[] = [video("a"), video("b", { removedAt: at() })];
+    const results = ["a", "b", "c", "c", "d", "e"].map((videoId) => ({ videoId }));
+    expect(firstUnstored(items, results, 2).map((r) => r.videoId)).toEqual(["c", "d"]);
   });
 });

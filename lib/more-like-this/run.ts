@@ -24,7 +24,7 @@ const BUCKETS: Record<Bucket, { items: (d: Data) => Item[]; add: (d: Data, item:
 /**
  * "More like this" for one card: write a query (once per card), search further
  * down than last time, skip videos already in the same bucket, keep up to 4
- * relevant ones, and store them after the card. Not filtered by the avoid list.
+ * relevant ones, and store them after the card. Not filtered by guidance.
  */
 export async function moreLikeThis(itemId: string, bucket: Bucket = "feed"): Promise<MoreResult> {
   const { items: itemsOf, add } = BUCKETS[bucket];

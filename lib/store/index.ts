@@ -53,7 +53,6 @@ async function writeJson(file: string, value: unknown) {
 const FILES: { [K in keyof Data]: () => Data[K] } = {
   creators: () => DEFAULT_CREATORS,
   items: () => [],
-  avoid: () => [],
   favorites: () => [],
   settings: () => ({ onFavorite: "ask" }),
 };

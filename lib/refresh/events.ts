@@ -11,10 +11,10 @@ export const STORIES_PER_LANE = 2;
 
 export type RefreshEvent =
   | { type: "start"; batch: number; startedAt: string; creators: { id: string; name: string }[] }
-  /** A creator's new videos. `checking` while the guidance / avoid filter still has to run. */
+  /** A creator's new videos. `checking` while the guidance filter still has to run. */
   | { type: "videos"; creatorId: string; cards: Card[]; checking: boolean }
   | { type: "creator-failed"; creatorId: string }
-  /** The filter ran: these cards were held back (they move to the hidden panel); the rest are confirmed. */
+  /** The filter ran: these cards were held back (dropped from view); the rest are confirmed. */
   | { type: "filtered"; heldIds: string[] }
   | { type: "lanes"; lanes: { id: string; name: string; brief: string }[]; slots: number }
   | { type: "activity"; laneId: string; text: string }
@@ -25,7 +25,6 @@ export type RefreshEvent =
       type: "done";
       videos: number;
       stories: number;
-      hidden: number;
       failed: string[];
       seconds: number;
       usd: number;
