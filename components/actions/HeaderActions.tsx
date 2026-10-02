@@ -3,33 +3,30 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AddCreatorDialog } from "./AddCreatorDialog";
-import {
-  FEED_CHANGED_EVENT,
-  REFRESH_EVENT,
-  SEARCH_EVENT,
-  refreshElsewhere,
-  searchElsewhere,
-  toast,
-  useActions,
-} from "./store";
+import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, handToHome, toast, useActions, type HomeTask } from "./store";
 
 const ICON = { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 
-/** Refresh, add creator and search: on every page. On home they act on the feed in place; elsewhere they report with a toast. */
+/** Refresh, add creator and search: on every page. On home they act on the feed in place; elsewhere refresh and search go home first. */
 export function HeaderActions() {
   const home = usePathname() === "/";
   const router = useRouter();
-  const { refreshing, searching } = useActions();
+  const { refreshing } = useActions();
   const [adding, setAdding] = useState(false);
+
+  function goHome(task: HomeTask) {
+    handToHome(task);
+    router.push("/");
+  }
 
   function refresh() {
     if (home) window.dispatchEvent(new Event(REFRESH_EVENT));
-    else void refreshElsewhere();
+    else goHome({ kind: "refresh" });
   }
 
   function search(query: string) {
     if (home) window.dispatchEvent(new CustomEvent(SEARCH_EVENT, { detail: { query } }));
-    else void searchElsewhere(query);
+    else goHome({ kind: "search", query });
   }
 
   function added(result?: { name: string; grabbed?: number }) {
@@ -68,7 +65,7 @@ export function HeaderActions() {
           <path d="M19 8v6M16 11h6" />
         </svg>
       </button>
-      <SearchPill onSearch={search} disabled={refreshing || searching} />
+      <SearchPill onSearch={search} disabled={refreshing} />
       {adding && <AddCreatorDialog onClose={added} />}
     </>
   );

@@ -4,8 +4,9 @@ import { useSyncExternalStore } from "react";
 
 /*
   Header actions (refresh, add creator, search) work from every page. The home
-  page owns the feed, so on home they hand off to it through window events;
-  anywhere else they do the work here and say so with a toast (contract below).
+  page owns the feed, so on home they hand off to it through window events.
+  From another page, refresh and search go home and run there (handToHome);
+  add creator works in place and says so with a toast (contract below).
   State lives at module level so it survives navigating between pages.
 */
 
@@ -23,9 +24,9 @@ export const FEED_CHANGED_EVENT = "ainews:feed-changed";
 */
 export type ToastKind = "done" | "info" | "error" | "busy";
 export type Toast = { id: number; kind: ToastKind; text: string };
-type State = { refreshing: boolean; searching: boolean; toast: Toast | null };
+type State = { refreshing: boolean; toast: Toast | null };
 
-let state: State = { refreshing: false, searching: false, toast: null };
+let state: State = { refreshing: false, toast: null };
 const listeners = new Set<() => void>();
 const set = (patch: Partial<State>) => {
   state = { ...state, ...patch };
@@ -49,62 +50,15 @@ let toastId = 0;
 export const toast = (kind: ToastKind, text: string) => set({ toast: { id: ++toastId, kind, text } });
 export const dismissToast = () => set({ toast: null });
 
-const onHome = () => window.location.pathname === "/";
-
-/** Start a refresh from another page and follow it to the end. */
-export async function refreshElsewhere() {
-  if (state.refreshing) return;
-  set({ refreshing: true });
-  try {
-    const res = await fetch("/api/refresh", { method: "POST" });
-    if (!res.ok && res.status !== 409) throw new Error();
-  } catch {
-    set({ refreshing: false });
-    return toast("error", "Refresh failed to start");
-  }
-  const es = new EventSource("/api/refresh/events");
-  es.onmessage = (msg) => {
-    const e = JSON.parse(msg.data) as { type: string };
-    if (e.type !== "done" && e.type !== "idle") return;
-    es.close();
-    set({ refreshing: false });
-    if (!onHome()) toast("done", "Home page refreshed");
-  };
-  es.onerror = () => {
-    es.close();
-    set({ refreshing: false });
-  };
-}
-
-/** Run a YouTube search from another page. Results land on home. */
-export async function searchElsewhere(query: string) {
-  if (state.searching || state.refreshing) return;
-  set({ searching: true });
-  toast("busy", `Searching for ${query}`);
-  try {
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
-    const data = await res.json();
-    if (!res.ok) toast("error", data.error ?? "Search failed");
-    else if (!data.added) toast("info", data.message ?? "Nothing found");
-    else toast("done", "Home page updated");
-  } catch {
-    toast("error", "Search failed");
-  }
-  set({ searching: false });
-}
-
 /*
-  A search the Creators page hands to home. Home opens at once and runs it
-  behind placeholders, rather than Creators waiting on it and then navigating.
+  Work another page hands to home. Home opens at once and runs it behind
+  placeholders, rather than the other page waiting on it and then navigating.
 */
 export type VideoSearch = { title: string; channel: string };
-let handoff: VideoSearch | null = null;
-export const handToHome = (video: VideoSearch) => void (handoff = video);
-export function takeHandoff(): VideoSearch | null {
+export type HomeTask = { kind: "refresh" } | { kind: "search"; query: string } | ({ kind: "video" } & VideoSearch);
+let handoff: HomeTask | null = null;
+export const handToHome = (task: HomeTask) => void (handoff = task);
+export function takeHandoff(): HomeTask | null {
   const v = handoff;
   handoff = null;
   return v;
