@@ -3,8 +3,8 @@ export const MIN_DAYS = 5;
 export const MAX_DAYS = 28;
 export const DEFAULT_DAYS = 7;
 
-/** A channel feed lists only about this many newest videos, so a busy channel can be cut off inside the window. */
-export const FEED_CAP = 15;
+/** A channel's Videos tab lists only this many newest videos, so a busy channel can be cut off inside the window. */
+export const FEED_CAP = 30;
 
 export function clampDays(n: unknown): number {
   const d = Math.round(Number(n));

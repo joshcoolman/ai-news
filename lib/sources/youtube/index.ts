@@ -84,21 +84,84 @@ export class UserInputError extends Error {}
 
 const xml = new XMLParser({ ignoreAttributes: false, isArray: (name) => name === "entry" });
 
-/** The latest long-form videos (no Shorts) on a channel, newest first. */
+/**
+ * The latest long-form videos (no Shorts) on a channel, newest first: the first
+ * page of its Videos tab (30), which never lists Shorts.
+ *
+ * The tab only says "3 days ago", so the channel's RSS feed (15 entries, exact
+ * dates, full descriptions) upgrades every video it covers. YouTube stopped
+ * answering the feed for some channels in October 2026 (the Shorts-free
+ * playlist form for all of them), so a missing feed is routine, not an error:
+ * those videos keep the approximate date and an empty description.
+ *
+ * Approximate dates are safe for "newer than last seen": an age rounds down,
+ * so a video's date is never earlier than when it was really published, and a
+ * video found by one refresh never dates later than that refresh.
+ */
 export async function listChannelVideos(channelId: string): Promise<FeedVideo[]> {
-  const playlist = `UULF${channelId.slice(2)}`;
-  const body = await (await get(`https://www.youtube.com/feeds/videos.xml?playlist_id=${playlist}`)).text();
-  const feed = xml.parse(body)?.feed;
-  const entries: Record<string, any>[] = feed?.entry ?? [];
-  return entries
-    .map((e) => ({
-      videoId: String(e["yt:videoId"]),
-      title: text(e.title),
-      description: text(e["media:group"]?.["media:description"]),
-      channel: text(e.author?.name),
-      publishedAt: new Date(text(e.published)).toISOString(),
-    }))
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  const [tab, exact] = await Promise.all([channelVideos(channelId), feedEntries(channelId)]);
+  return tab.map((v) => exact.get(v.videoId) ?? v);
+}
+
+/** The channel's Videos tab, newest first, with approximate dates. */
+async function channelVideos(channelId: string): Promise<FeedVideo[]> {
+  const yt = await innertube();
+  const channel = await yt.getChannel(channelId);
+  const tab = await channel.getVideos();
+  const name = channel.metadata?.title ?? "";
+  const out: FeedVideo[] = [];
+  for (const v of tab.videos as any[]) {
+    const videoId = v.content_id ?? v.video_id ?? v.id;
+    if (typeof videoId !== "string") continue;
+    const ageText: string | undefined =
+      v.published?.toString() ??
+      v.metadata?.metadata?.metadata_rows?.[0]?.metadata_parts?.map((p: any) => p.text?.text).find((t: unknown) => typeof t === "string" && /ago/.test(t));
+    out.push({
+      videoId,
+      title: v.metadata?.title?.text ?? v.title?.toString() ?? "",
+      description: "",
+      channel: name,
+      publishedAt: (ageText && approxDate(ageText)) || new Date().toISOString(),
+    });
+  }
+  if (!out.length) throw new Error(`Videos tab of ${channelId} listed nothing`);
+  return out;
+}
+
+/** The channel feed's entries by video id, or none when YouTube will not serve it. */
+async function feedEntries(channelId: string): Promise<Map<string, FeedVideo>> {
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+  let body: string;
+  try {
+    body = await retry(2, async () => (await get(url)).text());
+  } catch {
+    return new Map();
+  }
+  const entries: Record<string, any>[] = xml.parse(body)?.feed?.entry ?? [];
+  return new Map(
+    entries.map((e) => [
+      String(e["yt:videoId"]),
+      {
+        videoId: String(e["yt:videoId"]),
+        title: text(e.title),
+        description: text(e["media:group"]?.["media:description"]),
+        channel: text(e.author?.name),
+        publishedAt: new Date(text(e.published)).toISOString(),
+      },
+    ]),
+  );
+}
+
+async function retry<T>(times: number, fn: () => Promise<T>): Promise<T> {
+  let last: unknown;
+  for (let n = 0; n < times; n++) {
+    try {
+      return await fn();
+    } catch (err) {
+      last = err;
+    }
+  }
+  throw last;
 }
 
 type Innertube = Awaited<ReturnType<typeof import("youtubei.js").Innertube.create>>;
