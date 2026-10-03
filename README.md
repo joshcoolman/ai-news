@@ -14,12 +14,12 @@ A local Next.js app that replaces a morning scroll through YouTube and X: one fi
 **Focus:** use the player window from daily browsing; #17 (now-playing highlight, next/previous, snap back) is next if it earns it. Otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
+- Creator videos come from the channel's Videos tab via youtubei.js (#18): YouTube's RSS feed stopped answering for most channels, so it only upgrades dates and descriptions when it does. Dates are day-accurate when it does not.
 - Player window (#14): thumbnails play in our own `/player` page (one reused window, right half), with a bar for creator / Add creator, and a favorite star that follows settings and undoes its own removal, plus a History list that lives only as long as the window; Home and Favorites update live.
 - Searches feel instant: the Creators magnifier and header search/refresh from any page go home at once and run there; searches show placeholders where results land (8 at top, 4 after a "more like this" card, also on Favorites) and new cards animate in.
 - Creators page opens instantly: creators from the store, videos/topics/counts as same-size placeholders that fill in. Feeds cached for the day; the tab keeps the last result; reloading /creators fetches fresh.
 - Creators page topic badges (`prompts/topics.md`): one small-model call groups the 28 days into named products, each badge its own colour; click to filter, combines with the creator sidebar.
 - Header is icons only (home, favorites, creators | refresh, add creator, search | settings). Refresh, add and search work from every page; off home they report with a toast that links home (contract in `components/actions/store.ts`).
-- Creators page: recent videos from your creators (5-28 day slider, default 7) with a creator sidebar, per-creator counts and a toggle filter; the magnifier on a video searches its topic on home.
 
 **Up next**
 - Open issues.
