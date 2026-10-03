@@ -66,8 +66,16 @@ function nameOf(item: Item): string {
   return item.moreLabel ?? item.title;
 }
 
+/** How long ago a recent video would still say "N days ago" rather than its date. */
+const AGO_DAYS = 28;
+
+/** When a video came out: "5 hours ago" or "3 days ago" while it is recent, the date after that. */
 function shortDate(iso: string): string {
   const d = new Date(iso);
+  const hours = Math.floor((Date.now() - d.getTime()) / 3_600_000);
+  if (hours >= 0 && hours < 24) return hours < 1 ? "just now" : `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days >= 1 && days <= AGO_DAYS) return `${days} ${days === 1 ? "day" : "days"} ago`;
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
   if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
   return d.toLocaleDateString("en-US", opts);
