@@ -135,3 +135,8 @@ export function domainOf(url: string): string {
 export function withinDays(iso: string, days: number, now = Date.now()): boolean {
   return now - new Date(iso).getTime() <= days * DAY;
 }
+
+/** The videos worth showing: members-only ones are dropped unless the setting is turned off. */
+export function playable<T extends { membersOnly?: boolean }>(videos: T[], settings: { skipMembersOnly?: boolean }): T[] {
+  return settings.skipMembersOnly === false ? videos : videos.filter((v) => !v.membersOnly);
+}

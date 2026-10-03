@@ -2,6 +2,7 @@ import "server-only";
 import { mutate, read } from "../store";
 import type { Data, Item, VideoItem } from "../store/types";
 import { pickRelevant, writeQuery } from "../ai/more-like-this";
+import { playable } from "../feed/rules";
 import { search } from "../sources/youtube";
 import { fillDurations, videoItem } from "../refresh/save";
 
@@ -28,7 +29,8 @@ const BUCKETS: Record<Bucket, { items: (d: Data) => Item[]; add: (d: Data, item:
  */
 export async function moreLikeThis(itemId: string, bucket: Bucket = "feed"): Promise<MoreResult> {
   const { items: itemsOf, add } = BUCKETS[bucket];
-  const items = itemsOf(await read());
+  const data = await read();
+  const items = itemsOf(data);
   const card = items.find((i) => i.id === itemId);
   if (!card) throw new NotFoundError();
 
@@ -42,7 +44,7 @@ export async function moreLikeThis(itemId: string, bucket: Bucket = "feed"): Pro
   const inBucket = new Set(items.filter((i): i is VideoItem => i.kind === "video").map((i) => i.videoId));
   const attempt = async (q: string, skip: number) => {
     const results = await search(q, { skip, count: PAGE });
-    const fresh = results.filter((r) => !inBucket.has(r.videoId));
+    const fresh = playable(results, data.settings).filter((r) => !inBucket.has(r.videoId));
     const picks = fresh.length ? await pickRelevant({ ...forQuery, label: label ?? "" }, fresh) : [];
     return { query: q, skip, results, fresh, picks };
   };

@@ -1,7 +1,8 @@
 import "server-only";
 import type { Card } from "../feed/cards";
 import { toCard } from "../feed/cards";
-import { withinDays } from "../feed/rules";
+import { playable, withinDays } from "../feed/rules";
+import { read } from "../store";
 import { videoItem } from "../refresh/save";
 import type { Creator } from "../store/types";
 import { listChannelVideos, videoDuration, type FeedVideo } from "../sources/youtube";
@@ -74,10 +75,12 @@ export async function cachedVideo(videoId: string): Promise<{ channelId: string;
 /** The raw videos behind the page, newest first, and how far each channel feed reached. */
 export async function recentEntries(creators: Creator[], fresh = false) {
   const reach: FeedReach[] = [];
+  const { settings } = await read();
   const perCreator = await Promise.all(
     creators.map(async (c) => {
       try {
-        const videos = await feedOf(c.channelId, fresh);
+        // The cache holds every video, so changing the setting shows at once.
+        const videos = playable(await feedOf(c.channelId, fresh), settings);
         reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
         return videos.filter((v) => withinDays(v.publishedAt, MAX_DAYS)).map((video) => ({ c, video }));
       } catch (err) {

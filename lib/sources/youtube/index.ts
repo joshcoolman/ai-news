@@ -19,6 +19,8 @@ export type FeedVideo = {
   description: string;
   channel: string;
   publishedAt: string;
+  /** Only the channel's paying members can play it. */
+  membersOnly?: true;
 };
 
 export type SearchResult = {
@@ -30,6 +32,8 @@ export type SearchResult = {
   /** Approximate publish time derived from "3 days ago". */
   publishedAt?: string;
   ageText?: string;
+  /** Only the channel's paying members can play it. */
+  membersOnly?: true;
 };
 
 // The consent cookie keeps EU addresses from being redirected to a consent page.
@@ -100,7 +104,8 @@ const xml = new XMLParser({ ignoreAttributes: false, isArray: (name) => name ===
  */
 export async function listChannelVideos(channelId: string): Promise<FeedVideo[]> {
   const [tab, exact] = await Promise.all([channelVideos(channelId), feedEntries(channelId)]);
-  return tab.map((v) => exact.get(v.videoId) ?? v);
+  // The feed does not say which videos are members only; the tab does.
+  return tab.map((v) => ({ ...(exact.get(v.videoId) ?? v), ...(v.membersOnly && { membersOnly: v.membersOnly }) }));
 }
 
 /** The channel's Videos tab, newest first, with approximate dates. */
@@ -122,6 +127,7 @@ async function channelVideos(channelId: string): Promise<FeedVideo[]> {
       description: "",
       channel: name,
       publishedAt: (ageText && approxDate(ageText)) || new Date().toISOString(),
+      ...(membersOnly(v) && { membersOnly: true as const }),
     });
   }
   if (!out.length) throw new Error(`Videos tab of ${channelId} listed nothing`);
@@ -213,7 +219,14 @@ function toResult(v: any): SearchResult | null {
     duration: typeof seconds === "number" && seconds > 0 ? seconds : undefined,
     ageText,
     publishedAt: ageText ? approxDate(ageText) : undefined,
+    ...(membersOnly(v) && { membersOnly: true as const }),
   };
+}
+
+/** YouTube marks a members-only video with a badge: among a Videos tab entry's metadata rows, or on a search result itself. */
+function membersOnly(v: any): boolean {
+  const badges: any[] = [...(v.badges ?? []), ...(v.metadata?.metadata?.metadata_rows ?? []).flatMap((r: any) => r.badges ?? [])];
+  return badges.some((b) => /MEMBERS_ONLY/.test(b?.style ?? ""));
 }
 
 /** Video length in seconds, or undefined when YouTube will not say. */

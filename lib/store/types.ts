@@ -57,6 +57,8 @@ export type Settings = {
   onFavorite: "ask" | "remove" | "keep";
   /** Days of recent videos the Creators page shows. Absent until first changed: DEFAULT_DAYS. */
   creatorsWindowDays?: number;
+  /** Leave members-only videos out of everything the app finds: they do not play here. Absent: on. */
+  skipMembersOnly?: boolean;
 };
 
 export type Data = {
