@@ -1,6 +1,6 @@
 import "server-only";
 import { mutate, read } from "../store";
-import { firstUnstored, maxBatch, mergeBatch } from "../feed/rules";
+import { firstUnstored, maxBatch, mergeBatch, playable } from "../feed/rules";
 import { writeQuery } from "../ai/more-like-this";
 import { search } from "../sources/youtube";
 import { fillDurations, videoItem } from "../refresh/save";
@@ -24,7 +24,7 @@ export async function searchFromVideo(video: { title: string; channel: string })
  * the first 8 results not already stored, added as a new batch at the top.
  */
 export async function searchHome(query: string): Promise<SearchResult> {
-  const results = await search(query, { count: FETCH, pastMonth: true });
+  const results = playable(await search(query, { count: FETCH, pastMonth: true }), (await read()).settings);
   const now = new Date().toISOString();
   const added = await mutate((d) => {
     const fresh = firstUnstored(d.items, results, KEEP);

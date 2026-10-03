@@ -2,7 +2,7 @@ import "server-only";
 import { read } from "../store";
 import type { Creator } from "../store/types";
 import { filterVideos } from "../ai/filter";
-import { maxBatch, withinDays } from "../feed/rules";
+import { maxBatch, playable, withinDays } from "../feed/rules";
 import { listChannelVideos } from "../sources/youtube";
 import { saveVideos, videoItemId } from "../refresh/save";
 import { clampDays, DEFAULT_DAYS } from "./window";
@@ -16,7 +16,7 @@ export async function grabRecent(creator: Creator): Promise<number> {
   const data = await read();
   const days = clampDays(data.settings.creatorsWindowDays ?? DEFAULT_DAYS);
   const stored = new Set(data.items.map((i) => i.id));
-  const videos = await listChannelVideos(creator.channelId);
+  const videos = playable(await listChannelVideos(creator.channelId), data.settings);
   const fresh = videos.filter((v) => withinDays(v.publishedAt, days) && !stored.has(videoItemId(v.videoId)));
   const guidance = creator.guidance.trim();
 

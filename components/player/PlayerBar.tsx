@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { PlayerVideo } from "@/lib/player/video";
 import { History } from "./History";
 import { announce } from "./link";
@@ -33,11 +33,13 @@ const post = (url: string, payload?: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload ? JSON.stringify(payload) : undefined });
 
 /**
- * The player window's bar: who made it, the title, and a favorite star that
- * follows the "on favorite" setting. No link out to YouTube: loading youtube.com
- * here wipes the window's name, and the next thumbnail opens a second window.
+ * The player window around the video passed as children: the History column
+ * beside it and the bar under it, with who made it (or Add creator) and a
+ * favorite star that follows the "on favorite" setting. No link
+ * out to YouTube: loading youtube.com here wipes the window's name, and the
+ * next thumbnail opens a second window.
  */
-export function PlayerBar({ video }: { video: PlayerVideo }) {
+export function PlayerBar({ video, children }: { video: PlayerVideo; children: ReactNode }) {
   const [creator, setCreator] = useState<Creator | undefined>(video.creator);
   const [adding, setAdding] = useState(false);
   const [creatorNote, setCreatorNote] = useState("");
@@ -95,46 +97,48 @@ export function PlayerBar({ video }: { video: PlayerVideo }) {
   }
 
   return (
-    <div className="player-bar">
-      <div className="player-creator">
-        {creator ? (
-          <>
-            {creator.avatarUrl ? <img className="avatar" src={creator.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span className="avatar" />}
-            <span className="name">{creator.name}</span>
-          </>
-        ) : video.channel ? (
-          <>
-            <span className="name">{video.channel}</span>
-            <button className="btn" type="button" onClick={addCreator} disabled={adding}>
-              {adding ? "Adding" : "Add creator"}
-            </button>
-          </>
-        ) : null}
-        {creatorNote && <span className="player-note">{creatorNote}</span>}
-      </div>
-      <div className="player-title" title={video.title}>
-        {video.title}
-      </div>
-      <div className="player-actions">
-        {asking && (
-          <button className="link-btn" type="button" onClick={remove}>
-            Also remove from Home?
-          </button>
-        )}
-        <button
-          className={`icon-btn player-star${favorited ? " on" : ""}`}
-          type="button"
-          onClick={toggleFavorite}
-          aria-pressed={favorited}
-          aria-label={favorited ? "Unfavorite" : "Favorite"}
-          title={favorited ? (removed ? "Unfavorite and put back on Home" : "Unfavorite") : "Favorite"}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill={favorited ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
-          </svg>
-        </button>
+    <>
+      <div className="player-main">
+        {children}
         <History video={video} />
       </div>
-    </div>
+      <div className="player-bar">
+        <div className="player-creator">
+          {creator ? (
+            <>
+              {creator.avatarUrl ? <img className="avatar" src={creator.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span className="avatar" />}
+              <span className="name">{creator.name}</span>
+            </>
+          ) : (
+            video.channel && <span className="name">{video.channel}</span>
+          )}
+        </div>
+        <div className="player-actions">
+          {asking && (
+            <button className="link-btn" type="button" onClick={remove}>
+              Also remove from Home?
+            </button>
+          )}
+          <button
+            className={`icon-btn player-star${favorited ? " on" : ""}`}
+            type="button"
+            onClick={toggleFavorite}
+            aria-pressed={favorited}
+            aria-label={favorited ? "Unfavorite" : "Favorite"}
+            title={favorited ? (removed ? "Unfavorite and put back on Home" : "Unfavorite") : "Favorite"}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill={favorited ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+            </svg>
+          </button>
+          {creatorNote && <span className="player-note">{creatorNote}</span>}
+          {!creator && (
+            <button className="btn add-creator" type="button" onClick={addCreator} disabled={adding}>
+              {adding ? "Adding" : "Add creator"}
+            </button>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

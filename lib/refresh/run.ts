@@ -1,7 +1,7 @@
 import "server-only";
 import { read } from "../store";
 import type { Creator, HiddenBy, Item } from "../store/types";
-import { maxBatch, withinDays } from "../feed/rules";
+import { maxBatch, playable, withinDays } from "../feed/rules";
 import { toCard } from "../feed/cards";
 import { listChannelVideos, type FeedVideo } from "../sources/youtube";
 import { estimateCost, STORIES_MODEL, type Usage } from "../ai/client";
@@ -104,7 +104,7 @@ async function run(emit: (e: RefreshEvent) => void, signal: AbortSignal) {
       data.creators.map(async (creator) => {
         let videos: FeedVideo[];
         try {
-          videos = await listChannelVideos(creator.channelId);
+          videos = playable(await listChannelVideos(creator.channelId), data.settings);
         } catch (err) {
           console.log(`[refresh] ${creator.name} failed: ${(err as Error).message}`);
           failed.push(creator.name);

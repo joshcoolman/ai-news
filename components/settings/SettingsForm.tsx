@@ -13,14 +13,10 @@ const ON_FAVORITE: { value: Settings["onFavorite"]; label: string }[] = [
 export function SettingsForm({ initial }: { initial: Settings }) {
   const [onFavorite, setOnFavorite] = useState(initial.onFavorite);
 
-  async function save(value: Settings["onFavorite"]) {
-    setOnFavorite(value);
-    await fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ onFavorite: value }),
-    });
-  }
+  const [skipMembersOnly, setSkipMembersOnly] = useState(initial.skipMembersOnly !== false);
+
+  const save = (change: Partial<Settings>) =>
+    fetch("/api/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) });
 
   return (
     <div className="wrap">
@@ -30,10 +26,21 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         <legend>When I favorite a card</legend>
         {ON_FAVORITE.map((o) => (
           <label key={o.value} className="check">
-            <input type="radio" name="onFavorite" value={o.value} checked={onFavorite === o.value} onChange={() => save(o.value)} />
+            <input type="radio" name="onFavorite" value={o.value} checked={onFavorite === o.value} onChange={() => (setOnFavorite(o.value), save({ onFavorite: o.value }))} />
             {o.label}
           </label>
         ))}
+      </fieldset>
+      <fieldset className="setting">
+        <legend>Members-only videos</legend>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={skipMembersOnly}
+            onChange={(e) => (setSkipMembersOnly(e.target.checked), save({ skipMembersOnly: e.target.checked }))}
+          />
+          Skip members-only content
+        </label>
       </fieldset>
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Item, StoryItem, VideoItem } from "../store/types";
-import { displayOrder, favoriteCopy, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, treeOrder } from "./rules";
+import { displayOrder, favoriteCopy, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, playable, treeOrder } from "./rules";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -147,5 +147,17 @@ describe("favoriteCopy", () => {
     expect(copy).not.toHaveProperty("after");
     expect(copy).not.toHaveProperty("batch");
     expect(copy).toMatchObject({ id: "a", videoId: "a", channel: "c" });
+  });
+});
+
+describe("playable", () => {
+  const videos = [{ videoId: "a" }, { videoId: "b", membersOnly: true as const }];
+
+  it("drops members-only videos by default", () => {
+    expect(playable(videos, {})).toEqual([{ videoId: "a" }]);
+  });
+
+  it("keeps them when the setting is off", () => {
+    expect(playable(videos, { skipMembersOnly: false })).toHaveLength(2);
   });
 });
