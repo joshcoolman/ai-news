@@ -2,11 +2,13 @@ import { keySources, MissingKeyError } from "./server/keys.js";
 import { mutate, read } from "./server/store.js";
 import { buildFeed, favoriteCards } from "./server/feed/cards.js";
 import { favoriteCopy } from "./server/feed/rules.js";
-import { resolveCreator, UserInputError } from "./server/youtube.js";
+import { keyWorks as youtubeKeyWorks, resolveCreator, UserInputError } from "./server/youtube.js";
+import { keyWorks as claudeKeyWorks } from "./server/ai/client.js";
 import { grabRecent } from "./server/creators/grab.js";
 import { recentVideos } from "./server/creators/recent.js";
 import { topicsFor } from "./server/creators/topics.js";
-import { clampDays } from "./server/creators/window.js";
+import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
+import { LANES, STORIES_PER_LANE } from "./server/refresh/events.js";
 import { cancelRefresh, RefreshBusyError, refreshRunning, startRefresh, subscribe } from "./server/refresh/run.js";
 import { searchFromVideo, searchHome } from "./server/search.js";
 import { moreLikeThis, NotFoundError } from "./server/more-like-this.js";
@@ -30,6 +32,7 @@ export const pages = {
 /** @type {[method: string, path: string, handler: (ctx: Ctx) => Reply | void | Promise<Reply | void>][]} */
 export const routes = [
   ["GET", "/api/config", config],
+  ["POST", "/api/keys/check", checkKeys],
 
   ["GET", "/api/feed", feed],
   ["POST", "/api/items/:id/remove", removeItem],
@@ -92,9 +95,25 @@ async function orFail(message, status, fn) {
   }
 }
 
-/** Where each key comes from, so the page knows whether to ask for them. */
+/**
+ * What every page reads first: where each key comes from (so it knows whether
+ * to ask for them), whether a refresh is running, and the numbers the pages
+ * must agree with the server on.
+ */
 function config() {
-  return json({ keys: keySources() });
+  return json({
+    keys: keySources(),
+    refreshing: refreshRunning(),
+    plan: { lanes: LANES, slots: STORIES_PER_LANE },
+    days: { min: MIN_DAYS, max: MAX_DAYS },
+    feedCap: FEED_CAP,
+  });
+}
+
+/** Whether the keys this request carries are accepted, checked before the browser saves them. */
+async function checkKeys() {
+  const [anthropic, youtube] = await Promise.all([claudeKeyWorks(), youtubeKeyWorks()]);
+  return json({ anthropic, youtube });
 }
 
 /* The feed */

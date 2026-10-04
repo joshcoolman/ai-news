@@ -1,0 +1,116 @@
+/*
+  What every page shares: fonts, colours, the page frame, buttons, form fields,
+  the status line and the loading shimmer. Each component's own styles sit
+  beside its script. Look and card anatomy follow docs/reference/prototype.html:
+  a video-site home grid. Dark by default; light follows the system.
+*/
+@font-face {
+  font-family: "Roboto"; font-weight: 100 900; font-stretch: 100%; font-display: swap;
+  src: url(/fonts/roboto-latin.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Roboto Mono"; font-weight: 100 700; font-display: swap;
+  src: url(/fonts/roboto-mono-latin.woff2) format("woff2");
+}
+
+:root {
+  --bg: #0f0f0f;
+  --fg: #f1f1f1;
+  --muted: #aaaaaa;
+  --thumb-ink: #ffffff;
+  --chip: #272727;
+  --chip-hover: #3a3a3a;
+  --line: #303030;
+  --pick: #ff4e45;
+  --tray: #181818;
+  --font: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Roboto Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --fg: #0f0f0f;
+    --muted: #606060;
+    --chip: #f2f2f2;
+    --chip-hover: #e5e5e5;
+    --line: #e5e5e5;
+    --pick: #cc0000;
+    --tray: #ffffff;
+    color-scheme: light;
+  }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 120px; }
+.page-title { font-size: 18px; font-weight: 500; margin: 8px 0 14px; }
+.empty { color: var(--muted); font-size: 15px; }
+
+/* Buttons */
+.btn {
+  background: var(--chip); border: 1px solid var(--line); border-radius: 18px;
+  font-weight: 500; font-size: 14px; padding: 6px 14px; cursor: pointer;
+
+  &:hover:not(:disabled) { background: var(--chip-hover); }
+  &:disabled { opacity: .55; cursor: default; }
+  &.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  &.primary:hover:not(:disabled) { background: var(--fg); opacity: .88; }
+  &.small { font-size: 13px; padding: 4px 10px; }
+}
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #3a3a3c; color: #fff;
+
+  &[aria-current="page"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+  &:hover:not(:disabled) { background: #4a4a4d; }
+  &:disabled { opacity: .55; cursor: default; }
+  &:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  &.spinning svg { animation: spin 1s linear infinite; }
+}
+.link-btn {
+  background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline;
+
+  &:hover { color: var(--fg); }
+}
+.btn:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* Forms */
+.field {
+  width: 100%; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px;
+
+  &:focus { outline: 2px solid var(--muted); outline-offset: 0; }
+}
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--chip); flex: none; object-fit: cover; }
+
+/* Status line */
+.status {
+  font-size: 14px; color: var(--muted); margin: 0 0 18px; min-height: 20px;
+
+  b { color: var(--fg); font-weight: 500; }
+}
+.progress { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--pick); animation: pulse 1.2s ease-in-out infinite; }
+
+/* Placeholders while something loads: same box sizes as the real things, so nothing jumps when they land. */
+.skeleton {
+  background: linear-gradient(100deg, var(--chip) 30%, var(--chip-hover) 50%, var(--chip) 70%);
+  background-size: 300% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton, .pulse { animation: none; }
+}
+
+/* `hidden` must win over a component's own display. */
+[hidden] { display: none !important; }

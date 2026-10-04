@@ -3,29 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "vitest run",
-    "server": "node server.js",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
     "check": "tsc -p jsconfig.json",
-    "test:server": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\""
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0",
-    "next": "^16.3.8",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "server-only": "^0.0.1",
-    "zod": "^4.6.5"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^26.6.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.3"
+    "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620"
 }

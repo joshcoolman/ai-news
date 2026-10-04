@@ -46,6 +46,16 @@ async function api(path, params) {
   throw new ApiError(res.status, `${res.status}${reason ? ` ${reason}` : ""} from YouTube ${path}`);
 }
 
+/** Whether the key in use is accepted: one cheap call (1 unit). */
+export async function keyWorks() {
+  try {
+    await api("i18nLanguages", { part: "snippet", hl: "en" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** @param {string} videoId */
 export function thumbnailUrl(videoId) {
   return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;

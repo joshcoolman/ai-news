@@ -1,0 +1,68 @@
+/* Grid and cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px 16px; }
+.card {
+  display: flex; flex-direction: column; gap: 10px; min-width: 0;
+
+  &.arrive { animation: arrive .45s cubic-bezier(.2, .8, .2, 1) both; }
+  &.checking .thumb img { opacity: .55; transition: opacity .3s; }
+
+  .title { font-size: 16px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
+  .title a { text-decoration: none; }
+  .title a:hover, .title a:focus-visible { text-decoration: underline; }
+}
+.meta { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+.thumb {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(135deg, hsl(var(--h) 55% 34%), hsl(calc(var(--h) + 40) 60% 18%));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--thumb-ink); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; text-align: center; padding: 12px;
+  line-height: 1.1;
+
+  &:hover { filter: brightness(1.12); }
+  &.skeleton:hover { filter: none; }
+  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .hit { position: absolute; inset: 0; }
+  .hit:focus-visible { outline: 3px solid var(--thumb-ink); outline-offset: -3px; }
+
+  .badge {
+    pointer-events: none; position: absolute; right: 6px; bottom: 6px; background: rgba(0,0,0,.8); color: #fff;
+    font: 500 12px var(--mono); padding: 2px 5px; border-radius: 4px;
+  }
+  .new-tag {
+    pointer-events: none; position: absolute; left: 6px; top: 6px; background: var(--pick); color: #fff;
+    font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+  }
+
+  .remove, .more, .fav {
+    position: absolute; width: 30px; height: 30px; border-radius: 50%; border: 0;
+    background: rgba(0,0,0,.7); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .remove { right: 6px; top: 6px; font: 500 18px/1 var(--font); }
+  .remove:hover { background: var(--pick); }
+  .more { left: 6px; bottom: 6px; }
+  .more:hover { background: #fff; color: #0f0f0f; }
+  .more:disabled { cursor: progress; opacity: .8; }
+  .fav { right: 42px; top: 6px; }
+  .fav:hover:not(:disabled) { background: #fff; color: #0f0f0f; }
+  .fav.on { color: #f5c518; cursor: default; }
+  .remove:focus-visible, .more:focus-visible, .fav:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  .card-note {
+    pointer-events: none; position: absolute; left: 42px; bottom: 9px; background: rgba(0,0,0,.8); color: #fff;
+    font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 4px;
+  }
+  .checking-note { left: 6px; }
+  .slot-label { font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+}
+
+/* A slot: the placeholder standing where a card will land. */
+.skeleton-line { height: 14px; width: 80%; border-radius: 4px; background: var(--chip); }
+.slot-activity { min-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; animation: fade-in .3s ease-out; }
+
+@keyframes arrive { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .card.arrive, .slot-activity { animation: none; }
+}
