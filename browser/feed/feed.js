@@ -1,7 +1,7 @@
 import { boot, load, patch, post, send } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, takeHandoff } from "../shared/handoff.js";
-import { onPlayerMessage } from "../shared/player-link.js";
+import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, slotEntries, slotTile } from "./card.js";
 import { favoritePrompt } from "./favorite-prompt.js";
@@ -69,6 +69,7 @@ function draw() {
       onRemove: () => remove(card),
       onMore: () => more(card),
       onFavorite: () => favorite(card),
+      onQueue: () => queue(card),
       ...extra,
     });
 
@@ -155,6 +156,21 @@ async function remove(card) {
   state.removed.add(card.id);
   draw();
   await post(`/api/items/${encodeURIComponent(card.id)}/remove`);
+}
+
+/*
+  Shift-click on a video: ask the player to queue it. Nothing here changes
+  until the player answers, and only a player that is playing something does,
+  so with no player the click does nothing.
+*/
+/** @type {Map<string, Card>} */
+const asked = new Map();
+
+/** @param {Card} card */
+function queue(card) {
+  if (!card.videoId) return;
+  asked.set(card.videoId, card);
+  announce({ type: "queue", videoId: card.videoId, title: card.title });
 }
 
 /** @param {Card} card */
@@ -249,6 +265,13 @@ window.addEventListener(FEED_CHANGED_EVENT, async (e) => {
 
 // The player window favorited, removed or restored a card, or added a creator (whose videos land here).
 onPlayerMessage(async (msg) => {
+  if (msg.type === "queue") return;
+  if (msg.type === "queued") {
+    // The player took it: it leaves home for good, like the × does.
+    const card = asked.get(msg.videoId);
+    asked.delete(msg.videoId);
+    return card && remove(card);
+  }
   if (msg.type === "card") state.faved.delete(msg.id);
   await reload();
   draw();

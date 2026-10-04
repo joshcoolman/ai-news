@@ -11,7 +11,8 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   onRemove?: () => void,
  *   onMore?: () => void,
  *   onFavorite?: () => void,
- * }} CardOptions
+ *   onQueue?: () => void,
+ * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player.
  */
 
 /**
@@ -19,8 +20,12 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, checking, arriving, onRemove, onMore, onFavorite } = {}) {
+export function cardTile(card, { note, searching, checking, arriving, onRemove, onMore, onFavorite, onQueue } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
+    if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
+      e.preventDefault();
+      return onQueue();
+    }
     // A plain click on the thumbnail plays in the player window; modified clicks keep the browser's own behaviour.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();

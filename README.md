@@ -21,12 +21,12 @@ Put `ANTHROPIC_API_KEY` and `YOUTUBE_API_KEY` in `.env.local` (see `.env.example
 **Focus:** use the rebuilt app day to day and note anything that behaves differently from before the rebuild (#21); fix those first. Then #17 (player follow-ups) if it earns it, otherwise the next issue in `gh issue list`. Story quality (prompts in `prompts/`) needs an issue first.
 
 **Last shipped**
+- Player power moves: shift-click a video on Home to queue it under the one playing (the card leaves Home); when a video ends, the next unwatched row plays by itself; the up and down arrows step through the History column, wrapping at both ends; left and right jump between a video's chapters, then on to the previous or next video.
 - No frameworks, no runtime dependencies, no build (#21): Next, React, zod, the Anthropic SDK and vitest are gone. `server.js` + `routes.js` + `server/` serve plain pages from `browser/`. Keys come from `.env.local`, or from the browser when the server has none (Add your keys; Delete keys in Settings). `pnpm check` and `pnpm test` are the gate.
 - YouTube comes from the official Data API (#21 stage 1): `YOUTUBE_API_KEY` is now required. Creator lists have exact dates and full descriptions; `youtubei.js` and the RSS feed are gone. A search costs 100 of the day's 10,000 units, everything else 1.
 - Card dates read as an age while recent ("9 hours ago", "2 days ago", up to 28 days), then the date.
 - Members-only videos are skipped everywhere the app finds videos (refresh, Creators page, searches); Settings has "Skip members-only content", on by default. Cards already in the feed are not touched.
 - Player resumes (sidecar): switching videos and coming back picks each one up where this window left it; History is an always-showing column right of the video that keeps its order when you replay from it; its rows have a remove ×. Add creator is a green button in the bar. Positions live in sessionStorage beside History; the embed reports its time over postMessage, no YouTube script loaded.
-- Player window (#14): thumbnails play in our own `/player` page (one reused window, right half), with a bar for creator / Add creator, and a favorite star that follows settings and undoes its own removal, plus a History list that lives only as long as the window; Home and Favorites update live.
 
 **Up next**
 - Open issues.

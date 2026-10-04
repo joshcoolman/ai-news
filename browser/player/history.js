@@ -1,14 +1,39 @@
 import { h } from "../shared/dom.js";
 import { setPosition, stopSaving } from "./positions.js";
+import { neighbor, nextUp, queueAfter } from "./queue.js";
 
-/** @typedef {{ videoId: string, title: string, thumbUrl: string, channel?: string }} Entry */
+/** @typedef {import("./queue.js").Entry} Entry */
 
 /*
   What this window has played, latest arrival first, in sessionStorage: it lives
   exactly as long as the player window and is never saved anywhere else.
 */
 const KEY = "player-history";
+/** Videos watched to the end in this window: what auto-play skips. */
+const FINISHED = "player-finished";
 const CAP = 30;
+
+/** @returns {Set<string>} */
+function finished() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(FINISHED) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * @param {string} videoId
+ * @param {boolean} on
+ */
+function setFinished(videoId, on) {
+  try {
+    const ids = finished();
+    if (on) ids.add(videoId);
+    else ids.delete(videoId);
+    sessionStorage.setItem(FINISHED, JSON.stringify([...ids]));
+  } catch {}
+}
 
 /**
  * @param {PlayerVideo} video
@@ -35,6 +60,7 @@ function remember(video) {
  */
 function forget(videoId) {
   setPosition(videoId, undefined);
+  setFinished(videoId, false);
   try {
     /** @type {Entry[]} */
     const list = JSON.parse(sessionStorage.getItem(KEY) ?? "[]").filter((/** @type {Entry} */ e) => e.videoId !== videoId);
@@ -45,10 +71,14 @@ function forget(videoId) {
   }
 }
 
-const linkTo = (/** @type {Entry} */ e) => `/player?${new URLSearchParams({ v: e.videoId, t: e.title })}`;
+export const linkTo = (/** @type {Entry} */ e) => `/player?${new URLSearchParams({ v: e.videoId, t: e.title })}`;
 
 /**
- * The history column beside the video: what this window has played, always showing. A new video joins at the top; replaying one leaves the order alone.
+ * The history column beside the video: what this window has played, always
+ * showing. A new video joins at the top; replaying one leaves the order alone.
+ * It is also the queue: `queue` puts a video right under the one playing, and
+ * `ended` marks the playing one watched and says what plays next, if anything;
+ * `step` is the row above or below, for the keys that walk the column.
  * @param {PlayerVideo} video
  */
 export function history(video) {
@@ -87,5 +117,24 @@ export function history(video) {
       }),
     );
   draw();
-  return column;
+
+  return {
+    column,
+    /** @param {Entry} entry */
+    queue(entry) {
+      list = queueAfter(list, video.videoId, entry).slice(0, CAP);
+      // Queued again after being watched, it is wanted again.
+      setFinished(entry.videoId, false);
+      try {
+        sessionStorage.setItem(KEY, JSON.stringify(list));
+      } catch {}
+      draw();
+    },
+    ended() {
+      setFinished(video.videoId, true);
+      return nextUp(list, video.videoId, finished());
+    },
+    /** The row to step to by key. @param {1 | -1} direction */
+    step: (direction) => neighbor(list, video.videoId, direction),
+  };
 }

@@ -1,5 +1,5 @@
 import { key } from "./keys.js";
-import { ageText, isoDurationSeconds, parseYouTubeUrl } from "./youtube-parse.js";
+import { ageText, isoDurationSeconds, parseChapters, parseYouTubeUrl } from "./youtube-parse.js";
 
 /*
   Everything the app knows about YouTube lives here, read from the YouTube Data
@@ -204,6 +204,25 @@ function toResult(v) {
     // The API has no members-only field, but it withholds the view count of a members-only video.
     ...(v.statistics && v.statistics.viewCount === undefined && { membersOnly: /** @type {const} */ (true) }),
   };
+}
+
+/** A video's chapters never change once read, and the player asks each time it loads. */
+/** @type {Map<string, { start: number, title: string }[]>} */
+const chapters = new Map();
+
+/**
+ * The chapters listed in a video's description; none when it lists none. The
+ * API has no chapters of its own, so the ones YouTube generates by itself are
+ * out of reach.
+ * @param {string} videoId
+ */
+export async function videoChapters(videoId) {
+  const known = chapters.get(videoId);
+  if (known) return known;
+  const [video] = await videos([videoId], "snippet");
+  const found = parseChapters(video?.snippet.description ?? "");
+  chapters.set(videoId, found);
+  return found;
 }
 
 /**

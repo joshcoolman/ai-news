@@ -27,7 +27,8 @@
   li { position: relative; }
   a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); }
   a:hover, a:focus-visible { background: var(--chip); outline: none; }
-  a.current { background: var(--chip); }
+  /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
+  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; }
   img { width: 112px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); }
 
   .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
