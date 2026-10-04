@@ -11,7 +11,8 @@ A Node server and plain HTML, JS and CSS, with no runtime dependencies and no bu
 5. **Every write goes through `store.mutate`:** a refresh that runs for minutes must not overwrite a removal made while it ran.
 6. **`dependencies` stays empty and nothing is compiled.** That is the experiment (#21). A new need is written here, in the open, or argued in an issue first. `typescript` and `@types/node` only check the code: `pnpm check` and `pnpm test` are the gate where another repo would run a production build.
 7. **A page is one state object and a `draw` function.** Components are functions that return elements built with `h` (`browser/shared/dom.js`); an action changes the state and calls `draw`; lists go through `sync` so unchanged cards are not touched. Attach handlers through `h` or `addEventListener`, not `el.onkeydown = ...`: a property handler that returns false cancels the event, which once swallowed Enter in the search box.
-8. **Names follow the UI's words.** Glossary:
+8. **A shortcut is listed where the user can find it.** Keys and clicks that have no button are described in the guide on the Settings page (`GUIDE` in `browser/settings/settings.js`); adding or changing one means updating it there.
+9. **Names follow the UI's words.** Glossary:
    - **Card**: one tile in the feed, a video or a story.
    - **Batch**: the cards one refresh added; the newest batch carries the New tag.
    - **Held back**: a creator video that missed its creator's guidance. Stored so it is not re-judged, never shown, no panel.

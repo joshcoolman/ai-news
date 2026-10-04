@@ -10,6 +10,52 @@ const ON_FAVORITE = [
   { value: "keep", label: "Keep on home" },
 ];
 
+/*
+  The guide at the foot of the page: everything the app does that no button
+  shows. Each entry is the keys (or the click) and what they do, in the app's
+  own words. A new shortcut is not done until it is listed here.
+*/
+/** @type {{ where: string, note?: string, moves: [keys: string[], does: string][] }[]} */
+const GUIDE = [
+  {
+    where: "Home",
+    moves: [[["Shift", "click"], "On a video, while the player is playing: queue it right under the one playing. The card leaves Home. With no player playing, nothing happens."]],
+  },
+  {
+    where: "Player",
+    note: "The keys work while the player's own page has the keyboard. After a click on the video they go to YouTube; click the bar or the History column to get them back.",
+    moves: [
+      [["↑", "↓"], "Play the video above or below in History. Wraps at both ends, and each video picks up where you left it."],
+      [["←", "→"], "Back or forward 10 seconds."],
+      [["C"], "Open or close Chapters, for a video that has them."],
+      [["↑", "↓"], "With Chapters open: the previous or next chapter."],
+      [["Esc"], "Close Chapters."],
+    ],
+  },
+  {
+    where: "Creators",
+    moves: [[["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."]],
+  },
+];
+
+function guide() {
+  return h(
+    "fieldset",
+    { class: "setting guide" },
+    h("legend", {}, "Keys and power moves"),
+    h("p", {}, "None of these has a button. When a video ends in the player, the next one down that you have not finished starts by itself."),
+    GUIDE.flatMap((section) => [
+      h("h3", {}, section.where),
+      h(
+        "dl",
+        {},
+        section.moves.flatMap(([keys, does]) => [h("dt", {}, keys.map((k) => h("kbd", {}, k))), h("dd", {}, does)]),
+      ),
+      section.note && h("p", {}, section.note),
+    ]),
+  );
+}
+
 const config = await boot();
 /** @type {Settings} */
 const settings = await load("/api/settings");
@@ -53,6 +99,7 @@ document.body.append(
         "Skip members-only content",
       ),
     ),
+    guide(),
     ownKeys &&
       h(
         "fieldset",
