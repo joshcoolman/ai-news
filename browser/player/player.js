@@ -35,8 +35,10 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   /*
     The player's keys, all bare arrows. Up and down: play the row above or
     below in the column, wrapping at both ends (each video resumes where this
-    window left it). Left and right: the previous and next chapter, when the
-    video lists chapters; Ctrl or Option with them does the same. They reach
+    window left it). Left and right: the previous and next chapter, and past
+    the first or last chapter, the previous or next video, so one key powers
+    through chapters and videos alike; a video with no chapters is one
+    chapter. Ctrl or Option with left and right does the same. They reach
     this page only while it has the keyboard: after a click inside the video,
     keys go to YouTube's embed.
   */
@@ -49,14 +51,19 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   window.addEventListener("keydown", (e) => {
     const bare = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
     const chapterKey = !e.metaKey && !e.shiftKey;
+    const step = (/** @type {1 | -1} */ direction) => {
+      const row = played.step(direction);
+      if (row) location.href = linkTo(row);
+    };
     if (bare && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
-      const row = played.step(e.key === "ArrowDown" ? 1 : -1);
-      if (row) location.href = linkTo(row);
-    } else if (chapterKey && (e.key === "ArrowRight" || e.key === "ArrowLeft") && starts.length) {
+      step(e.key === "ArrowDown" ? 1 : -1);
+    } else if (chapterKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
       e.preventDefault();
-      const target = chapterTarget(starts, player.time(), e.key === "ArrowRight" ? 1 : -1);
-      if (target !== undefined) player.seek(target);
+      const direction = e.key === "ArrowRight" ? 1 : -1;
+      const target = chapterTarget(starts, player.time(), direction);
+      if (target === undefined) step(direction);
+      else player.seek(target);
     }
   });
 

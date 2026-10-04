@@ -25,7 +25,7 @@ describe("parseChapters", () => {
 describe("chapterTarget", () => {
   const starts = [0, 90, 725];
 
-  it("forward goes to the next chapter, and nowhere from the last", () => {
+  it("forward goes to the next chapter, and off the end from the last", () => {
     assert.strictEqual(chapterTarget(starts, 10, 1), 90);
     assert.strictEqual(chapterTarget(starts, 90, 1), 725);
     assert.strictEqual(chapterTarget(starts, 800, 1), undefined);
@@ -34,6 +34,16 @@ describe("chapterTarget", () => {
   it("back restarts the chapter playing, or goes to the one before when it has just begun", () => {
     assert.strictEqual(chapterTarget(starts, 200, -1), 90);
     assert.strictEqual(chapterTarget(starts, 91, -1), 0);
-    assert.strictEqual(chapterTarget(starts, 1, -1), 0);
+    assert.strictEqual(chapterTarget(starts, 726, -1), 90);
+  });
+
+  it("back from anywhere in the first chapter runs off the start", () => {
+    assert.strictEqual(chapterTarget(starts, 1, -1), undefined);
+    assert.strictEqual(chapterTarget(starts, 60, -1), undefined);
+  });
+
+  it("a video with no chapters runs off both ends, so the keys move between videos", () => {
+    assert.strictEqual(chapterTarget([], 300, 1), undefined);
+    assert.strictEqual(chapterTarget([], 300, -1), undefined);
   });
 });
