@@ -38,10 +38,13 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     window left it). Left and right: the previous and next chapter, and past
     the first or last chapter, the previous or next video, so one key powers
     through chapters and videos alike; a video with no chapters is one
-    chapter. Ctrl or Option with left and right does the same. They reach
+    chapter. Ctrl or Option with left and right does the same. Shift with left
+    and right skips 30 seconds back or forward. They reach
     this page only while it has the keyboard: after a click inside the video,
     keys go to YouTube's embed.
   */
+  /** Seconds that Shift with left or right skips. */
+  const SKIP = 30;
   /** @type {number[]} */
   let starts = [];
   load(`/api/player/chapters?${new URLSearchParams({ v })}`).then(
@@ -51,6 +54,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   window.addEventListener("keydown", (e) => {
     const bare = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
     const chapterKey = !e.metaKey && !e.shiftKey;
+    const skip = e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey;
     const step = (/** @type {1 | -1} */ direction) => {
       const row = played.step(direction);
       if (row) location.href = linkTo(row);
@@ -58,6 +62,9 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     if (bare && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       step(e.key === "ArrowDown" ? 1 : -1);
+    } else if (skip && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+      e.preventDefault();
+      player.seek(Math.max(0, player.time() + (e.key === "ArrowRight" ? SKIP : -SKIP)));
     } else if (chapterKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
       e.preventDefault();
       const direction = e.key === "ArrowRight" ? 1 : -1;
