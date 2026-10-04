@@ -33,11 +33,12 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   document.body.append(h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column), playerBar(video)));
 
   /*
-    The player's keys. Up and down, bare: play the row above or below in the
-    column, wrapping at both ends. Left and right with Ctrl or Option: the
-    previous and next chapter, when the video lists chapters. They reach this
-    page only while it has the keyboard: after a click inside the video, keys
-    go to YouTube's embed.
+    The player's keys, all bare arrows. Up and down: play the row above or
+    below in the column, wrapping at both ends (each video resumes where this
+    window left it). Left and right: the previous and next chapter, when the
+    video lists chapters; Ctrl or Option with them does the same. They reach
+    this page only while it has the keyboard: after a click inside the video,
+    keys go to YouTube's embed.
   */
   /** @type {number[]} */
   let starts = [];
@@ -47,7 +48,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   );
   window.addEventListener("keydown", (e) => {
     const bare = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
-    const chapterKey = (e.ctrlKey || e.altKey) && !e.metaKey;
+    const chapterKey = !e.metaKey && !e.shiftKey;
     if (bare && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       const row = played.step(e.key === "ArrowDown" ? 1 : -1);
