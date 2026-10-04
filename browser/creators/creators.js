@@ -318,6 +318,30 @@ async function loadCreators() {
   await loadVideos();
 }
 
+/*
+  While a creator is picked, the up and down arrows move the pick through the
+  list, wrapping at both ends. With none picked the keys are left alone. A
+  click on empty page (not a card, a control or the sidebar) drops the pick,
+  as clicking the picked creator again does.
+*/
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
+  const { creators, selected } = state;
+  const at = creators.findIndex((c) => c.channelId === selected);
+  if (at < 0) return;
+  e.preventDefault();
+  state.selected = creators[(at + (e.key === "ArrowDown" ? 1 : -1) + creators.length) % creators.length].channelId;
+  draw();
+  rows.querySelector("li.on")?.scrollIntoView({ block: "nearest" });
+});
+document.addEventListener("click", (e) => {
+  const at = /** @type {Element} */ (e.target);
+  if (!state.selected || at.closest("aside, .card, button, a, input, label, dialog")) return;
+  state.selected = null;
+  draw();
+});
+
 window.addEventListener(CREATORS_CHANGED_EVENT, () => void loadCreators());
 onPlayerMessage((msg) => msg.type === "creators" && void loadCreators());
 
