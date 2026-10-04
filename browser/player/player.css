@@ -1,6 +1,6 @@
 /* Player window: the embedded player fills it, History beside it, the bar under it */
 .player-page { position: fixed; inset: 0; display: flex; flex-direction: column; background: #000; }
-.player-main { flex: 1; min-height: 0; display: flex; }
+.player-main { flex: 1; min-height: 0; display: flex; position: relative; }
 .player { flex: 1; width: 100%; border: 0; background: #000; }
 .player-empty { padding: 16px; }
 
@@ -42,4 +42,27 @@
   li:hover .history-remove, .history-remove:focus-visible { opacity: 1; }
   .history-remove:hover { background: var(--pick); }
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+}
+
+/* Chapters: opens over the History column, same width, so the video stays in full view */
+.chapters {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 340px; display: flex; flex-direction: column;
+  background: var(--tray); border-left: 1px solid var(--line); color: var(--fg);
+
+  header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
+  .chapters-close {
+    width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: var(--chip); color: var(--fg); font: 500 18px/1 var(--font); cursor: pointer;
+  }
+  .chapters-close:hover { background: var(--pick); color: #fff; }
+
+  ol { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 6px; }
+  li button {
+    display: flex; gap: 10px; align-items: baseline; width: 100%; padding: 8px; border: 0; border-radius: 8px;
+    background: none; color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+  }
+  li button:hover, li button:focus-visible { background: var(--chip); outline: none; }
+  /* The chapter playing: the same green as the playing row in History. */
+  li.current button { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; }
+  .chapter-time { flex: none; min-width: 44px; font: 500 12px var(--mono); color: var(--muted); }
+  .chapter-title { line-height: 1.3; }
 }

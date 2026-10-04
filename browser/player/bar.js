@@ -37,8 +37,9 @@ function setStarRemoved(id, on) {
  * youtube.com here wipes the window's name, and the next thumbnail opens a
  * second window.
  * @param {PlayerVideo} video
+ * @param {HTMLElement} [tool] A button from elsewhere on the page (Chapters) that sits in the bar, left of the star.
  */
-export function playerBar(video) {
+export function playerBar(video, tool) {
   const state = {
     creator: video.creator,
     adding: false,
@@ -128,6 +129,7 @@ export function playerBar(video) {
         "div",
         { class: "player-actions" },
         asking && h("button", { class: "link-btn", type: "button", onclick: remove }, "Also remove from Home?"),
+        tool,
         h(
           "button",
           {

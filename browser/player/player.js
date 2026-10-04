@@ -2,6 +2,7 @@ import { boot, load } from "../shared/api.js";
 import { h } from "../shared/dom.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { playerBar } from "./bar.js";
+import { chapters } from "./chapters.js";
 import { playerFrame } from "./frame.js";
 import { history, linkTo } from "./history.js";
 
@@ -29,7 +30,10 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     const next = played.ended();
     if (next) location.href = linkTo(next);
   });
-  document.body.append(h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column), playerBar(video)));
+  const listed = chapters(v, player);
+  document.body.append(
+    h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, listed.panel), playerBar(video, listed.button)),
+  );
 
   /*
     The player's keys, bare arrows only. Up and down: play the row above or
