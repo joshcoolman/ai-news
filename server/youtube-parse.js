@@ -82,23 +82,3 @@ export function ageText(publishedAt, now = Date.now()) {
     [Math.floor(minutes / 525_600), "year"];
   return `${n} ${unit}${n === 1 ? "" : "s"} ago`;
 }
-
-/**
- * The chapters a creator lists in a description: lines that open with a
- * timestamp ("1:30 The setup", "(12:05) Results"). YouTube's own rule decides
- * whether they count: the first is 0:00, there are at least three, and they
- * only go forward. Anything else is no chapters.
- * @param {string} description
- * @returns {{ start: number, title: string }[]}
- */
-export function parseChapters(description) {
-  /** @type {{ start: number, title: string }[]} */
-  const chapters = [];
-  for (const line of description.split("\n")) {
-    const m = line.match(/^\s*[-*•]?\s*[([]?(?:(\d{1,2}):)?(\d{1,2}):(\d{2})[)\]]?\s*[-–—:|]?\s*(\S.*)$/);
-    if (!m) continue;
-    chapters.push({ start: Number(m[1] ?? 0) * 3600 + Number(m[2]) * 60 + Number(m[3]), title: m[4].trim() });
-  }
-  const forward = chapters.every((c, i) => i === 0 || c.start > chapters[i - 1].start);
-  return chapters.length >= 3 && chapters[0].start === 0 && forward ? chapters : [];
-}

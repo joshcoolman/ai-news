@@ -31,7 +31,7 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 
 **Last shipped**
 - Cheaper story search: the lanes cache what they read, so each step re-reads earlier results at a tenth of the price, and a fetched page is capped at 8,000 tokens. Measured on two refreshes: $0.97 and $0.84, where the same work uncached would have cost $1.54 and $1.40. The server log line `[stories]` shows both numbers after every refresh.
-- Player power moves: shift-click a video on Home to queue it under the one playing (the card leaves Home); when a video ends, the next unwatched row plays by itself; the up and down arrows step through the History column, wrapping at both ends; left and right jump between a video's chapters, then on to the previous or next video.
+- Player power moves: shift-click a video on Home to queue it under the one playing (the card leaves Home); when a video ends, the next unwatched row plays by itself; up and down arrows step through the History column, wrapping at both ends; left and right skip 10 seconds.
 - No frameworks, no runtime dependencies, no build (#21): Next, React, zod, the Anthropic SDK and vitest are gone. `server.js` + `routes.js` + `server/` serve plain pages from `browser/`. Keys come from `.env.local`, or from the browser when the server has none (Add your keys; Delete keys in Settings). `pnpm check` and `pnpm test` are the gate.
 - YouTube comes from the official Data API (#21 stage 1): `YOUTUBE_API_KEY` is now required. Creator lists have exact dates and full descriptions; `youtubei.js` and the RSS feed are gone. A search costs 100 of the day's 10,000 units, everything else 1.
 - Card dates read as an age while recent ("9 hours ago", "2 days ago", up to 28 days), then the date.

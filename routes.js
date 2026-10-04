@@ -2,7 +2,7 @@ import { keySources, MissingKeyError } from "./server/keys.js";
 import { mutate, read } from "./server/store.js";
 import { buildFeed, favoriteCards } from "./server/feed/cards.js";
 import { favoriteCopy } from "./server/feed/rules.js";
-import { keyWorks as youtubeKeyWorks, resolveCreator, UserInputError, videoChapters } from "./server/youtube.js";
+import { keyWorks as youtubeKeyWorks, resolveCreator, UserInputError } from "./server/youtube.js";
 import { keyWorks as claudeKeyWorks } from "./server/ai/client.js";
 import { grabRecent } from "./server/creators/grab.js";
 import { recentVideos } from "./server/creators/recent.js";
@@ -63,7 +63,6 @@ export const routes = [
   ["PATCH", "/api/settings", editSettings],
 
   ["GET", "/api/player/video", playerInfo],
-  ["GET", "/api/player/chapters", playerChapters],
   ["POST", "/api/player/favorite", playerFavorite],
 ];
 
@@ -382,14 +381,6 @@ async function playerInfo({ query }) {
   const v = query.get("v") ?? "";
   if (!/^[A-Za-z0-9_-]{11}$/.test(v)) return fail("Missing video id.", 400);
   return json(await playerVideo(v, query.get("t") ?? ""));
-}
-
-/** The chapters of the video playing, for the chapter keys: `?v=<video id>`. None is an empty list, and so is a failed lookup. */
-/** @param {Ctx} ctx */
-async function playerChapters({ query }) {
-  const v = query.get("v") ?? "";
-  if (!/^[A-Za-z0-9_-]{11}$/.test(v)) return fail("Missing video id.", 400);
-  return orFail("Could not read chapters.", 502, async () => json({ chapters: await videoChapters(v) }));
 }
 
 /** Favorite the video playing in the player window, by video id (Creators-page videos have no card). */

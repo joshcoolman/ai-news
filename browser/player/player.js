@@ -2,7 +2,6 @@ import { boot, load } from "../shared/api.js";
 import { h } from "../shared/dom.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { playerBar } from "./bar.js";
-import { chapterTarget } from "./chapters.js";
 import { playerFrame } from "./frame.js";
 import { history, linkTo } from "./history.js";
 
@@ -33,44 +32,22 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   document.body.append(h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column), playerBar(video)));
 
   /*
-    The player's keys, all bare arrows. Up and down: play the row above or
+    The player's keys, bare arrows only. Up and down: play the row above or
     below in the column, wrapping at both ends (each video resumes where this
-    window left it). Left and right: the previous and next chapter, and past
-    the first or last chapter, the previous or next video, so one key powers
-    through chapters and videos alike; a video with no chapters is one
-    chapter. Ctrl or Option with left and right does the same. Shift with left
-    and right skips 30 seconds back or forward. They reach
+    window left it). Left and right: back or forward 10 seconds. They reach
     this page only while it has the keyboard: after a click inside the video,
     keys go to YouTube's embed.
   */
-  /** Seconds that Shift with left or right skips. */
-  const SKIP = 30;
-  /** @type {number[]} */
-  let starts = [];
-  load(`/api/player/chapters?${new URLSearchParams({ v })}`).then(
-    (found) => (starts = found.chapters.map((/** @type {{ start: number }} */ c) => c.start)),
-    () => {},
-  );
+  const SKIP = 10;
   window.addEventListener("keydown", (e) => {
-    const bare = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
-    const chapterKey = !e.metaKey && !e.shiftKey;
-    const skip = e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey;
-    const step = (/** @type {1 | -1} */ direction) => {
-      const row = played.step(direction);
-      if (row) location.href = linkTo(row);
-    };
-    if (bare && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+    if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      step(e.key === "ArrowDown" ? 1 : -1);
-    } else if (skip && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+      const row = played.step(e.key === "ArrowDown" ? 1 : -1);
+      if (row) location.href = linkTo(row);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
       player.seek(Math.max(0, player.time() + (e.key === "ArrowRight" ? SKIP : -SKIP)));
-    } else if (chapterKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
-      e.preventDefault();
-      const direction = e.key === "ArrowRight" ? 1 : -1;
-      const target = chapterTarget(starts, player.time(), direction);
-      if (target === undefined) step(direction);
-      else player.seek(target);
     }
   });
 
