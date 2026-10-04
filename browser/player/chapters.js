@@ -16,7 +16,8 @@ function clock(seconds) {
  * a panel that opens over the History column, so the video stays in full view.
  * Picking a chapter jumps there and leaves the panel open, because looking for
  * the right spot usually takes a few tries. While it is open, the up and down
- * keys walk the chapters (`step`). The ×, Escape, the button again, or a click
+ * keys walk the chapters (`step`). The C key does what the button does. The ×,
+ * Escape, the button or C again, or a click
  * anywhere else (the video included) closes it. The button stays hidden when
  * the video has no chapters.
  * @param {string} videoId
@@ -35,7 +36,7 @@ export function chapters(videoId, player) {
     h("header", {}, h("span", {}, "Chapters"), h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close chapters", title: "Close" }, "×")),
     rows,
   );
-  const button = h("button", { class: "btn", type: "button", hidden: true, "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Chapters");
+  const button = h("button", { class: "btn", type: "button", hidden: true, title: "Chapters (C)", "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Chapters");
 
   /** Which chapter is playing, by its place in the list. */
   const playing = () => Math.max(0, list.findLastIndex((c) => c.start <= player.time()));
@@ -91,7 +92,12 @@ export function chapters(videoId, player) {
     if (!panel.hidden && !panel.contains(at) && !button.contains(at)) open(false);
   });
   window.addEventListener("blur", () => setTimeout(() => document.activeElement === player.frame && open(false)));
-  window.addEventListener("keydown", (e) => e.key === "Escape" && open(false));
+  // Escape closes; C opens and closes, and does nothing for a video without chapters.
+  window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key === "Escape") open(false);
+    else if (e.key.toLowerCase() === "c" && list.length) open(panel.hidden !== false);
+  });
 
   return {
     button,
