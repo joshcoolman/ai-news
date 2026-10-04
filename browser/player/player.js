@@ -38,7 +38,8 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   /*
     The player's keys, bare arrows only. Up and down: play the row above or
     below in the column, wrapping at both ends (each video resumes where this
-    window left it). Left and right: back or forward 10 seconds. They reach
+    window left it); while the Chapters list is open they walk the chapters
+    instead. Left and right: back or forward 10 seconds. They reach
     this page only while it has the keyboard: after a click inside the video,
     keys go to YouTube's embed.
   */
@@ -47,7 +48,9 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      const row = played.step(e.key === "ArrowDown" ? 1 : -1);
+      const direction = e.key === "ArrowDown" ? 1 : -1;
+      if (listed.step(direction)) return;
+      const row = played.step(direction);
       if (row) location.href = linkTo(row);
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();

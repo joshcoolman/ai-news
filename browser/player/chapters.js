@@ -15,9 +15,10 @@ function clock(seconds) {
  * Chapters, for a video whose description lists them: a button for the bar and
  * a panel that opens over the History column, so the video stays in full view.
  * Picking a chapter jumps there and leaves the panel open, because looking for
- * the right spot usually takes a few tries. The ×, Escape, the button again, or
- * a click anywhere else (the video included) closes it. The button stays
- * hidden when the video has no chapters.
+ * the right spot usually takes a few tries. While it is open, the up and down
+ * keys walk the chapters (`step`). The ×, Escape, the button again, or a click
+ * anywhere else (the video included) closes it. The button stays hidden when
+ * the video has no chapters.
  * @param {string} videoId
  * @param {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void }} player
  */
@@ -36,11 +37,13 @@ export function chapters(videoId, player) {
   );
   const button = h("button", { class: "btn", type: "button", hidden: true, "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Chapters");
 
+  /** Which chapter is playing, by its place in the list. */
+  const playing = () => Math.max(0, list.findLastIndex((c) => c.start <= player.time()));
+
   /** Mark the chapter that is playing. */
   function mark() {
-    const time = player.time();
-    const playing = list.findLast((c) => c.start <= time) ?? list[0];
-    list.forEach((c, i) => rows.children[i]?.classList.toggle("current", c === playing));
+    const at = playing();
+    list.forEach((_, i) => rows.children[i]?.classList.toggle("current", i === at));
   }
 
   function open(/** @type {boolean} */ on) {
@@ -90,5 +93,23 @@ export function chapters(videoId, player) {
   window.addEventListener("blur", () => setTimeout(() => document.activeElement === player.frame && open(false)));
   window.addEventListener("keydown", (e) => e.key === "Escape" && open(false));
 
-  return { button, panel };
+  return {
+    button,
+    panel,
+    /**
+     * Move to the chapter above or below the one playing. False when the list
+     * is closed, so the key keeps its usual meaning; at either end it stays put.
+     * @param {1 | -1} direction
+     */
+    step(direction) {
+      if (panel.hidden) return false;
+      const next = list[playing() + direction];
+      if (next) {
+        player.seek(next.start);
+        mark();
+        rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+      }
+      return true;
+    },
+  };
 }
