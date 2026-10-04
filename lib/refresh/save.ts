@@ -82,7 +82,7 @@ export function videoItem(
   };
 }
 
-/** Durations are not in the feed XML. Fill them in afterwards (feed or Favorites); never block a refresh on it. */
+/** A channel's video list carries no durations. Fill them in afterwards (feed or Favorites); never block a refresh on it. */
 export async function fillDurations(items: Item[]) {
   const todo = items.filter((i): i is VideoItem => i.kind === "video" && !i.duration);
   for (let n = 0; n < todo.length; n += 4) {
