@@ -4,6 +4,8 @@ A small web app that replaces a morning scroll through YouTube and X: one finite
 
 It is also an experiment in building without frameworks (#21): a Node server and plain HTML, JS and CSS, with no runtime dependencies and no build step. `package.json`, `server.js` and `routes.js` are the three files to read first.
 
+![The Creators page: recent videos from the creators you follow, grouped by topic](docs/screenshots/creators.png)
+
 - The spec is issue #1.
 - `docs/reference/prototype.html` is the working prototype of the feed page. Open it in a browser; it is the look and behaviour to match.
 
