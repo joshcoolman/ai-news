@@ -48,3 +48,23 @@ export function parseYouTubeUrl(input: string): ParsedYouTubeUrl | null {
 function video(videoId: string): ParsedYouTubeUrl {
   return { kind: "video", videoId, url: `https://www.youtube.com/watch?v=${videoId}` };
 }
+
+/** Seconds in an ISO 8601 duration ("PT1H2M3S"), or undefined for none, zero (a live stream) or anything unreadable. */
+export function isoDurationSeconds(iso: string | undefined): number | undefined {
+  const m = iso?.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);
+  if (!m) return undefined;
+  const [d, h, min, s] = m.slice(1).map((n) => Number(n ?? 0));
+  return d * 86_400 + h * 3600 + min * 60 + s || undefined;
+}
+
+/** "3 days ago" for a publish time. */
+export function ageText(publishedAt: string, now = Date.now()): string {
+  const minutes = Math.max(0, Math.floor((now - Date.parse(publishedAt)) / 60_000));
+  const [n, unit] =
+    minutes < 60 ? [minutes, "minute"] :
+    minutes < 1440 ? [Math.floor(minutes / 60), "hour"] :
+    minutes < 43_200 ? [Math.floor(minutes / 1440), "day"] :
+    minutes < 525_600 ? [Math.floor(minutes / 43_200), "month"] :
+    [Math.floor(minutes / 525_600), "year"];
+  return `${n} ${unit}${n === 1 ? "" : "s"} ago`;
+}

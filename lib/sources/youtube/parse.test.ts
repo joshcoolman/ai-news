@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseYouTubeUrl } from "./parse";
+import { ageText, isoDurationSeconds, parseYouTubeUrl } from "./parse";
 
 describe("parseYouTubeUrl", () => {
   it.each([
@@ -44,5 +44,34 @@ describe("parseYouTubeUrl", () => {
     "https://notyoutube.com/@someone",
   ])("rejects %j", (input) => {
     expect(parseYouTubeUrl(input)).toBeNull();
+  });
+});
+
+describe("isoDurationSeconds", () => {
+  it.each([
+    ["PT10M1S", 601],
+    ["PT56M43S", 3403],
+    ["PT1H2M3S", 3723],
+    ["PT45S", 45],
+    ["P1DT1H", 90_000],
+  ])("reads %s", (iso, seconds) => {
+    expect(isoDurationSeconds(iso)).toBe(seconds);
+  });
+
+  it.each([["P0D"], ["PT0S"], [""], [undefined], ["10:01"]])("has no length for %s", (iso) => {
+    expect(isoDurationSeconds(iso)).toBeUndefined();
+  });
+});
+
+describe("ageText", () => {
+  const now = Date.parse("2026-10-04T12:00:00Z");
+  it.each([
+    ["2026-10-04T11:59:00Z", "1 minute ago"],
+    ["2026-10-04T03:00:00Z", "9 hours ago"],
+    ["2026-10-01T12:00:00Z", "3 days ago"],
+    ["2026-08-01T12:00:00Z", "2 months ago"],
+    ["2024-10-01T12:00:00Z", "2 years ago"],
+  ])("%s reads %s", (at, text) => {
+    expect(ageText(at, now)).toBe(text);
   });
 });

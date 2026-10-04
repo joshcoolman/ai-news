@@ -2,7 +2,7 @@
 
 ## Rules
 
-1. **The outside world goes through one module each:** YouTube `lib/sources/youtube/`, data `lib/store/`, models `lib/ai/`. Scraping breaks without notice; the store and the model provider are meant to be swappable.
+1. **The outside world goes through one module each:** YouTube `lib/sources/youtube/`, data `lib/store/`, models `lib/ai/`. The YouTube module leans on two undocumented playlist ids (its header says which); the store and the model provider are meant to be swappable.
 2. **Every prompt is a file in `prompts/`,** loaded at call time by `lib/ai/prompts.ts`. Guidance is passed word for word, never rewritten into rules.
 3. **Rules that could silently corrupt the feed stay pure and tested** (`lib/feed/rules.ts`, `lib/refresh/live.ts`).
 4. **Server modules start with `import "server-only"`,** so a browser import is a build error, not a leaked API key. Browser code imports from them with `import type` only.
