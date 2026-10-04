@@ -1,23 +1,122 @@
-/*
-  Where a chapter key lands. Pure, so it is tested directly.
-*/
+import { load } from "../shared/api.js";
+import { h } from "../shared/dom.js";
 
-/** How far into a chapter "previous" still means the chapter before, not the start of this one. */
-const GRACE = 3;
+/** @typedef {{ start: number, title: string }} Chapter */
+
+/** @param {number} seconds */
+function clock(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = String(seconds % 60).padStart(2, "0");
+  return hours ? `${hours}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
 
 /**
- * The time to jump to, or undefined when the key runs off the end of the
- * video: forward from the last chapter, back from the first. The player then
- * moves to the next or previous video, so the same two keys walk chapters and
- * videos alike. Forward is the next chapter's start. Back is the start of the
- * chapter playing, or of the one before when it has only just begun (the way a
- * music player's back button works). A video with no chapters is one chapter.
- * @param {number[]} starts Chapter start times in seconds, ascending, the first 0. Empty for no chapters.
- * @param {number} time
- * @param {1 | -1} direction
+ * Chapters, for a video whose description lists them: a button for the bar and
+ * a panel that opens over the History column, so the video stays in full view.
+ * Picking a chapter jumps there and leaves the panel open, because looking for
+ * the right spot usually takes a few tries. While it is open, the up and down
+ * keys walk the chapters (`step`). The C key does what the button does. The ×,
+ * Escape, the button or C again, or a click
+ * anywhere else (the video included) closes it. The button stays hidden when
+ * the video has no chapters.
+ * @param {string} videoId
+ * @param {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void }} player
  */
-export function chapterTarget(starts, time, direction) {
-  if (direction === 1) return starts.find((s) => s > time);
-  if (starts.length < 2 || time < starts[1]) return undefined;
-  return starts.findLast((s) => s <= time - GRACE) ?? starts[0];
+export function chapters(videoId, player) {
+  /** @type {Chapter[]} */
+  let list = [];
+  /** @type {ReturnType<typeof setInterval> | undefined} */
+  let ticking;
+
+  const rows = h("ol", {});
+  const panel = h(
+    "aside",
+    { class: "chapters", hidden: true, "aria-label": "Chapters" },
+    h("header", {}, h("span", {}, "Chapters"), h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close chapters", title: "Close" }, "×")),
+    rows,
+  );
+  const button = h("button", { class: "btn", type: "button", hidden: true, title: "Chapters (C)", "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Chapters");
+
+  /** Which chapter is playing, by its place in the list. */
+  const playing = () => Math.max(0, list.findLastIndex((c) => c.start <= player.time()));
+
+  /** Mark the chapter that is playing. */
+  function mark() {
+    const at = playing();
+    list.forEach((_, i) => rows.children[i]?.classList.toggle("current", i === at));
+  }
+
+  function open(/** @type {boolean} */ on) {
+    panel.hidden = !on;
+    button.setAttribute("aria-expanded", String(on));
+    clearInterval(ticking);
+    if (!on) return;
+    mark();
+    ticking = setInterval(mark, 500);
+    rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+  }
+
+  load(`/api/player/chapters?${new URLSearchParams({ v: videoId })}`).then(
+    (found) => {
+      list = found.chapters;
+      if (!list.length) return;
+      rows.replaceChildren(
+        ...list.map((c) =>
+          h(
+            "li",
+            {},
+            h(
+              "button",
+              {
+                type: "button",
+                onclick: () => {
+                  player.seek(c.start);
+                  mark();
+                },
+              },
+              h("span", { class: "chapter-time" }, clock(c.start)),
+              h("span", { class: "chapter-title" }, c.title),
+            ),
+          ),
+        ),
+      );
+      button.hidden = false;
+    },
+    () => {},
+  );
+
+  // Clicking off closes it. A click on the video never reaches this page; the page losing the keyboard to the video is how it shows.
+  document.addEventListener("pointerdown", (e) => {
+    const at = /** @type {Node} */ (e.target);
+    if (!panel.hidden && !panel.contains(at) && !button.contains(at)) open(false);
+  });
+  window.addEventListener("blur", () => setTimeout(() => document.activeElement === player.frame && open(false)));
+  // Escape closes; C opens and closes, and does nothing for a video without chapters.
+  window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key === "Escape") open(false);
+    // Not while the key repeats: holding C down would flick the list open and shut.
+    else if (e.key.toLowerCase() === "c" && !e.repeat && list.length) open(panel.hidden !== false);
+  });
+
+  return {
+    button,
+    panel,
+    /**
+     * Move to the chapter above or below the one playing. False when the list
+     * is closed, so the key keeps its usual meaning; at either end it stays put.
+     * @param {1 | -1} direction
+     */
+    step(direction) {
+      if (panel.hidden) return false;
+      const next = list[playing() + direction];
+      if (next) {
+        player.seek(next.start);
+        mark();
+        rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+      }
+      return true;
+    },
+  };
 }

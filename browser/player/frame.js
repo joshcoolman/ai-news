@@ -6,6 +6,8 @@ const YOUTUBE = "https://www.youtube.com";
 const PLAYING = 1;
 const PAUSED = 2;
 const ENDED = 0;
+/** How long after a jump to distrust a reported time that is not near where the jump went. */
+const SETTLE = 1500;
 
 /**
  * YouTube's embedded player, started where this window left the video. The
@@ -33,6 +35,8 @@ export function playerFrame(videoId, title, onEnded) {
   let ended = false;
   let state = -1;
   let time = 0;
+  /** When `seek` last jumped. For a moment afterwards the embed still reports the old position. */
+  let soughtAt = 0;
   let duration = 0;
   /** @type {number | undefined} */
   let saved;
@@ -66,7 +70,8 @@ export function playerFrame(videoId, title, onEnded) {
     if (state === PLAYING) ended = false;
     // Times reported before playback starts are 0 and would wipe the saved position.
     if (typeof info.currentTime !== "number" || (state !== PLAYING && state !== PAUSED)) return;
-    time = info.currentTime;
+    // A report from before the jump landed would send the next key press off from the wrong place.
+    if (Date.now() - soughtAt > SETTLE || Math.abs(info.currentTime - time) < 2) time = info.currentTime;
     const point = resumePoint(info.currentTime, duration);
     if (point === saved) return;
     setPosition(videoId, (saved = point));
@@ -77,6 +82,7 @@ export function playerFrame(videoId, title, onEnded) {
     time: () => time,
     seek(seconds) {
       time = seconds;
+      soughtAt = Date.now();
       frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [seconds, true] }), YOUTUBE);
     },
   };
