@@ -96,7 +96,8 @@ export function chapters(videoId, player) {
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
     if (e.key === "Escape") open(false);
-    else if (e.key.toLowerCase() === "c" && list.length) open(panel.hidden !== false);
+    // Not while the key repeats: holding C down would flick the list open and shut.
+    else if (e.key.toLowerCase() === "c" && !e.repeat && list.length) open(panel.hidden !== false);
   });
 
   return {
