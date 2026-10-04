@@ -13,8 +13,11 @@ const ENDED = 0;
  * protocol YouTube's own iframe API speaks), so no script from YouTube loads.
  * @param {string} videoId
  * @param {string} title
+ * @param {() => void} onEnded Called once each time the video plays through to its end.
+ * @returns {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void }}
+ *   `time` is where playback is, as last reported; `seek` jumps there.
  */
-export function playerFrame(videoId, title) {
+export function playerFrame(videoId, title, onEnded) {
   const params = new URLSearchParams({ autoplay: "1", enablejsapi: "1", origin: location.origin });
   const start = positions()[videoId];
   if (start) params.set("start", String(start));
@@ -27,7 +30,9 @@ export function playerFrame(videoId, title) {
   });
 
   let heard = false;
+  let ended = false;
   let state = -1;
+  let time = 0;
   let duration = 0;
   /** @type {number | undefined} */
   let saved;
@@ -51,13 +56,28 @@ export function playerFrame(videoId, title) {
     if (!info) return;
     if (typeof info.playerState === "number") state = info.playerState;
     if (typeof info.duration === "number") duration = info.duration;
-    if (state === ENDED) return setPosition(videoId, (saved = undefined));
+    if (state === ENDED) {
+      setPosition(videoId, (saved = undefined));
+      // The embed reports the end more than once.
+      if (!ended) onEnded();
+      ended = true;
+      return;
+    }
+    if (state === PLAYING) ended = false;
     // Times reported before playback starts are 0 and would wipe the saved position.
     if (typeof info.currentTime !== "number" || (state !== PLAYING && state !== PAUSED)) return;
+    time = info.currentTime;
     const point = resumePoint(info.currentTime, duration);
     if (point === saved) return;
     setPosition(videoId, (saved = point));
   });
 
-  return frame;
+  return {
+    frame,
+    time: () => time,
+    seek(seconds) {
+      time = seconds;
+      frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [seconds, true] }), YOUTUBE);
+    },
+  };
 }
