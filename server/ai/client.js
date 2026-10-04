@@ -84,6 +84,19 @@ async function post(body, signal) {
 
 class ClaudeError extends Error {}
 
+/** Whether the key in use is accepted: lists one model, which costs nothing. */
+export async function keyWorks() {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/models?limit=1", {
+      headers: { "x-api-key": key("anthropic"), "anthropic-version": "2023-06-01" },
+      signal: AbortSignal.timeout(15_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** @param {ContentBlock[]} content */
 export function textOf(content) {
   return content

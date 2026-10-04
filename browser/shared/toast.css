@@ -1,0 +1,20 @@
+.toast-wrap { position: fixed; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; pointer-events: none; z-index: 20; }
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 24px; padding: 12px 22px;
+  background: #c6ff3d; color: #101010; font: inherit; font-size: 15px; font-weight: 700;
+  box-shadow: 0 0 0 2px #101010, 0 0 22px 4px rgba(198, 255, 61, .65), 0 10px 30px rgba(0,0,0,.4);
+  animation: toast-in .55s cubic-bezier(.3, 1.6, .5, 1) both, toast-glow 1.6s ease-in-out .55s 3;
+
+  &.busy { animation: toast-in .4s ease-out both; }
+  &.busy .pulse { background: #101010; }
+  &.done { cursor: pointer; }
+  &.done:hover { filter: brightness(1.08); }
+  &.info { animation: toast-in .4s ease-out both; }
+  &.error {
+    background: #ff5d5d; color: #101010;
+    box-shadow: 0 0 0 2px #101010, 0 0 22px 4px rgba(255, 93, 93, .6), 0 10px 30px rgba(0,0,0,.4);
+    animation: toast-in .55s cubic-bezier(.3, 1.6, .5, 1) both;
+  }
+}
+@keyframes toast-in { from { transform: translateY(40px) scale(.85); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+@keyframes toast-glow { 50% { box-shadow: 0 0 0 2px #101010, 0 0 34px 10px rgba(198, 255, 61, .9), 0 10px 30px rgba(0,0,0,.4); } }

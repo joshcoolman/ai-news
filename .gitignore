@@ -1,7 +1,5 @@
 node_modules/
-.next/
 .env*
 !.env.example
 data/
 .DS_Store
-*.tsbuildinfo

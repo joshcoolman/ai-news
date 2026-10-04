@@ -1,0 +1,8 @@
+.setting {
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+
+  legend { padding: 0 6px; font-size: 14px; }
+  .btn { align-self: flex-start; }
+  p { margin: 0; font-size: 13px; color: var(--muted); }
+}
+.setting + .setting { margin-top: 14px; }

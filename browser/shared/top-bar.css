@@ -1,0 +1,26 @@
+/* Header */
+.top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 14px;
+
+  nav { display: flex; align-items: center; gap: 10px; }
+  nav.end { margin-left: auto; }
+  .divider { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a:hover, nav a[aria-current="page"] { color: var(--fg); }
+  nav a.icon-btn, nav a.icon-btn:hover, nav a.icon-btn[aria-current="page"] { color: #fff; }
+}
+
+/* Search: a circle that opens into the input in place */
+.search-pill {
+  display: flex; align-items: center; width: 36px; height: 36px; border-radius: 18px; overflow: hidden; flex: none;
+  background: #3a3a3c; transition: width .22s cubic-bezier(.2, .8, .2, 1);
+
+  &.open { width: min(320px, calc(100vw - 32px)); }
+  .icon-btn { background: transparent; }
+  input {
+    flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; color: #fff; font-size: 14px; padding: 0 14px 0 0; opacity: 0;
+  }
+  &.open input { opacity: 1; }
+  input::placeholder { color: #a8a8ad; }
+  input:focus { outline: none; }
+}
