@@ -7,7 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "vitest run"
+    "test": "vitest run",
+    "server": "node server.js",
+    "check": "tsc -p jsconfig.json",
+    "test:server": "node --test \"test/*.test.js\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
