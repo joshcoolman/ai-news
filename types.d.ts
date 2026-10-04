@@ -132,7 +132,8 @@ type ParsedYouTubeUrl =
 
 type KeyName = "anthropic" | "youtube";
 
-type Usage = { input: number; output: number; searches: number; fetches: number };
+/** Tokens by how they are billed: `input` is read fresh, `cacheWrite` is read and stored, `cacheRead` is served from the cache. */
+type Usage = { input: number; cacheWrite: number; cacheRead: number; output: number; searches: number; fetches: number };
 
 /** One block of a Claude message, as the API sends it. Read by `type`; the rest varies. */
 type ContentBlock = { type: string; [field: string]: any };
@@ -143,6 +144,7 @@ type ClaudeMessage = {
   usage: {
     input_tokens?: number;
     output_tokens?: number;
+    cache_creation_input_tokens?: number;
     cache_read_input_tokens?: number;
     server_tool_use?: { web_search_requests?: number; web_fetch_requests?: number };
   };
