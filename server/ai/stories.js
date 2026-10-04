@@ -18,6 +18,8 @@ const StoryShape = obj({
 
 const SEARCHES_PER_LANE = 4;
 const MAX_CONTINUATIONS = 8;
+/** The most of one fetched page a lane reads: about 6,000 words. */
+const FETCH_TOKENS = 8000;
 
 /**
  * The user turn for the planner and every lane.
@@ -80,13 +82,22 @@ export async function runLane(lane, others, input, events, signal) {
       {
         model: STORIES_MODEL,
         max_tokens: 32000,
+        /*
+          A lane is a loop: after every search the model reads everything so
+          far again. With caching on, each step stores what it read and the
+          next step reads it back at a tenth of the price; the API adds the
+          storing points after each tool result by itself. Measured on
+          2026-10-04, this is most of what a refresh costs.
+        */
+        cache_control: { type: "ephemeral" },
         system,
         messages,
         output_config: { format: { type: "json_schema", schema: obj({ stories: { ...arr(StoryShape), description: `At most ${STORIES_PER_LANE}.` } }) } },
         tools: [
           // The plain tool versions: the dynamic-filtering ones add code-execution round trips to every search.
           { type: "web_search_20250305", name: "web_search", max_uses: SEARCHES_PER_LANE },
-          { type: "web_fetch_20250910", name: "web_fetch", max_uses: 6 },
+          // A page is read to confirm what a thing is and who made it, which its opening says; the cap keeps one long page from costing as much as several searches.
+          { type: "web_fetch_20250910", name: "web_fetch", max_uses: 6, max_content_tokens: FETCH_TOKENS },
         ],
       },
       (block) => {
@@ -97,7 +108,9 @@ export async function runLane(lane, others, input, events, signal) {
     );
     final = message;
     events.onUsage({
-      input: (message.usage.input_tokens ?? 0) + (message.usage.cache_read_input_tokens ?? 0),
+      input: message.usage.input_tokens ?? 0,
+      cacheWrite: message.usage.cache_creation_input_tokens ?? 0,
+      cacheRead: message.usage.cache_read_input_tokens ?? 0,
       output: message.usage.output_tokens ?? 0,
       searches: message.usage.server_tool_use?.web_search_requests ?? 0,
       fetches: message.usage.server_tool_use?.web_fetch_requests ?? 0,

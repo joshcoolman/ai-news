@@ -17,14 +17,16 @@ export const STORIES_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 /** The small calls: the lane planner, the creator-video filter and the two "more like this" steps. */
 export const SMALL_MODEL = "claude-haiku-4-5-20251001";
 
-/** Dollars per million tokens, [input, output]. */
-/** @type {Record<string, [number, number]>} */
+/** Dollars per million tokens, [input, output, input read from the cache]. */
+/** @type {Record<string, [number, number, number]>} */
 const PRICES = {
-  "claude-fable-5-1": [10, 50],
-  "claude-opus-5-5": [4, 20],
-  "claude-sonnet-5-5": [2, 10],
-  "claude-haiku-4-5-20251001": [1, 5],
+  "claude-fable-5-1": [10, 50, 0.25],
+  "claude-opus-5-5": [4, 20, 0.2],
+  "claude-sonnet-5-5": [2, 10, 0.2],
+  "claude-haiku-4-5-20251001": [1, 5, 0.1],
 };
+/** Storing input in the cache (for five minutes) costs this much more than reading it fresh. */
+const CACHE_WRITE = 1.25;
 
 /**
  * Rough spend from usage. Web search is billed per search on top of tokens.
@@ -32,8 +34,18 @@ const PRICES = {
  * @param {Usage} u
  */
 export function estimateCost(model, u) {
-  const [inPrice, outPrice] = PRICES[model] ?? PRICES["claude-fable-5-1"];
-  return (u.input * inPrice + u.output * outPrice) / 1_000_000 + u.searches * 0.01;
+  const [inPrice, outPrice, readPrice] = PRICES[model] ?? PRICES["claude-fable-5-1"];
+  const tokens = u.input * inPrice + u.cacheWrite * inPrice * CACHE_WRITE + u.cacheRead * readPrice + u.output * outPrice;
+  return tokens / 1_000_000 + u.searches * 0.01;
+}
+
+/**
+ * What the same usage would have cost with nothing cached: the number that says what caching saved.
+ * @param {string} model
+ * @param {Usage} u
+ */
+export function uncachedCost(model, u) {
+  return estimateCost(model, { ...u, input: u.input + u.cacheWrite + u.cacheRead, cacheWrite: 0, cacheRead: 0 });
 }
 
 /* JSON Schema for structured output, where every object is closed and every property required. */

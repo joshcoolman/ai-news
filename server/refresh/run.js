@@ -2,7 +2,7 @@ import { read } from "../store.js";
 import { maxBatch, playable, withinDays } from "../feed/rules.js";
 import { toCard } from "../feed/cards.js";
 import { listChannelVideos } from "../youtube.js";
-import { estimateCost, STORIES_MODEL } from "../ai/client.js";
+import { estimateCost, STORIES_MODEL, uncachedCost } from "../ai/client.js";
 import { filterVideos } from "../ai/filter.js";
 import { planLanes, runLane } from "../ai/stories.js";
 import { STORIES_PER_LANE } from "./events.js";
@@ -74,7 +74,7 @@ export function startRefresh() {
 async function run(emit, signal) {
   const started = Date.now();
   /** @type {Totals} */
-  const totals = { videos: 0, stories: 0, usage: { input: 0, output: 0, searches: 0, fetches: 0 } };
+  const totals = { videos: 0, stories: 0, usage: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0, searches: 0, fetches: 0 } };
   /** @type {string[]} */
   const failed = [];
   const finish = (/** @type {string} */ error) =>
@@ -218,6 +218,8 @@ async function runStories(batch, input, emit, signal, totals) {
             onUsage: (u) => {
               const t = totals.usage;
               t.input += u.input;
+              t.cacheWrite += u.cacheWrite;
+              t.cacheRead += u.cacheRead;
               t.output += u.output;
               t.searches += u.searches;
               t.fetches += u.fetches;
@@ -241,7 +243,8 @@ async function runStories(batch, input, emit, signal, totals) {
   );
   const u = totals.usage;
   console.log(
-    `[stories] model=${STORIES_MODEL} input=${u.input} output=${u.output} searches=${u.searches} fetches=${u.fetches} ~$${estimateCost(STORIES_MODEL, u).toFixed(2)}`,
+    `[stories] model=${STORIES_MODEL} input=${u.input} cache-write=${u.cacheWrite} cache-read=${u.cacheRead} output=${u.output} searches=${u.searches} fetches=${u.fetches} ` +
+      `~$${estimateCost(STORIES_MODEL, u).toFixed(2)} (uncached it would be ~$${uncachedCost(STORIES_MODEL, u).toFixed(2)})`,
   );
 }
 
