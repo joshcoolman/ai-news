@@ -36,14 +36,14 @@ export function nextUp(list, playingId, finished) {
 
 /**
  * The row above or below the playing video, for stepping through the column
- * by key. It wraps: down from the last row is the first, up from the first is
- * the last. Nothing when the playing video is the only row.
+ * by key. The column has a fixed center and the list slides under it, so the
+ * ends are ends: nothing from the last row down or the first row up.
  * @param {Entry[]} list
  * @param {string} playingId
  * @param {1 | -1} direction 1 is down the column.
  */
 export function neighbor(list, playingId, direction) {
   const at = list.findIndex((e) => e.videoId === playingId);
-  if (at < 0 || list.length < 2) return undefined;
-  return list[(at + direction + list.length) % list.length];
+  if (at < 0) return undefined;
+  return list[at + direction];
 }

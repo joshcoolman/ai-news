@@ -34,12 +34,15 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   document.body.append(
     h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, listed.panel), playerBar(video, listed.button)),
   );
+  played.center();
 
   /*
-    The player's keys, bare arrows only. Up and down: play the row above or
-    below in the column, wrapping at both ends (each video resumes where this
+    The player's keys, bare arrows and Delete. Up and down: play the row above
+    or below in the column, stopping at its ends (each video resumes where this
     window left it); while the Chapters list is open they walk the chapters
-    instead. Left and right: back or forward 10 seconds. They reach
+    instead. Left and right: back or forward 10 seconds. Delete (Backspace on a
+    Mac keyboard, or forward Delete): remove the playing row, as its × does,
+    and move on to the row below. They reach
     this page only while it has the keyboard: after a click inside the video,
     keys go to YouTube's embed.
   */
@@ -55,6 +58,9 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
       player.seek(Math.max(0, player.time() + (e.key === "ArrowRight" ? SKIP : -SKIP)));
+    } else if (e.key === "Backspace" || e.key === "Delete") {
+      e.preventDefault();
+      played.removeCurrent();
     }
   });
 

@@ -99,13 +99,14 @@ export function history(video) {
     location.replace(next ? linkTo(next) : "/player");
   };
 
-  const draw = () =>
+  const draw = () => {
     column.replaceChildren(
       ...list.map((e) => {
         const current = e.videoId === video.videoId;
         return h(
           "li",
-          {},
+          // Named so the view transition can morph each row from where it was to where it is across the page load a step makes.
+          { style: `view-transition-name: h-${e.videoId}` },
           h(
             "a",
             { class: current ? "current" : undefined, href: linkTo(e), "aria-current": current ? "true" : undefined },
@@ -116,10 +117,19 @@ export function history(video) {
         );
       }),
     );
+    center();
+  };
+  // The playing row sits at the column's vertical middle: the column is padded half its height at both ends so the first and last rows get there too.
+  // A cut while the column is not on the page yet (the page just loaded; the caller centers once it is), a slide when the list changes in place.
+  const center = () => {
+    column.querySelector("a.current")?.scrollIntoView({ block: "center", behavior: column.isConnected ? "smooth" : "instant" });
+  };
   draw();
 
   return {
     column,
+    /** Scroll the playing row to the middle; call once the column is on the page. */
+    center,
     /** @param {Entry} entry */
     queue(entry) {
       list = queueAfter(list, video.videoId, entry).slice(0, CAP);
@@ -136,5 +146,7 @@ export function history(video) {
     },
     /** The row to step to by key. @param {1 | -1} direction */
     step: (direction) => neighbor(list, video.videoId, direction),
+    /** The Delete key: the playing row's ×. */
+    removeCurrent: () => remove(video.videoId),
   };
 }

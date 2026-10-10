@@ -25,7 +25,8 @@ const GUIDE = [
     where: "Player",
     note: "The keys work while the player's own page has the keyboard. After a click on the video they go to YouTube; click the bar or the History column to get them back.",
     moves: [
-      [["↑", "↓"], "Play the video above or below in History. Wraps at both ends, and each video picks up where you left it."],
+      [["↑", "↓"], "Play the video above or below in History. The playing one stays at the column's middle; the list slides. Each video picks up where you left it."],
+      [["Delete"], "Remove the playing video from History and move on to the one below it. Home keeps its card."],
       [["←", "→"], "Back or forward 10 seconds."],
       [["C"], "Open or close Chapters, for a video that has them."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
