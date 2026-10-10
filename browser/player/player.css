@@ -27,10 +27,16 @@
   .btn.add-creator:hover:not(:disabled) { background: #55f088; }
 }
 
-/* History: a compact column right of the video, always showing */
+/*
+  History: a compact column right of the video, always showing. The column is a
+  scroll container, which clips anything poking out of it, so to let the playing
+  row peek over the video the column itself is 24px wider than it looks: that
+  strip lies over the video's edge and is transparent, and only the gray part
+  reads as the sidebar.
+*/
 .history {
-  flex: none; width: 340px; overflow-y: auto; list-style: none; margin: 0; padding: 0 6px;
-  background: var(--tray); border-left: 1px solid var(--line);
+  flex: none; width: 364px; margin: 0 0 0 -24px; padding: 0 6px 0 30px; overflow-y: auto; list-style: none;
+  background: linear-gradient(to right, transparent 24px, var(--line) 24px, var(--line) 25px, var(--tray) 25px);
 
   /* Half the column's height of room at each end, so the first and last rows can sit at the center like any other. */
   &::before, &::after { content: ""; display: block; height: 50%; }
@@ -38,11 +44,11 @@
   /* Rows sit inset on gray cards; the playing one spreads to the full width with a bigger thumbnail and the green outline, so it stands out like a glass over the list.
      Nothing is dimmed: the column is read while a video plays, so every row stays as legible as the playing one. */
   li { position: relative; padding: 2px 14px; transition: padding 0.25s; }
-  li:has(a.current) { padding: 2px 0; }
+  li:has(a.current) { padding: 2px 0; margin-left: -24px; }
   a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); background: #222; }
   a:hover, a:focus-visible { background: var(--chip-hover); outline: none; }
   /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
-  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; padding: 7px; }
+  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
   img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
   a.current img { width: 160px; }
   a.current .history-title { font-size: 15px; }
