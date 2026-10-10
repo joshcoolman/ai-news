@@ -120,9 +120,12 @@ export function history(video) {
     center();
   };
   // The playing row sits at the column's vertical middle: the column is padded half its height at both ends so the first and last rows get there too.
-  // A cut while the column is not on the page yet (the page just loaded; the caller centers once it is), a slide when the list changes in place.
+  // Instant until the column has been centered once on the page (a step is a page load, and the view transition does the sliding;
+  // a smooth scroll here would run from the top on every step). After that, a slide when the list changes in place.
+  let settled = false;
   const center = () => {
-    column.querySelector("a.current")?.scrollIntoView({ block: "center", behavior: column.isConnected ? "smooth" : "instant" });
+    column.querySelector("a.current")?.scrollIntoView({ block: "center", behavior: settled ? "smooth" : "instant" });
+    settled ||= column.isConnected;
   };
   draw();
 
