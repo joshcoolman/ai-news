@@ -41,22 +41,17 @@
   /* Half the column's height of room at each end, so the first and last rows can sit at the center like any other. */
   &::before, &::after { content: ""; display: block; height: 50%; }
 
-  /* Rows are gray cards, inset so the lens has room to grow them. Nothing is dimmed: the column is read while a video plays. */
-  li { position: relative; padding: 2px 14px; }
-  li:has(a.current) { z-index: 1; }
+  /* Rows sit inset on gray cards; the playing one spreads to the full width with a bigger thumbnail and the green outline, so it stands out like a glass over the list.
+     Nothing is dimmed: the column is read while a video plays, so every row stays as legible as the playing one. */
+  li { position: relative; padding: 2px 14px; transition: padding 0.25s; }
+  li:has(a.current) { padding: 2px 0; margin-left: -24px; }
   a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); background: #222; }
   a:hover, a:focus-visible { background: var(--chip-hover); outline: none; }
-  /*
-    The lens: a row's size follows how close it is to the column's vertical middle, driven by the column's own scroll (Chromium; elsewhere
-    rows stay one size and the outline below still marks the playing one). The range covers the row's whole trip through the column, so 50%
-    is the row's center on the column's center; one row's height is about 10% of it, so only the row in the middle is full size and its
-    neighbors are a touch larger than the rest. It grows from its right edge, out over the video, since the column is a scroll container
-    and clips there; the 24px strip the column overlaps the video with is the room for that.
-  */
-  a { transform-origin: right center; animation: lens linear both; animation-timeline: view(); }
   /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
-  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
-  img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); }
+  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
+  img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
+  a.current img { width: 160px; }
+  a.current .history-title { font-size: 15px; }
 
   .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .history-title { font-size: 13px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -66,15 +61,10 @@
     position: absolute; right: 22px; top: 8px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
     background: #4a4a4c; color: var(--fg); font: 500 16px/1 var(--font); cursor: pointer; opacity: 0;
   }
+  li:has(a.current) .history-remove { right: 8px; }
   li:hover .history-remove, .history-remove:focus-visible { opacity: 1; }
   .history-remove:hover { background: var(--pick); }
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-}
-
-@keyframes lens {
-  0%, 35% { transform: scale(1); }
-  50% { transform: scale(1.14); }
-  65%, 100% { transform: scale(1); }
 }
 
 /* Chapters: opens over the History column, same width, so the video stays in full view */
