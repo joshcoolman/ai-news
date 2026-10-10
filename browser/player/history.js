@@ -131,6 +131,8 @@ export function history(video) {
 
   return {
     column,
+    /** The fixed frame over the column's middle, where the playing row always sits. Goes beside the column, not in it: the column scrolls. */
+    lens: h("div", { class: "history-lens", "aria-hidden": "true" }),
     /** Scroll the playing row to the middle; call once the column is on the page. */
     center,
     /** @param {Entry} entry */
