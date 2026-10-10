@@ -32,7 +32,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   });
   const listed = chapters(v, player);
   document.body.append(
-    h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, played.lens, listed.panel), playerBar(video, listed.button)),
+    h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, listed.panel), playerBar(video, listed.button)),
   );
   played.center();
 

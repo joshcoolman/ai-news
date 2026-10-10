@@ -41,14 +41,17 @@
   /* Half the column's height of room at each end, so the first and last rows can sit at the center like any other. */
   &::before, &::after { content: ""; display: block; height: 50%; }
 
-  /* Rows are gray cards, all one size, so a step slides the stack by exactly one row under the fixed lens.
+  /* Rows sit inset on gray cards; the playing one spreads to the full width with a bigger thumbnail and the green outline, so it stands out like a glass over the list.
      Nothing is dimmed: the column is read while a video plays, so every row stays as legible as the playing one. */
-  li { position: relative; padding: 3px 14px; }
+  li { position: relative; padding: 2px 14px; transition: padding 0.25s; }
+  li:has(a.current) { padding: 2px 0; margin-left: -24px; }
   a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); background: #222; }
   a:hover, a:focus-visible { background: var(--chip-hover); outline: none; }
-  /* The one playing is under the lens; its card is a step lighter so the lens reads as lit. */
-  a.current, a.current:focus-visible { background: var(--chip); }
-  img { width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); }
+  /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
+  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); }
+  img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
+  a.current img { width: 160px; }
+  a.current .history-title { font-size: 15px; }
 
   .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .history-title { font-size: 13px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -58,21 +61,11 @@
     position: absolute; right: 22px; top: 8px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
     background: #4a4a4c; color: var(--fg); font: 500 16px/1 var(--font); cursor: pointer; opacity: 0;
   }
+  li:has(a.current) .history-remove { right: 8px; }
   li:hover .history-remove, .history-remove:focus-visible { opacity: 1; }
   .history-remove:hover { background: var(--pick); }
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 }
-
-/*
-  The lens: a fixed frame over the column's vertical middle, the same loud green as Add creator. The playing row is always scrolled
-  under it, so a step slides the rows (the view transition) while the frame stays put, like a little window the stack passes through.
-  It spans the strip the column overlaps the video with, so it reads as sitting over the video's edge. Hidden under Chapters.
-*/
-.history-lens {
-  position: absolute; top: 50%; right: 4px; width: 356px; height: 96px; transform: translateY(-50%); pointer-events: none;
-  border: 2px solid #2fe36a; border-radius: 12px; box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.6);
-}
-.player-main:has(.chapters:not([hidden])) .history-lens { display: none; }
 
 /* Chapters: opens over the History column, same width, so the video stays in full view */
 .chapters {
