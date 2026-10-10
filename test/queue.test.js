@@ -44,9 +44,9 @@ describe("neighbor", () => {
     assert.strictEqual(neighbor(list, "playing", -1)?.videoId, "new");
   });
 
-  it("wraps at both ends", () => {
-    assert.strictEqual(neighbor(list, "old2", 1)?.videoId, "new");
-    assert.strictEqual(neighbor(list, "new", -1)?.videoId, "old2");
+  it("stops at both ends", () => {
+    assert.strictEqual(neighbor(list, "old2", 1), undefined);
+    assert.strictEqual(neighbor(list, "new", -1), undefined);
   });
 
   it("has nowhere to go from the only row", () => {

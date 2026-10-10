@@ -32,12 +32,12 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** nothing is in flight; pick from the parked list. (1) Sidecar keyboard: after a click on the video the arrow keys go to YouTube until the bar or History is clicked; the fix is to take focus back from the embed in `browser/player/frame.js`, at the cost of YouTube's own keys (re-add space for pause). Do it only if Josh says it bothers him. (2) After his next refresh, screenshot Home and make it the README's lead image (`docs/screenshots/`). (3) #17: the now-playing highlight on Home's card and snapping the window back are still open; its next/previous is done by the up and down keys. Cheaper stories beyond caching (fewer searches, a cheaper model, stories only on request) change the output and need his say first.
 
 **Last shipped**
+- Sidecar History is a fixed-center carousel (#30): the playing row sits at the column's middle, larger than the rest, and up and down slide the list under it, stopping at the ends. Delete (or Backspace) removes the playing video and moves on to the one below.
 - Sidecar and Creators power moves, all listed in the guide on the Settings page: shift-click on Home queues a video under the one playing; a finished video starts the next unfinished row; up and down switch videos, left and right skip 10 seconds; a Chapters button (and C) lists chapters over History, with up and down walking them; on Creators, up and down cycle the picked creator.
 - Cheaper story search: the lanes cache what they read, so each step re-reads earlier results at a tenth of the price, and a fetched page is capped at 8,000 tokens. Measured on two refreshes: $0.97 and $0.84, where the same work uncached would have cost $1.54 and $1.40. The server log line `[stories]` shows both numbers after every refresh.
 - No frameworks, no runtime dependencies, no build (#21): Next, React, zod, the Anthropic SDK and vitest are gone. `server.js` + `routes.js` + `server/` serve plain pages from `browser/`. Keys come from `.env.local`, or from the browser when the server has none (Add your keys; Delete keys in Settings). `pnpm check` and `pnpm test` are the gate.
 - YouTube comes from the official Data API (#21 stage 1): `YOUTUBE_API_KEY` is now required. Creator lists have exact dates and full descriptions; `youtubei.js` and the RSS feed are gone. A search costs 100 of the day's 10,000 units, everything else 1.
 - Card dates read as an age while recent ("9 hours ago", "2 days ago", up to 28 days), then the date.
-- Members-only videos are skipped everywhere the app finds videos (refresh, Creators page, searches); Settings has "Skip members-only content", on by default. Cards already in the feed are not touched.
 
 **Up next**
 - Open issues.

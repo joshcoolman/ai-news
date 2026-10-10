@@ -1,3 +1,11 @@
+/*
+  A step by key is a page load. The view transition (Chromium) slides each
+  History row from where it was to where it is, so the list moves under the
+  fixed center rather than cutting; the rest of the page just swaps.
+*/
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+
 /* Player window: the embedded player fills it, History beside it, the bar under it */
 .player-page { position: fixed; inset: 0; display: flex; flex-direction: column; background: #000; }
 .player-main { flex: 1; min-height: 0; display: flex; position: relative; }
@@ -21,24 +29,32 @@
 
 /* History: a compact column right of the video, always showing */
 .history {
-  flex: none; width: 340px; overflow-y: auto; list-style: none; margin: 0; padding: 6px;
+  flex: none; width: 340px; overflow-y: auto; list-style: none; margin: 0; padding: 0 6px;
   background: var(--tray); border-left: 1px solid var(--line);
 
-  li { position: relative; }
-  a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); }
-  a:hover, a:focus-visible { background: var(--chip); outline: none; }
+  /* Half the column's height of room at each end, so the first and last rows can sit at the center like any other. */
+  &::before, &::after { content: ""; display: block; height: 50%; }
+
+  /* Rows sit inset; the playing one spreads to the full width and gets a bigger thumbnail, so it stands out like a glass over the list. */
+  li { position: relative; padding: 0 14px; transition: padding 0.25s; }
+  li:has(a.current) { padding: 0; }
+  a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); opacity: 0.7; transition: opacity 0.25s; }
+  a:hover, a:focus-visible { background: var(--chip); outline: none; opacity: 1; }
   /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
-  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; }
-  img { width: 112px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); }
+  a.current, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; opacity: 1; padding: 7px; }
+  img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
+  a.current img { width: 140px; }
+  a.current .history-title { font-size: 14px; }
 
   .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .history-title { font-size: 13px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .history-channel { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .history-remove {
-    position: absolute; right: 8px; top: 8px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+    position: absolute; right: 22px; top: 8px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
     background: #4a4a4c; color: var(--fg); font: 500 16px/1 var(--font); cursor: pointer; opacity: 0;
   }
+  li:has(a.current) .history-remove { right: 8px; }
   li:hover .history-remove, .history-remove:focus-visible { opacity: 1; }
   .history-remove:hover { background: var(--pick); }
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
