@@ -10,13 +10,7 @@ type Creator = {
   name: string;
   channelUrl: string;
   avatarUrl: string;
-  guidance: string;
-  /** Publish time of the newest video seen in the channel's list. Absent until the first fetch. */
-  newestSeen?: string;
 };
-
-/** Why a refresh held an item back: it did not fit the creator's guidance. Held items are stored, never shown. */
-type HiddenBy = { kind: "guidance"; text: string };
 
 type ItemBase = {
   id: string;
@@ -30,7 +24,6 @@ type ItemBase = {
   /** The card a "more like this" result belongs to. */
   after?: string;
   removedAt?: string;
-  hiddenBy?: HiddenBy;
   /** "More like this" state for this card: the query used and how far down its results we have looked. */
   moreQuery?: string;
   moreSeen?: number;
@@ -150,7 +143,8 @@ type ClaudeMessage = {
   };
 };
 
-type Lane = { id: string; name: string; brief: string };
+/** One name the creators are talking about, searched on its own; the progress line calls them searches. */
+type Lane = { id: string; name: string };
 
 type Story = { label: string; title: string; sourceUrl: string; topic: string };
 
@@ -167,11 +161,9 @@ type StoriesInput = {
 */
 type RefreshEvent =
   | { type: "start"; batch: number; startedAt: string; creators: { id: string; name: string }[] }
-  /** A creator's new videos. `checking` while the guidance filter still has to run. */
-  | { type: "videos"; creatorId: string; cards: Card[]; checking: boolean }
+  /** A creator's list was read for its titles. */
+  | { type: "creator-done"; creatorId: string }
   | { type: "creator-failed"; creatorId: string }
-  /** The filter ran: these cards were held back (dropped from view); the rest are confirmed. */
-  | { type: "filtered"; heldIds: string[] }
   | { type: "lanes"; lanes: Lane[]; slots: number }
   | { type: "activity"; laneId: string; text: string }
   | { type: "stories"; laneId: string; cards: Card[] }
@@ -179,7 +171,6 @@ type RefreshEvent =
   | { type: "cost"; usd: number; searches: number }
   | {
       type: "done";
-      videos: number;
       stories: number;
       failed: string[];
       seconds: number;
@@ -213,7 +204,7 @@ type PlayerVideo = {
   channel?: string;
   /** The saved creator behind this video, when there is one. */
   creator?: { name: string; avatarUrl: string };
-  /** A card on home (not held back), so favoriting can remove it there and unfavoriting restore it. */
+  /** A card on home, so favoriting can remove it there and unfavoriting restore it. */
   inFeed: boolean;
   removed: boolean;
   favorited: boolean;

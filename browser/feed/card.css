@@ -4,7 +4,6 @@
   display: flex; flex-direction: column; gap: 10px; min-width: 0;
 
   &.arrive { animation: arrive .45s cubic-bezier(.2, .8, .2, 1) both; }
-  &.checking .thumb img { opacity: .55; transition: opacity .3s; }
 
   .title { font-size: 16px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
   .title a { text-decoration: none; }
@@ -54,7 +53,6 @@
     pointer-events: none; position: absolute; left: 42px; bottom: 9px; background: rgba(0,0,0,.8); color: #fff;
     font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 4px;
   }
-  .checking-note { left: 6px; }
   .slot-label { font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
 }
 

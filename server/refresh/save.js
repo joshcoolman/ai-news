@@ -4,33 +4,13 @@ import { domainOf, mergeBatch, normalizeUrl, withinDays } from "../feed/rules.js
 import { channelInfo, videoDuration } from "../youtube.js";
 
 /*
-  Turning fetched videos and found stories into stored items, plus the
-  background fill-ins (durations, avatars). Shared by a refresh and by
+  Turning found stories and searched videos into stored items, plus the
+  background fill-ins (durations, avatars). Shared by a refresh, searches and
   "more like this". Every write goes through store.mutate.
 */
 
 /**
- * Save one creator's videos (and its feed position). Returns what was actually added.
- * @param {number} batch
- * @param {string} channelId
- * @param {string | undefined} newestSeen
- * @param {{ video: FeedVideo, hiddenBy?: HiddenBy }[]} entries
- * @returns {Promise<VideoItem[]>}
- */
-export async function saveVideos(batch, channelId, newestSeen, entries) {
-  const now = new Date().toISOString();
-  const incoming = entries.map(({ video, hiddenBy }) => ({ ...videoItem(video, now), ...(hiddenBy ? { hiddenBy } : {}) }));
-  const added = await mutate((d) => {
-    const c = d.creators.find((x) => x.channelId === channelId);
-    if (c && newestSeen && (!c.newestSeen || newestSeen > c.newestSeen)) c.newestSeen = newestSeen;
-    return mergeBatch(d.items, incoming, batch);
-  });
-  void fillDurations(added);
-  return added;
-}
-
-/**
- * Save one lane's stories, skipping any that duplicate a stored card or another lane's.
+ * Save one name's stories, skipping any that duplicate a stored card or another name's.
  * @param {number} batch
  * @param {Story[]} stories
  * @returns {Promise<StoryItem[]>}

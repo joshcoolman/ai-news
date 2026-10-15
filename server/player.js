@@ -14,7 +14,7 @@ import { thumbnailUrl } from "./youtube.js";
  * @param {string} id
  */
 function storedVideo(d, id) {
-  const found = d.items.find((i) => i.id === id && !i.hiddenBy) ?? d.favorites.find((f) => f.item.id === id)?.item;
+  const found = d.items.find((i) => i.id === id) ?? d.favorites.find((f) => f.item.id === id)?.item;
   return found?.kind === "video" ? found : undefined;
 }
 
@@ -34,7 +34,7 @@ export async function playerVideo(videoId, title = "") {
   const creator = cached
     ? d.creators.find((c) => c.channelId === cached.channelId)
     : d.creators.find((c) => c.name.toLowerCase() === channel?.toLowerCase());
-  const item = d.items.find((i) => i.id === id && !i.hiddenBy);
+  const item = d.items.find((i) => i.id === id);
   return {
     id,
     videoId,

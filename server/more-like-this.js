@@ -24,7 +24,7 @@ export class NotFoundError extends Error {}
 /**
  * "More like this" for one card: write a query (once per card), search further
  * down than last time, skip videos already in the same bucket, keep up to 4
- * relevant ones, and store them after the card. Not filtered by guidance.
+ * relevant ones, and store them after the card.
  * @param {string} itemId
  * @param {Bucket} [bucket]
  * @returns {Promise<{ added: number, message?: string }>}

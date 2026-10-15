@@ -13,17 +13,16 @@ const DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 
 /** @type {Creator[]} */
 const DEFAULT_CREATORS = [
-  ["Matthew Berman", "UCawZsQWqfGSbCI5yjkdVkTA", ""],
-  ["Riley Brown", "UCMcoud_ZW7cfxeIugBflSBw", ""],
-  ["Fast Hours", "UCxkOnB_ojDRWywB2W1fGCdg", ""],
-  ["OpenAI", "UCXZCJLdBC09xxGZ6gcdrc6A", "Only announcement videos."],
-  ["Anthropic", "UCrDwWp7EBBv4NwvScIpBDOA", "Only announcement videos."],
-].map(([name, channelId, guidance]) => ({
+  ["Matthew Berman", "UCawZsQWqfGSbCI5yjkdVkTA"],
+  ["Riley Brown", "UCMcoud_ZW7cfxeIugBflSBw"],
+  ["Fast Hours", "UCxkOnB_ojDRWywB2W1fGCdg"],
+  ["OpenAI", "UCXZCJLdBC09xxGZ6gcdrc6A"],
+  ["Anthropic", "UCrDwWp7EBBv4NwvScIpBDOA"],
+].map(([name, channelId]) => ({
   channelId,
   name,
   channelUrl: `https://www.youtube.com/channel/${channelId}`,
   avatarUrl: "",
-  guidance,
 }));
 
 /** One JSON file per key of Data, with what a missing file starts as. */

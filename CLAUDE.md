@@ -13,12 +13,10 @@ A Node server and plain HTML, JS and CSS, with no runtime dependencies and no bu
 7. **A page is one state object and a `draw` function.** Components are functions that return elements built with `h` (`browser/shared/dom.js`); an action changes the state and calls `draw`; lists go through `sync` so unchanged cards are not touched. Attach handlers through `h` or `addEventListener`, not `el.onkeydown = ...`: a property handler that returns false cancels the event, which once swallowed Enter in the search box.
 8. **A shortcut is listed where the user can find it.** Keys and clicks that have no button are described in the guide on the Settings page (`GUIDE` in `browser/settings/settings.js`); adding or changing one means updating it there.
 9. **Names follow the UI's words.** Glossary:
-   - **Card**: one tile in the feed, a video or a story.
+   - **Card**: one tile in the feed, a video or a story. A refresh adds only stories; a video reaches Home only through a search or More like this.
    - **Batch**: the cards one refresh added; the newest batch carries the New tag.
-   - **Held back**: a creator video that missed its creator's guidance. Stored so it is not re-judged, never shown, no panel.
    - **Favorite**: a copy of a card on the Favorites page; deleting it and deleting the feed card are independent.
-   - **Guidance**: per-creator text saying which of their videos to keep.
-   - **Lane**: one parallel story search (the progress line calls them "searches").
+   - **Name**: a specific thing the week's creator titles are about (`prompts/extract-names.md`). Each name gets its own search for its maker's page (`prompts/define.md`; the progress line calls them "searches"); no maker's page, no card. The creators are the signal, never the source.
    - **Search**: the home-page box; a YouTube search of the last month whose first 8 unseen results land at the top as a new batch (meta line `Search: <query> ·`).
    - **More like this**: a YouTube search seeded by one card, its results placed after it.
    - **Members only**: a video only a channel's paying members can play. Left out of everything the app finds (refresh, Creators page, searches) unless Settings turns that off; the one rule is `playable` in `server/feed/rules.js`.

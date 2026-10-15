@@ -14,7 +14,7 @@ const API = "https://api.anthropic.com/v1/messages";
  * (63s) where four Sonnet 5.5 calls ran in parallel (13s).
  */
 export const STORIES_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
-/** The small calls: the lane planner, the creator-video filter and the two "more like this" steps. */
+/** The small calls: the name extractor and the two "more like this" steps. */
 export const SMALL_MODEL = "claude-haiku-4-5-20251001";
 
 /** Dollars per million tokens, [input, output, input read from the cache]. */

@@ -3,9 +3,9 @@ import { h } from "./dom.js";
 
 /**
  * Add a creator from the header. Paste a URL and the dialog says who it found;
- * Add then saves the creator and grabs their recent videos into the feed.
- * `onClose` gets the result, or nothing when the dialog was cancelled.
- * @param {(result?: { name: string, grabbed?: number }) => void} onClose
+ * Add then saves the creator. `onClose` gets the result, or nothing when the
+ * dialog was cancelled.
+ * @param {(result?: { name: string }) => void} onClose
  */
 export function addCreatorDialog(onClose) {
   /** @type {{ name: string, avatarUrl: string, listed: boolean } | null} */
@@ -13,7 +13,7 @@ export function addCreatorDialog(onClose) {
   let looking = false;
   let error = "";
   let busy = false;
-  /** @type {{ name: string, grabbed?: number } | undefined} */
+  /** @type {{ name: string } | undefined} */
   let result;
   // Each lookup gets a number; an answer for an older one is dropped.
   let lookup = 0;
@@ -21,7 +21,6 @@ export function addCreatorDialog(onClose) {
   let timer;
 
   const url = h("input", { class: "field", placeholder: "Paste a YouTube video or channel URL", "aria-label": "YouTube URL", autofocus: true });
-  const guidance = h("input", { class: "field", placeholder: "Guidance (optional), e.g. only announcement videos", "aria-label": "Guidance for this creator" });
   const line = h("p", { class: "found", role: "status" });
   const add = h("button", { class: "btn primary", type: "submit" }, "Add");
 
@@ -88,10 +87,10 @@ export function addCreatorDialog(onClose) {
           busy = true;
           draw();
           try {
-            const res = await post("/api/creators", { url: url.value, guidance: guidance.value, grab: true });
+            const res = await post("/api/creators", { url: url.value });
             const data = await res.json();
             if (res.ok) {
-              result = { name: data.creator.name, grabbed: data.grabbed };
+              result = { name: data.creator.name };
               return dialog.close();
             }
             error = data.error ?? "Could not add that creator.";
@@ -105,7 +104,6 @@ export function addCreatorDialog(onClose) {
       h("h2", {}, "Add creator"),
       url,
       line,
-      guidance,
       h("div", { class: "prompt-actions" }, h("button", { class: "btn", type: "button", onclick: () => dialog.close() }, "Cancel"), add),
     ),
   );

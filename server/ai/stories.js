@@ -1,12 +1,13 @@
 import { arr, ask, obj, str, stream, STORIES_MODEL, textOf } from "./client.js";
 import { prompt } from "./prompts.js";
-import { domainOf, normalizeUrl } from "../feed/rules.js";
-import { LANES, STORIES_PER_LANE } from "../refresh/events.js";
+import { domainOf, newNames, normalizeUrl } from "../feed/rules.js";
+import { MAX_NAMES, STORIES_PER_NAME } from "../refresh/events.js";
 
 /*
-  Stories come from parallel lanes. A small planner call splits this week's
-  ground into lanes; each lane is its own short agent turn with web search and
-  web fetch, told the other lanes' briefs so it stays in its own.
+  Stories come in two steps. A small call reads this week's creator titles and
+  lists the named things they are about; then each name gets its own short
+  agent turn with web search and web fetch, whose one job is to find the
+  maker's page and say what the thing is. No page, no story.
 */
 
 const StoryShape = obj({
@@ -16,13 +17,13 @@ const StoryShape = obj({
   topic: str("A short topic for the meta line, e.g. 'coding agents'."),
 });
 
-const SEARCHES_PER_LANE = 4;
+const SEARCHES_PER_NAME = 3;
 const MAX_CONTINUATIONS = 8;
-/** The most of one fetched page a lane reads: about 6,000 words. */
+/** The most of one fetched page a search reads: about 6,000 words. */
 const FETCH_TOKENS = 8000;
 
 /**
- * The user turn for the planner and every lane.
+ * The user turn for the extractor and every search.
  * @param {StoriesInput} input
  */
 function context(input) {
@@ -38,37 +39,28 @@ function context(input) {
 }
 
 /**
- * Split this week's ground into non-overlapping lanes for the parallel agents.
+ * The named things this week's creator titles are about, one lane each. Names
+ * already on Home are dropped here as well as in the prompt.
  * @param {StoriesInput} input
  * @returns {Promise<Lane[]>}
  */
-export async function planLanes(input) {
-  /** @type {{ lanes: { name: string, brief: string }[] }} */
-  const out = await ask(obj({ lanes: arr(obj({ name: str(), brief: str() })) }), await prompt("plan-lanes", { lanes: LANES }), await context(input));
-  return out.lanes.slice(0, LANES).map((l, i) => ({ id: `lane-${i}`, name: l.name.trim(), brief: l.brief.trim() }));
+export async function extractNames(input) {
+  /** @type {{ names: string[] }} */
+  const out = await ask(obj({ names: arr(str()) }), await prompt("extract-names", { max: MAX_NAMES }), await context(input));
+  return newNames(out.names, input.recentCards, MAX_NAMES).map((name, i) => ({ id: `name-${i}`, name }));
 }
 
 /**
- * One lane: a short agent turn with web search and web fetch. Loops over
- * `pause_turn`, and returns only stories whose source the agent actually saw.
+ * One name: a short agent turn with web search and web fetch. Loops over
+ * `pause_turn`, and returns only a story whose source the agent actually saw.
  * @param {Lane} lane
- * @param {Lane[]} others
  * @param {StoriesInput} input
  * @param {{ onActivity: (text: string) => void, onUsage: (delta: Usage) => void }} events
  * @param {AbortSignal} signal
  * @returns {Promise<Story[]>}
  */
-export async function runLane(lane, others, input, events, signal) {
-  const system = [
-    await prompt("stories"),
-    await prompt("stories-lane", {
-      count: others.length + 1,
-      name: lane.name,
-      brief: lane.brief,
-      others: others.map((o) => `- ${o.name}: ${o.brief}`).join("\n"),
-      max: STORIES_PER_LANE,
-    }),
-  ].join("\n\n");
+export async function defineName(lane, input, events, signal) {
+  const system = [await prompt("stories"), await prompt("define", { name: lane.name })].join("\n\n");
 
   /** @type {{ role: string, content: string | ContentBlock[] }[]} */
   const messages = [{ role: "user", content: await context(input) }];
@@ -83,8 +75,8 @@ export async function runLane(lane, others, input, events, signal) {
         model: STORIES_MODEL,
         max_tokens: 32000,
         /*
-          A lane is a loop: after every search the model reads everything so
-          far again. With caching on, each step stores what it read and the
+          A search is a loop: after every tool result the model reads everything
+          so far again. With caching on, each step stores what it read and the
           next step reads it back at a tenth of the price; the API adds the
           storing points after each tool result by itself. Measured on
           2026-10-04, this is most of what a refresh costs.
@@ -92,12 +84,12 @@ export async function runLane(lane, others, input, events, signal) {
         cache_control: { type: "ephemeral" },
         system,
         messages,
-        output_config: { format: { type: "json_schema", schema: obj({ stories: { ...arr(StoryShape), description: `At most ${STORIES_PER_LANE}.` } }) } },
+        output_config: { format: { type: "json_schema", schema: obj({ stories: { ...arr(StoryShape), description: `At most ${STORIES_PER_NAME}.` } }) } },
         tools: [
           // The plain tool versions: the dynamic-filtering ones add code-execution round trips to every search.
-          { type: "web_search_20250305", name: "web_search", max_uses: SEARCHES_PER_LANE },
+          { type: "web_search_20250305", name: "web_search", max_uses: SEARCHES_PER_NAME },
           // A page is read to confirm what a thing is and who made it, which its opening says; the cap keeps one long page from costing as much as several searches.
-          { type: "web_fetch_20250910", name: "web_fetch", max_uses: 6, max_content_tokens: FETCH_TOKENS },
+          { type: "web_fetch_20250910", name: "web_fetch", max_uses: 3, max_content_tokens: FETCH_TOKENS },
         ],
       },
       (block) => {
@@ -121,20 +113,20 @@ export async function runLane(lane, others, input, events, signal) {
   }
 
   if (!final || final.stop_reason !== "end_turn") {
-    console.log(`[lane ${lane.name}] ended with ${final?.stop_reason}; no stories`);
+    console.log(`[name ${lane.name}] ended with ${final?.stop_reason}; no story`);
     return [];
   }
   /** @type {Story[]} */
   let stories;
   try {
-    stories = JSON.parse(textOf(final.content)).stories.slice(0, STORIES_PER_LANE);
+    stories = JSON.parse(textOf(final.content)).stories.slice(0, STORIES_PER_NAME);
   } catch (err) {
-    console.log(`[lane ${lane.name}] could not parse output: ${/** @type {Error} */ (err).message}`);
+    console.log(`[name ${lane.name}] could not parse output: ${/** @type {Error} */ (err).message}`);
     return [];
   }
   return stories.filter((s) => {
     if (seen.has(normalizeUrl(s.sourceUrl))) return true;
-    console.log(`[lane ${lane.name}] dropped "${s.label}": ${s.sourceUrl} was not seen this turn`);
+    console.log(`[name ${lane.name}] dropped "${s.label}": ${s.sourceUrl} was not seen this turn`);
     return false;
   });
 }
