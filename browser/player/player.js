@@ -69,6 +69,11 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
+    // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
+    if (msg.type === "unqueue") {
+      announce({ type: "unqueued", videoId: msg.videoId });
+      return played.remove(msg.videoId);
+    }
     if (msg.type !== "queue" || msg.videoId === v) return;
     /** @type {PlayerVideo} */
     const info = await load(`/api/player/video?${new URLSearchParams({ v: msg.videoId, t: msg.title })}`);

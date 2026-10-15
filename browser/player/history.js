@@ -151,5 +151,7 @@ export function history(video) {
     step: (direction) => neighbor(list, video.videoId, direction),
     /** The Delete key: the playing row's ×. */
     removeCurrent: () => remove(video.videoId),
+    /** A page unqueueing a row: its ×, the playing row's included. @param {string} videoId */
+    remove,
   };
 }
