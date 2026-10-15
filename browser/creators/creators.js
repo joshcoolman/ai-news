@@ -190,7 +190,6 @@ function draw() {
               h(
                 "div",
                 { class: "row-main" },
-                guidanceInput(c),
                 h("button", { class: "link-btn", type: "button", onclick: () => remove(c), "aria-label": `Delete ${c.name}` }, "Delete creator"),
               ),
           ),
@@ -200,38 +199,11 @@ function draw() {
 }
 
 /**
- * Guidance edited in place; saved on Enter or when focus leaves.
- * @param {Creator} creator
- */
-function guidanceInput(creator) {
-  const input = h("input", {
-    class: "guidance-input",
-    value: creator.guidance,
-    placeholder: "No guidance: every new video. Click to add some.",
-    "aria-label": `Guidance for ${creator.name}`,
-    onblur: async () => {
-      if (input.value.trim() === creator.guidance) return;
-      const res = await patch(`/api/creators/${creator.channelId}`, { guidance: input.value });
-      if (res.ok) creator.guidance = input.value.trim();
-    },
-    onkeydown: (/** @type {KeyboardEvent} */ e) => {
-      if (e.key === "Enter") input.blur();
-      if (e.key === "Escape") {
-        input.value = creator.guidance;
-        input.blur();
-      }
-    },
-  });
-  return input;
-}
-
-/**
- * Paste a video, Shorts, youtu.be, /@handle or /channel/UC… URL; optional guidance for that creator.
+ * Paste a video, Shorts, youtu.be, /@handle or /channel/UC… URL.
  * @param {() => void} onAdded
  */
 function addCreatorForm(onAdded) {
   const url = h("input", { class: "field url", placeholder: "Paste a YouTube video or channel URL", "aria-label": "YouTube URL" });
-  const guidance = h("input", { class: "field guide", placeholder: "Guidance (optional), e.g. only announcement videos", "aria-label": "Guidance for this creator" });
   const submit = h("button", { class: "btn primary", type: "submit", disabled: true }, "Add creator");
   const said = h("p", { hidden: true });
   const say = (/** @type {"error" | "ok" | ""} */ kind, text = "") => {
@@ -253,12 +225,12 @@ function addCreatorForm(onAdded) {
         busy(true);
         say("");
         try {
-          const res = await post("/api/creators", { url: url.value, guidance: guidance.value });
+          const res = await post("/api/creators", { url: url.value });
           const data = await res.json();
           if (!res.ok) say("error", data.error ?? "Could not add that creator.");
           else {
             say("ok", data.added ? `Added ${data.creator.name}.` : `${data.creator.name} is already listed.`);
-            url.value = guidance.value = "";
+            url.value = "";
             onAdded();
           }
         } catch {
@@ -268,7 +240,6 @@ function addCreatorForm(onAdded) {
       },
     },
     url,
-    guidance,
     submit,
     said,
   );

@@ -3,26 +3,22 @@ import { maxBatch, playable, withinDays } from "../feed/rules.js";
 import { toCard } from "../feed/cards.js";
 import { listChannelVideos } from "../youtube.js";
 import { estimateCost, STORIES_MODEL, uncachedCost } from "../ai/client.js";
-import { filterVideos } from "../ai/filter.js";
-import { planLanes, runLane } from "../ai/stories.js";
-import { STORIES_PER_LANE } from "./events.js";
-import { fillAvatars, saveStories, saveVideos, videoItem, videoItemId } from "./save.js";
+import { defineName, extractNames } from "../ai/stories.js";
+import { STORIES_PER_NAME } from "./events.js";
+import { fillAvatars, saveStories } from "./save.js";
 
 /*
   A refresh runs as one server-side job that outlives the request that started
   it. Everything it does is appended to an event log; the browser streams that
   log over SSE (replaying it in full on reconnect), so a reload never loses
-  progress. Creator lists, the filter and the story lanes all run in parallel
-  and each result is saved and announced the moment it is ready. The lock is
-  held until the job ends; a second refresh gets a 409.
+  progress. The creators are only a signal: their week's titles are read for
+  the named things they are about, and each name is searched for its maker's
+  page in parallel. Only stories land on Home. The lock is held until the job
+  ends; a second refresh gets a 409.
 */
 
-const FIRST_FETCH = 2;
-const PER_REFRESH = 5;
-
 /** @typedef {(e: RefreshEvent) => void} Emit */
-/** @typedef {{ creator: Creator, videos: FeedVideo[], newestSeen?: string }} Pending */
-/** @typedef {{ videos: number, stories: number, usage: Usage }} Totals */
+/** @typedef {{ stories: number, usage: Usage }} Totals */
 
 /** The refresh in progress, if any. */
 /** @type {{ events: RefreshEvent[], listeners: Set<Emit>, abort: AbortController } | undefined} */
@@ -74,13 +70,12 @@ export function startRefresh() {
 async function run(emit, signal) {
   const started = Date.now();
   /** @type {Totals} */
-  const totals = { videos: 0, stories: 0, usage: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0, searches: 0, fetches: 0 } };
+  const totals = { stories: 0, usage: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0, searches: 0, fetches: 0 } };
   /** @type {string[]} */
   const failed = [];
   const finish = (/** @type {string} */ error) =>
     emit({
       type: "done",
-      videos: totals.videos,
       stories: totals.stories,
       failed,
       seconds: Math.round((Date.now() - started) / 1000),
@@ -100,13 +95,10 @@ async function run(emit, signal) {
       creators: data.creators.map((c) => ({ id: c.channelId, name: c.name })),
     });
 
-    const stored = new Set(data.items.map((i) => i.id));
     /** @type {StoriesInput["creatorTitles"]} */
     const creatorTitles = [];
-    /** @type {Pending[]} */
-    const toFilter = [];
 
-    // 1. Every creator's list at once. Each resolves into cards as soon as it lands.
+    // 1. Every creator's list at once, for the week's titles.
     await Promise.all(
       data.creators.map(async (creator) => {
         /** @type {FeedVideo[]} */
@@ -122,67 +114,18 @@ async function run(emit, signal) {
         for (const v of videos) {
           if (withinDays(v.publishedAt, 7)) creatorTitles.push({ channel: creator.name, title: v.title, publishedAt: v.publishedAt });
         }
-        const { newestSeen: last } = creator;
-        const fresh = (last ? videos.filter((v) => v.publishedAt > last).slice(0, PER_REFRESH) : videos.slice(0, FIRST_FETCH)).filter(
-          (v) => !stored.has(videoItemId(v.videoId)),
-        );
-        const newestSeen = videos[0]?.publishedAt;
-
-        if (fresh.length && creator.guidance.trim()) {
-          // Show them now, marked as checking; the filter decides shortly.
-          toFilter.push({ creator, videos: fresh, newestSeen });
-          const now = new Date().toISOString();
-          emit({ type: "videos", creatorId: creator.channelId, checking: true, cards: fresh.map((v) => toCard(videoItem(v, now), undefined, true)) });
-          return;
-        }
-        const added = await saveVideos(batch, creator.channelId, newestSeen, fresh.map((v) => ({ video: v })));
-        totals.videos += added.length;
-        emit({ type: "videos", creatorId: creator.channelId, checking: false, cards: added.map((i) => toCard(i, undefined, true)) });
+        emit({ type: "creator-done", creatorId: creator.channelId });
       }),
     );
 
-    // 2. The filter and the story lanes run side by side.
-    await Promise.all([
-      runFilter(batch, toFilter, emit, totals),
-      runStories(batch, { creatorTitles, recentCards: recentCards(data.items) }, emit, signal, totals),
-    ]);
+    // 2. The names in those titles, then one search per name.
+    await runStories(batch, { creatorTitles, recentCards: recentCards(data.items) }, emit, signal, totals);
     finish("");
   } catch (err) {
     const e = /** @type {Error} */ (err);
     console.log(`[refresh] failed: ${e.stack ?? e}`);
     finish(e.message);
   }
-}
-
-/**
- * @param {number} batch
- * @param {Pending[]} pending
- * @param {Emit} emit
- * @param {Totals} totals
- */
-async function runFilter(batch, pending, emit, totals) {
-  if (!pending.length) return;
-  const flat = pending.flatMap((p) => p.videos.map((video) => ({ video, creator: p.creator })));
-  /** @type {Map<number, HiddenBy>} */
-  let held = new Map();
-  try {
-    held = await filterVideos(flat.map((f) => ({ ...f.video, guidance: f.creator.guidance.trim() })));
-  } catch (err) {
-    console.log(`[refresh] filter failed, letting every video through: ${/** @type {Error} */ (err).message}`);
-  }
-  /** @type {string[]} */
-  const heldIds = [];
-  let n = 0;
-  for (const p of pending) {
-    const entries = p.videos.map((video) => {
-      const hiddenBy = held.get(n++);
-      if (hiddenBy) heldIds.push(videoItemId(video.videoId));
-      return { video, hiddenBy };
-    });
-    const added = await saveVideos(batch, p.creator.channelId, p.newestSeen, entries);
-    totals.videos += added.filter((i) => !i.hiddenBy).length;
-  }
-  emit({ type: "filtered", heldIds });
 }
 
 /**
@@ -196,22 +139,21 @@ async function runStories(batch, input, emit, signal, totals) {
   /** @type {Lane[]} */
   let lanes;
   try {
-    lanes = await planLanes(input);
+    lanes = await extractNames(input);
   } catch (err) {
-    console.log(`[stories] planning failed: ${/** @type {Error} */ (err).message}`);
+    console.log(`[stories] extracting names failed: ${/** @type {Error} */ (err).message}`);
     emit({ type: "lanes", lanes: [], slots: 0 });
     return;
   }
-  emit({ type: "lanes", lanes, slots: STORIES_PER_LANE });
-  console.log(`[stories] lanes: ${lanes.map((l) => l.name).join(" | ")}`);
+  emit({ type: "lanes", lanes, slots: STORIES_PER_NAME });
+  console.log(`[stories] names: ${lanes.map((l) => l.name).join(" | ") || "none"}`);
 
   await Promise.all(
     lanes.map(async (lane) => {
       const t0 = Date.now();
       try {
-        const stories = await runLane(
+        const stories = await defineName(
           lane,
-          lanes.filter((l) => l !== lane),
           input,
           {
             onActivity: (text) => emit({ type: "activity", laneId: lane.id, text }),
@@ -232,11 +174,11 @@ async function runStories(batch, input, emit, signal, totals) {
         totals.stories += added.length;
         emit({ type: "stories", laneId: lane.id, cards: added.map((i) => toCard(i, undefined, true)) });
         emit({ type: "lane-done", laneId: lane.id });
-        console.log(`[lane ${lane.name}] ${added.length} stories in ${Math.round((Date.now() - t0) / 1000)}s`);
+        console.log(`[name ${lane.name}] ${added.length ? "a story" : "no story"} in ${Math.round((Date.now() - t0) / 1000)}s`);
       } catch (err) {
         if (signal.aborted) return emit({ type: "lane-done", laneId: lane.id, cancelled: true });
         const { message } = /** @type {Error} */ (err);
-        console.log(`[lane ${lane.name}] failed: ${message}`);
+        console.log(`[name ${lane.name}] failed: ${message}`);
         emit({ type: "lane-done", laneId: lane.id, error: message });
       }
     }),

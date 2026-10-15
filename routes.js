@@ -4,11 +4,10 @@ import { buildFeed, favoriteCards } from "./server/feed/cards.js";
 import { favoriteCopy } from "./server/feed/rules.js";
 import { keyWorks as youtubeKeyWorks, resolveCreator, UserInputError, videoChapters } from "./server/youtube.js";
 import { keyWorks as claudeKeyWorks } from "./server/ai/client.js";
-import { grabRecent } from "./server/creators/grab.js";
 import { recentVideos } from "./server/creators/recent.js";
 import { topicsFor } from "./server/creators/topics.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
-import { LANES, STORIES_PER_LANE } from "./server/refresh/events.js";
+import { MAX_NAMES, STORIES_PER_NAME } from "./server/refresh/events.js";
 import { cancelRefresh, RefreshBusyError, refreshRunning, startRefresh, subscribe } from "./server/refresh/run.js";
 import { searchFromVideo, searchHome } from "./server/search.js";
 import { moreLikeThis, NotFoundError } from "./server/more-like-this.js";
@@ -56,7 +55,6 @@ export const routes = [
   ["POST", "/api/creators/resolve", lookUpCreator],
   ["GET", "/api/creators/recent", creatorsRecent],
   ["GET", "/api/creators/topics", creatorsTopics],
-  ["PATCH", "/api/creators/:id", editCreator],
   ["DELETE", "/api/creators/:id", deleteCreator],
 
   ["GET", "/api/settings", settings],
@@ -105,7 +103,7 @@ function config() {
   return json({
     keys: keySources(),
     refreshing: refreshRunning(),
-    plan: { lanes: LANES, slots: STORIES_PER_LANE },
+    plan: { lanes: MAX_NAMES, slots: STORIES_PER_NAME },
     days: { min: MIN_DAYS, max: MAX_DAYS },
     feedCap: FEED_CAP,
   });
@@ -291,23 +289,12 @@ async function creatorFrom(url) {
 async function addCreator({ body }) {
   const info = await creatorFrom(body.url);
   if ("status" in info) return info;
-  const creator = { ...info, guidance: typeof body.guidance === "string" ? body.guidance.trim() : "" };
   const added = await mutate((d) => {
     if (d.creators.some((c) => c.channelId === info.channelId)) return false;
-    d.creators.push(creator);
+    d.creators.push(info);
     return true;
   });
-  // The quick grab claims the next batch number, so it waits out a running refresh (the next refresh picks the videos up).
-  /** @type {number | undefined} */
-  let grabbed;
-  if (added && body.grab && !refreshRunning()) {
-    try {
-      grabbed = await grabRecent(creator);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-  return json({ added, creator: info, grabbed });
+  return json({ added, creator: info });
 }
 
 /** Look up what a pasted URL points at, without adding anything. Feeds the "Found ..." line in the Add creator popup. */
@@ -330,19 +317,7 @@ function creatorsTopics() {
   return orFail("Could not group topics.", 500, async () => json({ topics: await topicsFor((await read()).creators) }));
 }
 
-/** @param {Ctx} ctx */
-async function editCreator({ params, body }) {
-  const { guidance } = body;
-  if (typeof guidance !== "string") return fail("guidance is required.", 400);
-  const found = await mutate((d) => {
-    const c = d.creators.find((x) => x.channelId === params.id);
-    if (c) c.guidance = guidance.trim();
-    return !!c;
-  });
-  return found ? json({ ok: true }) : fail("No such creator.", 404);
-}
-
-/** Stops future fetches. Their existing cards stay in the feed. */
+/** Stops future fetches. */
 /** @param {Ctx} ctx */
 async function deleteCreator({ params }) {
   await mutate((d) => {

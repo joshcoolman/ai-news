@@ -6,7 +6,6 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @typedef {{
  *   note?: string,
  *   searching?: boolean,
- *   checking?: boolean,
  *   arriving?: boolean,
  *   onRemove?: () => void,
  *   onMore?: () => void,
@@ -20,7 +19,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, checking, arriving, onRemove, onMore, onFavorite, onQueue } = {}) {
+export function cardTile(card, { note, searching, arriving, onRemove, onMore, onFavorite, onQueue } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
     if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
       e.preventDefault();
@@ -32,34 +31,32 @@ export function cardTile(card, { note, searching, checking, arriving, onRemove, 
     if (card.videoId) openInPlayer(`/player?${new URLSearchParams({ v: card.videoId, t: card.title })}`);
     else window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
   };
-  const actions = checking
-    ? [h("span", { class: "card-note checking-note" }, "Checking guidance")]
-    : [
-        onRemove && h("button", { class: "remove", type: "button", onclick: onRemove, "aria-label": `Remove: ${card.title}`, title: "Remove" }, "×"),
-        onFavorite &&
-          h(
-            "button",
-            {
-              class: `fav${card.favorited ? " on" : ""}`,
-              type: "button",
-              onclick: onFavorite,
-              disabled: card.favorited,
-              "aria-label": card.favorited ? `In favorites: ${card.title}` : `Favorite: ${card.title}`,
-              title: card.favorited ? "In favorites" : "Favorite",
-            },
-            icon(ICONS.star, { size: 16, stroke: 2.2, fill: card.favorited ? "currentColor" : "none" }),
-          ),
-        onMore &&
-          h(
-            "button",
-            { class: "more", type: "button", onclick: onMore, disabled: searching, "aria-label": `More like this: ${card.title}`, title: "More like this" },
-            icon(ICONS.search, { size: 16, stroke: 2.4 }),
-          ),
-        (searching || note) && h("span", { class: "card-note" }, searching ? "Searching" : note),
-      ];
+  const actions = [
+    onRemove && h("button", { class: "remove", type: "button", onclick: onRemove, "aria-label": `Remove: ${card.title}`, title: "Remove" }, "×"),
+    onFavorite &&
+      h(
+        "button",
+        {
+          class: `fav${card.favorited ? " on" : ""}`,
+          type: "button",
+          onclick: onFavorite,
+          disabled: card.favorited,
+          "aria-label": card.favorited ? `In favorites: ${card.title}` : `Favorite: ${card.title}`,
+          title: card.favorited ? "In favorites" : "Favorite",
+        },
+        icon(ICONS.star, { size: 16, stroke: 2.2, fill: card.favorited ? "currentColor" : "none" }),
+      ),
+    onMore &&
+      h(
+        "button",
+        { class: "more", type: "button", onclick: onMore, disabled: searching, "aria-label": `More like this: ${card.title}`, title: "More like this" },
+        icon(ICONS.search, { size: 16, stroke: 2.4 }),
+      ),
+    (searching || note) && h("span", { class: "card-note" }, searching ? "Searching" : note),
+  ];
   return h(
     "div",
-    { class: `card${arriving ? " arrive" : ""}${checking ? " checking" : ""}` },
+    { class: `card${arriving ? " arrive" : ""}` },
     h(
       "div",
       { class: "thumb", style: { "--h": hue(card.id) } },
@@ -98,7 +95,7 @@ export function slotTile(label, activity) {
 export function cardEntry(card, options) {
   return {
     key: card.id,
-    sig: JSON.stringify([card, options.note, options.searching, options.checking, options.arriving]),
+    sig: JSON.stringify([card, options.note, options.searching, options.arriving]),
     // A card redrawn in place has already arrived; only a new one animates in.
     make: (replacing) => cardTile(card, { ...options, arriving: options.arriving && !replacing }),
   };

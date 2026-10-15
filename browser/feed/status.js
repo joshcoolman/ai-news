@@ -25,8 +25,8 @@ export function progressLine(live, onCancel) {
   const creatorsDone = live.creators.filter((c) => c.status !== "pending").length;
   const lanesDone = live.lanes?.filter((l) => l.status === "done").length ?? 0;
   const parts = [
-    creatorsDone < live.creators.length ? `Creators ${creatorsDone} of ${live.creators.length}` : "Creators done",
-    live.lanes ? `Stories: ${lanesDone} of ${live.lanes.length} searches done` : "Planning story searches",
+    creatorsDone < live.creators.length ? `Creators ${creatorsDone} of ${live.creators.length}` : "Creators read",
+    live.lanes ? `Stories: ${lanesDone} of ${live.lanes.length} searches done` : "Finding what they are talking about",
     clock((Date.now() - live.startedAt) / 1000),
     `$${live.usd.toFixed(2)}`,
   ];
@@ -53,8 +53,7 @@ export function busyLine(text) {
  * @returns {(Node | string)[]}
  */
 export function summaryLine(s) {
-  const added = [s.videos && plural(s.videos, "video"), s.stories && plural(s.stories, "story", "stories")].filter(Boolean);
-  const head = added.length ? `Added ${added.join(" and ")}` : "Nothing new since the last refresh";
+  const head = s.stories ? `Added ${plural(s.stories, "story", "stories")}` : "Nothing new since the last refresh";
   const tail = [
     s.cancelled && "stopped early",
     s.failed.length && `could not fetch ${s.failed.join(", ")}`,

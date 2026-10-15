@@ -10,13 +10,35 @@ const DAY = 86_400_000;
  * @returns {Item}
  */
 export function favoriteCopy(item) {
-  const { batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery, ...copy } = item;
-  void [batch, after, removedAt, hiddenBy, moreQuery, moreSeen, searchQuery];
+  const { batch, after, removedAt, moreQuery, moreSeen, searchQuery, ...copy } = item;
+  void [batch, after, removedAt, moreQuery, moreSeen, searchQuery];
   return copy;
 }
 
 /**
- * Highest batch number ever used, hidden items included, so numbers never collide.
+ * The names a refresh goes on to search: trimmed, no repeats (case aside), none
+ * already a card's label from the last 30 days, at most `max`, in the order given.
+ * @param {string[]} names
+ * @param {{ label: string }[]} recentCards
+ * @param {number} max
+ */
+export function newNames(names, recentCards, max) {
+  const taken = new Set(recentCards.map((c) => c.label.trim().toLowerCase()).filter(Boolean));
+  /** @type {string[]} */
+  const out = [];
+  for (const raw of names) {
+    const name = raw.trim();
+    const key = name.toLowerCase();
+    if (!name || taken.has(key)) continue;
+    taken.add(key);
+    out.push(name);
+    if (out.length === max) break;
+  }
+  return out;
+}
+
+/**
+ * Highest batch number ever used, removed items included, so numbers never collide.
  * @param {Item[]} items
  */
 export function maxBatch(items) {
@@ -52,7 +74,7 @@ export function latestBatch(items) {
   /** @type {number | undefined} */
   let latest;
   for (const i of items) {
-    if (i.batch === undefined || i.hiddenBy) continue;
+    if (i.batch === undefined) continue;
     if (latest === undefined || i.batch > latest) latest = i.batch;
   }
   return latest;
@@ -86,7 +108,7 @@ export function mergeBatch(items, incoming, batch) {
  * Feed order as a tree walk: top-level cards newest batch first (stored order
  * within a batch), each followed by its "more like this" results in the order
  * they were added, each of those followed by its own. Removed cards are
- * skipped but their results keep their place. Hidden cards are never shown.
+ * skipped but their results keep their place.
  * @param {Item[]} items
  */
 export function displayOrder(items) {
@@ -131,7 +153,7 @@ export function treeOrder(items, compareTop) {
   const walk = (/** @type {Item} */ item) => {
     if (visited.has(item.id)) return;
     visited.add(item.id);
-    if (!item.removedAt && !item.hiddenBy) out.push(item);
+    if (!item.removedAt) out.push(item);
     for (const child of children.get(item.id) ?? []) walk(child);
   };
   top.forEach(walk);

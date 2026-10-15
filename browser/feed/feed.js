@@ -44,7 +44,7 @@ const state = {
 
 const status = h("div", { class: "status", role: "status" });
 const grid = h("div", { class: "grid" });
-const empty = h("p", { class: "empty" }, "Nothing here yet. Press Refresh to fetch the latest from your creators and the web.");
+const empty = h("p", { class: "empty" }, "Nothing here yet. Press Refresh to find what your creators are talking about.");
 document.body.append(h("div", { class: "wrap" }, topBar("home"), status, empty, grid));
 
 function drawStatus() {
@@ -62,7 +62,7 @@ function draw() {
   // While a refresh runs, the cards arriving at the front are the new ones.
   const rest = view.cards.filter((c) => !frontIds.has(c.id) && !removed.has(c.id)).map((c) => (live ? { ...c, isNew: false } : c));
 
-  const entry = (/** @type {Card} */ card, /** @type {{ checking?: boolean, arriving?: boolean }} */ extra) =>
+  const entry = (/** @type {Card} */ card, /** @type {{ arriving?: boolean }} */ extra) =>
     cardEntry(faved.has(card.id) ? { ...card, favorited: true } : card, {
       note: notes[card.id],
       searching: searching.has(card.id),
@@ -81,7 +81,7 @@ function draw() {
     ...front.map((t) =>
       t.kind === "slot"
         ? { key: t.key, sig: JSON.stringify([t.label, t.activity]), make: () => slotTile(t.label, t.activity) }
-        : entry(t.card, { checking: t.checking, arriving: true }),
+        : entry(t.card, { arriving: true }),
     ),
     ...rest.flatMap((card) => [
       entry(card, { arriving: arrived.has(card.id) }),
@@ -263,7 +263,7 @@ window.addEventListener(FEED_CHANGED_EVENT, async (e) => {
   draw();
 });
 
-// The player window favorited, removed or restored a card, or added a creator (whose videos land here).
+// The player window favorited, removed or restored a card.
 onPlayerMessage(async (msg) => {
   if (msg.type === "queue") return;
   if (msg.type === "queued") {

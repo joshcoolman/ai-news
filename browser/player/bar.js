@@ -97,7 +97,7 @@ export function playerBar(video, tool) {
     state.creatorNote = "";
     draw();
     try {
-      const res = await post("/api/creators", { url: video.link, guidance: "", grab: true });
+      const res = await post("/api/creators", { url: video.link });
       const data = await res.json();
       if (!res.ok) state.creatorNote = data.error ?? "Could not add";
       else {

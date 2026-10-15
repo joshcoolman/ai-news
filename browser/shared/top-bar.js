@@ -74,13 +74,9 @@ export function topBar(current) {
         addCreatorDialog((result) => {
           if (!result) return;
           window.dispatchEvent(new Event(CREATORS_CHANGED_EVENT));
-          const { name, grabbed } = result;
-          const notice =
-            grabbed === undefined
-              ? `Added ${name}; their videos arrive with the next refresh`
-              : `Added ${name}${grabbed ? ` and ${grabbed} recent ${grabbed === 1 ? "video" : "videos"}` : ", nothing recent to grab"}`;
+          const notice = `Added ${result.name}; the next refresh reads them too`;
           if (home) window.dispatchEvent(new CustomEvent(FEED_CHANGED_EVENT, { detail: { notice } }));
-          else toast("done", `Added ${name}. Home page updated`);
+          else toast("done", notice);
         }),
     },
     icon(ADD_ICON),

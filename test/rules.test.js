@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { displayOrder, favoriteCopy, firstUnstored, latestBatch, maxBatch, mergeBatch, normalizeUrl, playable, treeOrder } from "../server/feed/rules.js";
+import { displayOrder, favoriteCopy, firstUnstored, latestBatch, mergeBatch, newNames, normalizeUrl, playable, treeOrder } from "../server/feed/rules.js";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -81,15 +81,6 @@ describe("mergeBatch", () => {
     mergeBatch(items, [video("b")], 2);
     assert.strictEqual(latestBatch(items), 2);
     assert.strictEqual(byId(items, "a").batch, 1);
-  });
-
-  it("a batch that is entirely hidden does not move New, but still uses its number", () => {
-    const items = /** @type {Item[]} */ ([]);
-    mergeBatch(items, [video("a")], 1);
-    mergeBatch(items, [video("b", { hiddenBy: { kind: "guidance", text: "only announcements" } })], 2);
-    assert.strictEqual(latestBatch(items), 1);
-    assert.strictEqual(maxBatch(items), 2);
-    assert.deepStrictEqual(ids(displayOrder(items)), ["a"]);
   });
 
   it("more-like-this results never change which batch is latest", () => {
@@ -178,5 +169,14 @@ describe("playable", () => {
 
   it("keeps them when the setting is off", () => {
     assert.strictEqual(playable(videos, { skipMembersOnly: false }).length, 2);
+  });
+});
+
+describe("newNames", () => {
+  it("keeps the order, drops repeats and names already on a recent card, and stops at the cap", () => {
+    const recent = [{ label: "Claude Code" }, { label: "" }];
+    const names = ["Gemini 4 Argon", " REA ", "claude code", "rea", "", "Python 3.15", "Opus 6"];
+    assert.deepStrictEqual(newNames(names, recent, 3), ["Gemini 4 Argon", "REA", "Python 3.15"]);
+    assert.deepStrictEqual(newNames([], recent, 3), []);
   });
 });
