@@ -14,9 +14,9 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   onFavorite?: () => void,
  *   onQueue?: () => void,
  *   onSearch?: (query: string) => void,
- * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player. `onPlay` replaces the plain click on a video
- * (Creators queues instead of playing while the player plays); `mark` tags a card that is in the player's History. `onSearch` is the click
- * on a story with no source: run its search here.
+ * }} CardOptions `onPlay` replaces the plain click on a video (Home and Creators queue instead of playing while the player plays);
+ * `onQueue` is the shift-click on a video (Creators: take it out of the queue again); `mark` tags a card that is in the player's History.
+ * `onSearch` is the click on a story with no source: run its search here.
  */
 
 /**

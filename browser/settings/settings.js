@@ -19,7 +19,7 @@ const ON_FAVORITE = [
 const GUIDE = [
   {
     where: "Home",
-    moves: [[["Shift", "click"], "On a video, while the player is playing: queue it right under the one playing. The card leaves Home. With no player playing, nothing happens."]],
+    moves: [[["click"], "On a video: while the player is playing, queue it right under the one playing; with nothing playing, play it. Either way the card leaves Home, as its × does."]],
   },
   {
     where: "Player",
