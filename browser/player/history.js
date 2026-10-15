@@ -1,6 +1,6 @@
 import { h } from "../shared/dom.js";
 import { setPosition, stopSaving } from "./positions.js";
-import { neighbor, nextUp, queueAfter } from "./queue.js";
+import { earlierFrom, neighbor, nextUp, queueAfter } from "./queue.js";
 
 /** @typedef {import("./queue.js").Entry} Entry */
 
@@ -12,6 +12,23 @@ import { neighbor, nextUp, queueAfter } from "./queue.js";
 const KEY = "player-history";
 /** Videos watched to the end: what auto-play skips. */
 const FINISHED = "player-finished";
+/** Each opening of the window is a session: a counter in localStorage, this window's number in sessionStorage (a step is a page load in the same window). */
+const SESSION = "player-session";
+
+/** This window's session number, taken on its first page load. */
+function session() {
+  try {
+    const mine = sessionStorage.getItem(SESSION);
+    if (mine) return Number(mine);
+    const next = Number(localStorage.getItem(SESSION) ?? "0") + 1;
+    localStorage.setItem(SESSION, String(next));
+    sessionStorage.setItem(SESSION, String(next));
+    return next;
+  } catch {
+    return 0;
+  }
+}
+const SESSION_ID = session();
 
 /** @returns {Set<string>} */
 function finished() {
@@ -40,7 +57,7 @@ function setFinished(videoId, on) {
  * @returns {Entry[]}
  */
 function remember(video) {
-  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel };
+  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel, session: SESSION_ID };
   try {
     /** @type {Entry[]} */
     const before = JSON.parse(localStorage.getItem(KEY) ?? "[]");
@@ -100,10 +117,12 @@ export function history(video) {
   };
 
   const draw = () => {
+    // A thin line above the first row an earlier opening of the window left behind.
+    const earlier = earlierFrom(list, SESSION_ID);
     column.replaceChildren(
-      ...list.map((e) => {
+      ...list.flatMap((e, i) => {
         const current = e.videoId === video.videoId;
-        return h(
+        const row = h(
           "li",
           // Named so the view transition can morph each row from where it was to where it is across the page load a step makes.
           { style: `view-transition-name: h-${e.videoId}` },
@@ -115,6 +134,7 @@ export function history(video) {
           ),
           h("button", { class: "history-remove", type: "button", onclick: () => remove(e.videoId), "aria-label": `Remove from history: ${e.title}`, title: "Remove" }, "×"),
         );
+        return i === earlier ? [h("li", { class: "history-divider", style: "view-transition-name: h-divider", "aria-hidden": "true" }, "Earlier"), row] : [row];
       }),
     );
     center();
@@ -135,7 +155,7 @@ export function history(video) {
     center,
     /** @param {Entry} entry */
     queue(entry) {
-      list = queueAfter(list, video.videoId, entry);
+      list = queueAfter(list, video.videoId, { ...entry, session: SESSION_ID });
       // Queued again after being watched, it is wanted again.
       setFinished(entry.videoId, false);
       try {

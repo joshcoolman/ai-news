@@ -10,7 +10,7 @@ const ENDED = 0;
 const SETTLE = 1500;
 
 /**
- * YouTube's embedded player, started where this window left the video. The
+ * YouTube's embedded player, started where the video was left. The
  * embed reports its time over postMessage once it hears "listening" (the
  * protocol YouTube's own iframe API speaks), so no script from YouTube loads.
  * @param {string} videoId

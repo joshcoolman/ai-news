@@ -64,7 +64,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     }
   });
 
-  // Pages queue into this window while it plays (Home's shift-click, a plain click on Creators): the video goes right under
+  // Pages queue into this window while it plays (a plain click on Home or Creators): the video goes right under
   // this one and the page hears "queued". They learn that something is playing from "playing", sent on load and in answer to a "ping";
   // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {
