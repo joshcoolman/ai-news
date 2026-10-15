@@ -2,19 +2,21 @@ import { read } from "../store.js";
 import { maxBatch, playable, withinDays } from "../feed/rules.js";
 import { toCard } from "../feed/cards.js";
 import { listChannelVideos } from "../youtube.js";
+import { parseChapters } from "../youtube-parse.js";
 import { estimateCost, STORIES_MODEL, uncachedCost } from "../ai/client.js";
 import { defineName, extractNames } from "../ai/stories.js";
 import { STORIES_PER_NAME } from "./events.js";
-import { fillAvatars, saveStories } from "./save.js";
+import { fillAvatars, saveStories, sourcelessStory } from "./save.js";
 
 /*
   A refresh runs as one server-side job that outlives the request that started
   it. Everything it does is appended to an event log; the browser streams that
   log over SSE (replaying it in full on reconnect), so a reload never loses
-  progress. The creators are only a signal: their week's titles are read for
-  the named things they are about, and each name is searched for its maker's
-  page in parallel. Only stories land on Home. The lock is held until the job
-  ends; a second refresh gets a 409.
+  progress. The creators are only a signal: their week's titles and chapter
+  lines are read for the named things they are about, and each name is
+  searched for a page in parallel; a name that finds none is still a card,
+  one whose click searches YouTube for it. Only stories land on Home. The lock
+  is held until the job ends; a second refresh gets a 409.
 */
 
 /** @typedef {(e: RefreshEvent) => void} Emit */
@@ -98,7 +100,7 @@ async function run(emit, signal) {
     /** @type {StoriesInput["creatorTitles"]} */
     const creatorTitles = [];
 
-    // 1. Every creator's list at once, for the week's titles.
+    // 1. Every creator's list at once, for the week's titles and chapters.
     await Promise.all(
       data.creators.map(async (creator) => {
         /** @type {FeedVideo[]} */
@@ -112,7 +114,9 @@ async function run(emit, signal) {
           return;
         }
         for (const v of videos) {
-          if (withinDays(v.publishedAt, 7)) creatorTitles.push({ channel: creator.name, title: v.title, publishedAt: v.publishedAt });
+          if (withinDays(v.publishedAt, 7)) {
+            creatorTitles.push({ channel: creator.name, title: v.title, publishedAt: v.publishedAt, chapters: parseChapters(v.description).map((c) => c.title) });
+          }
         }
         emit({ type: "creator-done", creatorId: creator.channelId });
       }),
@@ -170,11 +174,11 @@ async function runStories(batch, input, emit, signal, totals) {
           },
           signal,
         );
-        const added = await saveStories(batch, stories);
+        const added = await saveStories(batch, stories.length ? stories : [sourcelessStory(lane)]);
         totals.stories += added.length;
         emit({ type: "stories", laneId: lane.id, cards: added.map((i) => toCard(i, undefined, true)) });
         emit({ type: "lane-done", laneId: lane.id });
-        console.log(`[name ${lane.name}] ${added.length ? "a story" : "no story"} in ${Math.round((Date.now() - t0) / 1000)}s`);
+        console.log(`[name ${lane.name}] ${stories.length ? "sourced" : "no source"} in ${Math.round((Date.now() - t0) / 1000)}s`);
       } catch (err) {
         if (signal.aborted) return emit({ type: "lane-done", laneId: lane.id, cancelled: true });
         const { message } = /** @type {Error} */ (err);

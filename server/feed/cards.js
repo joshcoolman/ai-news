@@ -54,6 +54,7 @@ export function toCard(item, parent, isNew) {
       duration: item.duration ? formatDuration(item.duration) : undefined,
     };
   }
+  if (item.search) return { ...base, label: item.label, search: item.search, meta: `${prefix}no source yet · click to search YouTube` };
   return { ...base, label: item.label, meta: `${prefix}${item.topic} · ${item.sourceDomain}` };
 }
 

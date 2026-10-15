@@ -16,7 +16,7 @@ const log = [
   { type: "start", batch: 3, startedAt: new Date(0).toISOString(), creators },
   { type: "creator-done", creatorId: "a" },
   { type: "creator-failed", creatorId: "b" },
-  { type: "lanes", lanes: [{ id: "n0", name: "Gemini 4 Argon" }, { id: "n1", name: "REA" }, { id: "n2", name: "Opus 6" }], slots: 1 },
+  { type: "lanes", lanes: [{ id: "n0", name: "Gemini 4 Argon", heard: "" }, { id: "n1", name: "REA", heard: "" }, { id: "n2", name: "Opus 6", heard: "" }], slots: 1 },
   { type: "activity", laneId: "n0", text: 'Searching "Gemini 4 Argon"' },
   { type: "stories", laneId: "n1", cards: [card("s1")] },
   { type: "lane-done", laneId: "n1" },

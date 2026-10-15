@@ -10,6 +10,23 @@ import { channelInfo, videoDuration } from "../youtube.js";
 */
 
 /**
+ * The card for a name whose search found no page: the name, what the creators
+ * said, and a click that searches YouTube for it (`search`). Its link is the
+ * same search on youtube.com, for Favorites and anywhere else a card is just a link.
+ * @param {Lane} lane
+ * @returns {Story}
+ */
+export function sourcelessStory(lane) {
+  return {
+    label: lane.name,
+    title: lane.heard || lane.name,
+    sourceUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(lane.name)}`,
+    topic: "",
+    search: lane.name,
+  };
+}
+
+/**
  * Save one name's stories, skipping any that duplicate a stored card or another name's.
  * @param {number} batch
  * @param {Story[]} stories
@@ -39,6 +56,7 @@ export async function saveStories(batch, stories) {
         label: s.label,
         topic: s.topic,
         sourceDomain: domainOf(s.sourceUrl),
+        ...(s.search ? { search: s.search } : {}),
       });
     }
     return mergeBatch(d.items, incoming, batch);

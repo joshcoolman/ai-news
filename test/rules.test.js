@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { displayOrder, favoriteCopy, firstUnstored, latestBatch, mergeBatch, newNames, normalizeUrl, playable, treeOrder } from "../server/feed/rules.js";
+import { displayOrder, favoriteCopy, firstUnstored, latestBatch, mentioning, mergeBatch, newNames, normalizeUrl, playable, treeOrder } from "../server/feed/rules.js";
 
 let clock = 0;
 const at = () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString();
@@ -178,5 +178,21 @@ describe("newNames", () => {
     const names = ["Gemini 4 Argon", " REA ", "claude code", "rea", "", "Python 3.15", "Opus 6"];
     assert.deepStrictEqual(newNames(names, recent, 3), ["Gemini 4 Argon", "REA", "Python 3.15"]);
     assert.deepStrictEqual(newNames([], recent, 3), []);
+  });
+});
+
+describe("mentioning", () => {
+  const entries = [
+    { title: "FABLE 5.5 THIS WEEK? AI NEWS", chapters: ["Intro", "NVIDIA's New AI model Soon", "Grok Voice 3.0"] },
+    { title: "Python 3.15: Lazy Imports", chapters: [] },
+    { title: "Why AlphaFold Didn't Solve Protein Folding", chapters: ["The wet lab", "Models"] },
+  ];
+  it("keeps only the lines that mention the name, by the whole name first, then by its longer words", () => {
+    assert.deepStrictEqual(mentioning("grok voice 3.0", entries), [entries[0]]);
+    assert.deepStrictEqual(mentioning("NVIDIA new model", entries), [entries[0]]);
+    assert.deepStrictEqual(mentioning("Python 3.15", entries), [entries[1]]);
+  });
+  it("falls back to everything rather than nothing", () => {
+    assert.deepStrictEqual(mentioning("REA", entries), entries);
   });
 });
