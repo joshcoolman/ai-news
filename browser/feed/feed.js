@@ -70,6 +70,7 @@ function draw() {
       onMore: () => more(card),
       onFavorite: () => favorite(card),
       onQueue: () => queue(card),
+      onSearch: (q) => void search(q),
       ...extra,
     });
 

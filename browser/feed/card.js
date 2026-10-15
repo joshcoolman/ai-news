@@ -11,7 +11,8 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   onMore?: () => void,
  *   onFavorite?: () => void,
  *   onQueue?: () => void,
- * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player.
+ *   onSearch?: (query: string) => void,
+ * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player. `onSearch` is the click on a story with no source: run its search here.
  */
 
 /**
@@ -19,7 +20,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, arriving, onRemove, onMore, onFavorite, onQueue } = {}) {
+export function cardTile(card, { note, searching, arriving, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
     if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
       e.preventDefault();
@@ -29,6 +30,7 @@ export function cardTile(card, { note, searching, arriving, onRemove, onMore, on
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
     if (card.videoId) openInPlayer(`/player?${new URLSearchParams({ v: card.videoId, t: card.title })}`);
+    else if (card.search && onSearch) onSearch(card.search);
     else window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
   };
   const actions = [

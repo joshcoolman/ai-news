@@ -38,6 +38,27 @@ export function newNames(names, recentCards, max) {
 }
 
 /**
+ * The titles and chapter lines that mention a name, for the search about it:
+ * the name as a whole, else the entries matching the most of its longer words
+ * (so "model" alone does not pull in every video about models), else
+ * everything (a search with no context is worse than one with the whole week).
+ * @template {{ title: string, chapters: string[] }} T
+ * @param {string} name
+ * @param {T[]} entries
+ * @returns {T[]}
+ */
+export function mentioning(name, entries) {
+  const text = (/** @type {T} */ e) => [e.title, ...e.chapters].join("\n").toLowerCase();
+  const whole = name.trim().toLowerCase();
+  const byWhole = entries.filter((e) => text(e).includes(whole));
+  if (byWhole.length) return byWhole;
+  const words = whole.split(/\s+/).filter((w) => w.length >= 4);
+  const scored = entries.map((e) => ({ e, n: words.filter((w) => text(e).includes(w)).length }));
+  const best = Math.max(0, ...scored.map((s) => s.n));
+  return best ? scored.filter((s) => s.n === best).map((s) => s.e) : entries;
+}
+
+/**
  * Highest batch number ever used, removed items included, so numbers never collide.
  * @param {Item[]} items
  */

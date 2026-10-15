@@ -45,6 +45,8 @@ type StoryItem = ItemBase & {
   label: string;
   topic: string;
   sourceDomain: string;
+  /** No page was found for this name: a click searches YouTube for it instead of opening `link`. */
+  search?: string;
 };
 
 type Item = VideoItem | StoryItem;
@@ -80,6 +82,8 @@ type Card = {
   /** Video cards: the real thumbnail. Story cards: a label drawn on a colour block. */
   thumbUrl?: string;
   label?: string;
+  /** Story cards with no source: the click runs a search for this instead of opening the link. */
+  search?: string;
   meta: string;
   duration?: string;
   isNew: boolean;
@@ -143,14 +147,14 @@ type ClaudeMessage = {
   };
 };
 
-/** One name the creators are talking about, searched on its own; the progress line calls them searches. */
-type Lane = { id: string; name: string };
+/** One name the creators are talking about, searched on its own; the progress line calls them searches. `heard` is what they said. */
+type Lane = { id: string; name: string; heard: string };
 
-type Story = { label: string; title: string; sourceUrl: string; topic: string };
+type Story = { label: string; title: string; sourceUrl: string; topic: string; search?: string };
 
 type StoriesInput = {
-  /** Titles of creator videos from the last 7 days. */
-  creatorTitles: { channel: string; title: string; publishedAt: string }[];
+  /** Titles of creator videos from the last 7 days, each with its chapter lines (none when the video has no chapters). */
+  creatorTitles: { channel: string; title: string; publishedAt: string; chapters: string[] }[];
   /** Cards from the last 30 days, removed ones included. */
   recentCards: { label: string; title: string; link: string }[];
 };

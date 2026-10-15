@@ -16,7 +16,8 @@ A Node server and plain HTML, JS and CSS, with no runtime dependencies and no bu
    - **Card**: one tile in the feed, a video or a story. A refresh adds only stories; a video reaches Home only through a search or More like this.
    - **Batch**: the cards one refresh added; the newest batch carries the New tag.
    - **Favorite**: a copy of a card on the Favorites page; deleting it and deleting the feed card are independent.
-   - **Name**: a specific thing the week's creator titles are about (`prompts/extract-names.md`). Each name gets its own search for its maker's page (`prompts/define.md`; the progress line calls them "searches"); no maker's page, no card. The creators are the signal, never the source.
+   - **Name**: a specific thing the week's creator titles and chapter lines are about (`prompts/extract-names.md`; a roundup's chapters are its headlines). Each name gets one quick search for a page (`prompts/define.md`: the maker's news page first, else one web search; the progress line calls them "searches"). The creators are the signal, never the source.
+   - **No source yet**: a story card whose search found no page. The name on its block, what the creators said as its title; clicking it runs the home-page Search for the name instead of opening a page.
    - **Search**: the home-page box; a YouTube search of the last month whose first 8 unseen results land at the top as a new batch (meta line `Search: <query> ·`).
    - **More like this**: a YouTube search seeded by one card, its results placed after it.
    - **Members only**: a video only a channel's paying members can play. Left out of everything the app finds (refresh, Creators page, searches) unless Settings turns that off; the one rule is `playable` in `server/feed/rules.js`.
