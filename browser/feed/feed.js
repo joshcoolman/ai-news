@@ -6,6 +6,7 @@ import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries, slotTile } from "./card.js";
 import { favoritePrompt } from "./favorite-prompt.js";
 import { apply, optimistic, tiles } from "./live.js";
+import { movePick, nextPick } from "./pick.js";
 import { busyLine, progressLine, summaryLine } from "./status.js";
 
 /*
@@ -41,6 +42,10 @@ const state = {
   arrived: /** @type {Set<string>} */ (new Set()),
   /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
   playing: /** @type {string | null} */ (null),
+  /** The card the keyboard highlight is on, if any. */
+  picked: /** @type {string | null} */ (null),
+  /** The grid's cards in reading order, as last drawn: what the keys move through. */
+  shown: /** @type {string[]} */ ([]),
   onFavorite: /** @type {Settings["onFavorite"]} */ (settings.onFavorite),
 };
 
@@ -55,7 +60,7 @@ function drawStatus() {
 }
 
 function draw() {
-  const { live, pending, view, removed, faved, notes, searching, arrived } = state;
+  const { live, pending, view, removed, faved, notes, searching, arrived, picked } = state;
   drawStatus();
   setRefreshing(!!live);
 
@@ -73,9 +78,11 @@ function draw() {
       onFavorite: () => favorite(card),
       onPlay: () => play(card),
       onSearch: (q) => void search(q),
+      picked: card.id === picked,
       ...extra,
     });
 
+  state.shown = [...front.flatMap((t) => (t.kind === "card" ? [t.card.id] : [])), ...rest.map((c) => c.id)];
   const nothing = front.length === 0 && rest.length === 0 && !pending;
   empty.hidden = !nothing;
   grid.hidden = nothing;
@@ -156,6 +163,7 @@ function cancel() {
 
 /** @param {Card} card */
 async function remove(card) {
+  if (state.picked === card.id) state.picked = nextPick(state.shown, card.id) ?? null;
   state.removed.add(card.id);
   draw();
   await post(`/api/items/${encodeURIComponent(card.id)}/remove`);
@@ -289,6 +297,59 @@ onPlayerMessage(async (msg) => {
 });
 // Is a player already playing? One that is answers with "playing".
 announce({ type: "ping" });
+
+/*
+  Keyboard triage: arrows move a highlight through the grid (the first arrow
+  picks the first card), Enter acts on the highlighted card and Delete removes
+  it, and the highlight moves to the card after the one that left, the first
+  from the last. Enter on a topic is its More like this and then its ×, so the
+  results land where it was; on a video it is the click, queue or play. A mouse click on a card moves the highlight
+  there; Escape drops it. In the search box the keys are typing.
+*/
+window.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  const { shown, picked } = state;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+    e.preventDefault();
+    state.picked = movePick(shown, picked, e.key, columns()) ?? null;
+    draw();
+    return grid.querySelector(".card.picked")?.scrollIntoView({ block: "nearest" });
+  }
+  if (e.key === "Escape" && picked) {
+    state.picked = null;
+    return draw();
+  }
+  const card = picked ? cardById(picked) : undefined;
+  if (!card) return;
+  if (e.key === "Delete" || e.key === "Backspace") {
+    e.preventDefault();
+    void remove(card);
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    if (card.videoId) play(card);
+    else {
+      void more(card);
+      void remove(card);
+    }
+  }
+});
+grid.addEventListener("click", (e) => {
+  const tile = /** @type {Element} */ (e.target).closest(".card[data-id]");
+  if (!tile) return;
+  state.picked = tile.getAttribute("data-id");
+  draw();
+});
+
+/** @param {string} id */
+function cardById(id) {
+  return state.view.cards.find((c) => c.id === id) ?? state.live?.lanes?.flatMap((l) => l.cards).find((c) => c.id === id);
+}
+
+/** How many cards share the grid's first row: read from layout, since the grid wraps to the window. */
+function columns() {
+  const tops = [...grid.querySelectorAll(".card")].map((c) => /** @type {HTMLElement} */ (c).offsetTop);
+  return Math.max(1, tops.filter((t) => t === tops[0]).length);
+}
 
 draw();
 if (feed.refresh.running) follow();

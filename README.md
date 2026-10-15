@@ -32,12 +32,12 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** judge the first chapters-as-signal refresh (#36). Home was emptied on 2026-10-15 for it; run Refresh and look at three things: how many names came back (cap is 30), how many are "no source yet" and whether those are real things, and whether repos and announcements still link to the real page. Tune `prompts/extract-names.md` (what counts as a name) and `prompts/define.md` (how hard to look) from what you see. The cap (`MAX_NAMES`) is the cost knob.
 
 **Last shipped**
+- Home keyboard triage (#50): arrows move a green highlight through the grid, Enter on a topic is its More like this and × (results land where it was), Enter on a video queues or plays it, Delete is its ×. The highlight moves to the next card, the first from the last. Listed in the Settings guide; rules in `browser/feed/pick.js`.
 - Home click queues, History is kept, Earlier divider (#46, #47, #48). A plain click on a Home video queues it under the one playing, or plays it when nothing is, and the card leaves either way; shift-click on Home is gone. History, finished marks and positions are localStorage: a row leaves only by its ×, no cap. Each opening of the Player is a session, and an "Earlier" line sits above the rows a previous one left.
 - Creators: a click queues while the Player is playing (#38). The first click plays; after that each click puts the video right under the one playing and the card says Queued. The Player now announces "playing" and "closed", and answers a page's "ping", so pages know.
 - Chapters are signal and a source is optional (#36): the extractor reads each video's chapter lines as well as its title (a roundup's chapters are its headlines), up to 30 names a refresh, and each name gets one quick look (maker's news page first, else one search). A name with no page is still a card, marked "no source yet", and clicking it runs the home-page Search for the name.
 - Home is topic cards only (#33): a refresh reads the week's creator titles for the named things they are about, searches each name for its maker's page, and adds a story per name. Videos, the guidance filter, held-back videos and the quick grab on Add creator are gone from Home; the Creators page is unchanged. A video reaches Home only through a search.
 - Home, Favorites and Creators fill the viewport (#34).
-- Sidecar History is a fixed-center carousel (#30): the playing row sits at the column's middle, larger than the rest, and up and down slide the list under it, stopping at the ends. Delete (or Backspace) removes the playing video and moves on to the one below.
 
 **Up next**
 - Open issues.
