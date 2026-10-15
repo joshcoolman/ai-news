@@ -64,12 +64,17 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     }
   });
 
-  // Home's shift-click: take the video into the queue, right under this one, and say so. Home removes its card on hearing it.
+  // Pages queue into this window while it plays (Home's shift-click, a plain click on Creators): the video goes right under
+  // this one and the page hears "queued". They learn that something is playing from "playing", sent on load and in answer to a "ping";
+  // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {
+    if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     if (msg.type !== "queue" || msg.videoId === v) return;
     /** @type {PlayerVideo} */
     const info = await load(`/api/player/video?${new URLSearchParams({ v: msg.videoId, t: msg.title })}`);
     played.queue({ videoId: info.videoId, title: info.title, thumbUrl: info.thumbUrl, channel: info.channel });
     announce({ type: "queued", videoId: msg.videoId });
   });
+  announce({ type: "playing", videoId: v });
+  window.addEventListener("pagehide", () => announce({ type: "closed" }));
 }

@@ -35,7 +35,10 @@ const GUIDE = [
   },
   {
     where: "Creators",
-    moves: [[["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."]],
+    moves: [
+      [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued. The first click, with nothing playing, plays. A queued card ignores further clicks."],
+      [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."],
+    ],
   },
 ];
 
