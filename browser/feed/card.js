@@ -63,7 +63,7 @@ export function cardTile(card, { note, searching, arriving, queued, onPlay, onRe
   ];
   return h(
     "div",
-    { class: `card${arriving ? " arrive" : ""}` },
+    { class: `card${arriving ? " arrive" : ""}${queued ? " queued" : ""}` },
     h(
       "div",
       { class: "thumb", style: { "--h": hue(card.id) } },

@@ -34,6 +34,7 @@
     font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
   }
   .queued-tag { background: rgba(0,0,0,.8); }
+  &.queued .thumb img { opacity: .3; transition: opacity .3s; }
 
   .remove, .more, .fav {
     position: absolute; width: 30px; height: 30px; border-radius: 50%; border: 0;
