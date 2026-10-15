@@ -160,7 +160,7 @@ function draw() {
     grid,
     loading
       ? slotEntries("loading", PLACEHOLDERS)
-      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), queued: inPlayer(r.card) })),
+      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), onQueue: () => unqueue(r.card), mark: markOf(r.card) })),
   );
 
   noCreators.hidden = creators.length > 0;
@@ -262,8 +262,8 @@ async function remove(c) {
   await del(`/api/creators/${c.channelId}`);
 }
 
-/** Queued from here, or the one playing: either way it is in the player's History. @param {Card} card */
-const inPlayer = (card) => !!card.videoId && (state.queued.has(card.videoId) || card.videoId === state.playing);
+/** Playing in the sidecar, queued from here, or neither. @param {Card} card @returns {"playing" | "queued" | undefined} */
+const markOf = (card) => (card.videoId && card.videoId === state.playing ? "playing" : card.videoId && state.queued.has(card.videoId) ? "queued" : undefined);
 
 /**
  * A click on a video: the first one plays it in the player window; while the
@@ -275,8 +275,18 @@ const inPlayer = (card) => !!card.videoId && (state.queued.has(card.videoId) || 
 function play(card) {
   if (!card.videoId) return;
   if (!state.playing) return playInPlayer(card);
-  if (inPlayer(card)) return;
+  if (markOf(card)) return;
   announce({ type: "queue", videoId: card.videoId, title: card.title });
+}
+
+/**
+ * Shift-click on a queued or playing video: the player drops its row and the
+ * card is a plain card again. Dropping the playing one plays the next.
+ * @param {Card} card
+ */
+function unqueue(card) {
+  if (!card.videoId || !markOf(card)) return;
+  announce({ type: "unqueue", videoId: card.videoId });
 }
 
 /**
@@ -345,6 +355,7 @@ onPlayerMessage((msg) => {
   if (msg.type === "playing") state.playing = msg.videoId;
   else if (msg.type === "closed") state.playing = null;
   else if (msg.type === "queued") state.queued.add(msg.videoId);
+  else if (msg.type === "unqueued") state.queued.delete(msg.videoId);
   else return;
   draw();
 });

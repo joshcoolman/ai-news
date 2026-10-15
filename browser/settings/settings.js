@@ -36,7 +36,8 @@ const GUIDE = [
   {
     where: "Creators",
     moves: [
-      [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued. The first click, with nothing playing, plays. A queued card ignores further clicks."],
+      [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. A marked card ignores further clicks."],
+      [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the same as its Delete, the next one plays."],
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."],
     ],
   },

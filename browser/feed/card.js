@@ -7,7 +7,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   note?: string,
  *   searching?: boolean,
  *   arriving?: boolean,
- *   queued?: boolean,
+ *   mark?: "queued" | "playing",
  *   onPlay?: () => void,
  *   onRemove?: () => void,
  *   onMore?: () => void,
@@ -15,7 +15,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   onQueue?: () => void,
  *   onSearch?: (query: string) => void,
  * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player. `onPlay` replaces the plain click on a video
- * (Creators queues instead of playing while the player plays); `queued` marks a card the player has taken. `onSearch` is the click
+ * (Creators queues instead of playing while the player plays); `mark` tags a card that is in the player's History. `onSearch` is the click
  * on a story with no source: run its search here.
  */
 
@@ -24,7 +24,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, arriving, queued, onPlay, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
+export function cardTile(card, { note, searching, arriving, mark, onPlay, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
     if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
       e.preventDefault();
@@ -63,14 +63,14 @@ export function cardTile(card, { note, searching, arriving, queued, onPlay, onRe
   ];
   return h(
     "div",
-    { class: `card${arriving ? " arrive" : ""}${queued ? " queued" : ""}` },
+    { class: `card${arriving ? " arrive" : ""}${mark ? " queued" : ""}` },
     h(
       "div",
       { class: "thumb", style: { "--h": hue(card.id) } },
       card.thumbUrl ? h("img", { src: card.thumbUrl, alt: "", loading: "lazy" }) : h("span", {}, card.label),
       h("a", { class: "hit", href: card.link, target: "_blank", rel: "noopener", onclick: open, "aria-label": `Open: ${card.title}` }),
       card.isNew && h("span", { class: "new-tag" }, "New"),
-      queued && h("span", { class: "new-tag queued-tag" }, "Queued"),
+      mark && h("span", { class: "new-tag queued-tag" }, mark === "playing" ? "Playing" : "Queued"),
       actions,
       card.duration && h("span", { class: "badge" }, card.duration),
     ),
@@ -103,7 +103,7 @@ export function slotTile(label, activity) {
 export function cardEntry(card, options) {
   return {
     key: card.id,
-    sig: JSON.stringify([card, options.note, options.searching, options.arriving, options.queued]),
+    sig: JSON.stringify([card, options.note, options.searching, options.arriving, options.mark]),
     // A card redrawn in place has already arrived; only a new one animates in.
     make: (replacing) => cardTile(card, { ...options, arriving: options.arriving && !replacing }),
   };
