@@ -5,6 +5,7 @@
 
   &.arrive { animation: arrive .45s cubic-bezier(.2, .8, .2, 1) both; }
   /* In the player's History already (queued, or playing): almost gone, so what is left to pick stands out. */
+  &.queued .thumb { background: #000; }
   &.queued .thumb img { opacity: .1; transition: opacity .3s; }
 
   .title { font-size: 16px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
