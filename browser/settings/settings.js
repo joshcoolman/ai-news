@@ -69,7 +69,7 @@ const ownKeys = Object.values(config.keys).includes("browser");
 document.body.append(
   h(
     "div",
-    { class: "wrap" },
+    { class: "wrap narrow" },
     topBar("settings"),
     h("h2", { class: "page-title" }, "Settings"),
     h(
