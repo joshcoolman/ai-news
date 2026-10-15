@@ -4,7 +4,7 @@
   playing, and when a video ends the player moves down the column.
 */
 
-/** @typedef {{ videoId: string, title: string, thumbUrl: string, channel?: string }} Entry */
+/** @typedef {{ videoId: string, title: string, thumbUrl: string, channel?: string, session?: number }} Entry `session` is the window opening that added the row; an unstamped row is from before sessions. */
 
 /**
  * The list with `entry` directly under the playing video. One already listed
@@ -23,7 +23,7 @@ export function queueAfter(list, playingId, entry) {
 
 /**
  * What plays when the playing video ends: the first row under it that has not
- * been watched to the end in this window. Rows under the playing video are
+ * been watched to the end. Rows under the playing video are
  * otherwise older history, and those must not replay one after another.
  * @param {Entry[]} list
  * @param {string} playingId
@@ -46,4 +46,17 @@ export function neighbor(list, playingId, direction) {
   const at = list.findIndex((e) => e.videoId === playingId);
   if (at < 0) return undefined;
   return list[at + direction];
+}
+
+/**
+ * Where the "Earlier" divider goes: the index of the first row not added by
+ * this session, so this sitting's rows read apart from what was left over. No
+ * divider (-1) when every row is this session's, or when the earlier rows
+ * start at the top, where a line would separate nothing.
+ * @param {Entry[]} list
+ * @param {number} session
+ */
+export function earlierFrom(list, session) {
+  const at = list.findIndex((e) => e.session !== session);
+  return at > 0 ? at : -1;
 }

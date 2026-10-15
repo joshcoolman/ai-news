@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { neighbor, nextUp, queueAfter } from "../browser/player/queue.js";
+import { earlierFrom, neighbor, nextUp, queueAfter } from "../browser/player/queue.js";
 
 const entry = (/** @type {string} */ videoId) => ({ videoId, title: videoId, thumbUrl: "" });
 const ids = (/** @type {{ videoId: string }[]} */ list) => list.map((e) => e.videoId);
@@ -51,5 +51,20 @@ describe("neighbor", () => {
 
   it("has nowhere to go from the only row", () => {
     assert.strictEqual(neighbor([entry("playing")], "playing", 1), undefined);
+  });
+});
+
+describe("earlierFrom", () => {
+  const stamped = (/** @type {string} */ videoId, /** @type {number | undefined} */ session) => ({ ...entry(videoId), session });
+
+  it("is the first row from an earlier session, unstamped rows included", () => {
+    assert.strictEqual(earlierFrom([stamped("a", 3), stamped("b", 3), stamped("c", 2), stamped("d", undefined)], 3), 2);
+    assert.strictEqual(earlierFrom([stamped("a", 3), stamped("d", undefined)], 3), 1);
+  });
+
+  it("is nothing when every row is this session's, the list is empty, or the earlier rows start at the top", () => {
+    assert.strictEqual(earlierFrom([stamped("a", 3), stamped("b", 3)], 3), -1);
+    assert.strictEqual(earlierFrom([], 3), -1);
+    assert.strictEqual(earlierFrom([stamped("c", 2), stamped("d", 1)], 3), -1);
   });
 });

@@ -3,7 +3,7 @@ import { h, sync } from "../shared/dom.js";
 import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, takeHandoff } from "../shared/handoff.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
-import { cardEntry, slotEntries, slotTile } from "./card.js";
+import { cardEntry, playInPlayer, slotEntries, slotTile } from "./card.js";
 import { favoritePrompt } from "./favorite-prompt.js";
 import { apply, optimistic, tiles } from "./live.js";
 import { busyLine, progressLine, summaryLine } from "./status.js";
@@ -39,6 +39,8 @@ const state = {
   faved: /** @type {Set<string>} */ (new Set()),
   /** Cards the last search added: they animate in where the placeholders were. */
   arrived: /** @type {Set<string>} */ (new Set()),
+  /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
+  playing: /** @type {string | null} */ (null),
   onFavorite: /** @type {Settings["onFavorite"]} */ (settings.onFavorite),
 };
 
@@ -69,7 +71,7 @@ function draw() {
       onRemove: () => remove(card),
       onMore: () => more(card),
       onFavorite: () => favorite(card),
-      onQueue: () => queue(card),
+      onPlay: () => play(card),
       onSearch: (q) => void search(q),
       ...extra,
     });
@@ -160,16 +162,22 @@ async function remove(card) {
 }
 
 /*
-  Shift-click on a video: ask the player to queue it. Nothing here changes
-  until the player answers, and only a player that is playing something does,
-  so with no player the click does nothing.
+  A click on a video is a decision to watch it, so the card leaves Home either
+  way. With nothing playing it plays now. While the player is playing it is
+  queued right under the one playing, and the card goes once the player answers
+  "queued" (only a player that is playing something does).
 */
 /** @type {Map<string, Card>} */
 const asked = new Map();
 
 /** @param {Card} card */
-function queue(card) {
+function play(card) {
   if (!card.videoId) return;
+  if (!state.playing) {
+    playInPlayer(card);
+    return void remove(card);
+  }
+  if (asked.has(card.videoId)) return;
   asked.set(card.videoId, card);
   announce({ type: "queue", videoId: card.videoId, title: card.title });
 }
@@ -264,9 +272,10 @@ window.addEventListener(FEED_CHANGED_EVENT, async (e) => {
   draw();
 });
 
-// The player window favorited, removed or restored a card.
+// The player window: whether it is playing, a video it took into its queue, a card it favorited, removed or restored.
 onPlayerMessage(async (msg) => {
-  if (msg.type === "queue") return;
+  if (msg.type === "playing") return void (state.playing = msg.videoId);
+  if (msg.type === "closed") return void (state.playing = null);
   if (msg.type === "queued") {
     // The player took it: it leaves home for good, like the × does.
     const card = asked.get(msg.videoId);
@@ -274,9 +283,12 @@ onPlayerMessage(async (msg) => {
     return card && remove(card);
   }
   if (msg.type === "card") state.faved.delete(msg.id);
+  else if (msg.type !== "creators") return;
   await reload();
   draw();
 });
+// Is a player already playing? One that is answers with "playing".
+announce({ type: "ping" });
 
 draw();
 if (feed.refresh.running) follow();
