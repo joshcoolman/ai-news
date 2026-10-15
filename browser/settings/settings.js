@@ -19,7 +19,12 @@ const ON_FAVORITE = [
 const GUIDE = [
   {
     where: "Home",
-    moves: [[["click"], "On a video: while the player is playing, queue it right under the one playing; with nothing playing, play it. Either way the card leaves Home, as its × does."]],
+    moves: [
+      [["click"], "On a video: while the player is playing, queue it right under the one playing; with nothing playing, play it. Either way the card leaves Home, as its × does."],
+      [["←", "→", "↑", "↓"], "Move the highlight through the grid; the first press highlights the first card. Esc drops it. A click on a card moves it there."],
+      [["Enter"], "On a highlighted topic: More like this, and the topic leaves; the results land where it was. On a video: the click, queue or play. The highlight moves to the next card, the first from the last."],
+      [["Delete"], "Remove the highlighted card, as its × does. The highlight moves on the same way."],
+    ],
   },
   {
     where: "Player",

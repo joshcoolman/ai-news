@@ -8,6 +8,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   searching?: boolean,
  *   arriving?: boolean,
  *   mark?: "queued" | "playing",
+ *   picked?: boolean,
  *   onPlay?: () => void,
  *   onRemove?: () => void,
  *   onMore?: () => void,
@@ -15,8 +16,8 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   onQueue?: () => void,
  *   onSearch?: (query: string) => void,
  * }} CardOptions `onPlay` replaces the plain click on a video (Home and Creators queue instead of playing while the player plays);
- * `onQueue` is the shift-click on a video (Creators: take it out of the queue again); `mark` tags a card that is in the player's History.
- * `onSearch` is the click on a story with no source: run its search here.
+ * `onQueue` is the shift-click on a video (Creators: take it out of the queue again); `mark` tags a card that is in the player's History;
+ * `picked` is Home's keyboard highlight. `onSearch` is the click on a story with no source: run its search here.
  */
 
 /**
@@ -24,7 +25,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, arriving, mark, onPlay, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
+export function cardTile(card, { note, searching, arriving, mark, picked, onPlay, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
     if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
       e.preventDefault();
@@ -63,7 +64,7 @@ export function cardTile(card, { note, searching, arriving, mark, onPlay, onRemo
   ];
   return h(
     "div",
-    { class: `card${arriving ? " arrive" : ""}${mark ? " queued" : ""}` },
+    { class: `card${arriving ? " arrive" : ""}${mark ? " queued" : ""}${picked ? " picked" : ""}`, "data-id": card.id },
     h(
       "div",
       { class: "thumb", style: { "--h": hue(card.id) } },
@@ -103,7 +104,7 @@ export function slotTile(label, activity) {
 export function cardEntry(card, options) {
   return {
     key: card.id,
-    sig: JSON.stringify([card, options.note, options.searching, options.arriving, options.mark]),
+    sig: JSON.stringify([card, options.note, options.searching, options.arriving, options.mark, options.picked]),
     // A card redrawn in place has already arrived; only a new one animates in.
     make: (replacing) => cardTile(card, { ...options, arriving: options.arriving && !replacing }),
   };
