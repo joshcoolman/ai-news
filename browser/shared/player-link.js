@@ -6,12 +6,17 @@
 
 /**
  * From the player: a card's favorite or removal changed, a creator was added,
- * or a video was taken into its queue. To the player, from Home: queue this
- * video. Nobody answers a "queue" unless a player is playing something.
+ * a video was taken into its queue, it started playing a video, or its window
+ * is going away. To the player, from a page: queue this video, or "ping",
+ * which a playing player answers with "playing". Nobody answers a "queue"
+ * unless a player is playing something.
  * @typedef {{ type: "card", id: string }
  *   | { type: "creators" }
  *   | { type: "queue", videoId: string, title: string }
- *   | { type: "queued", videoId: string }} PlayerMessage
+ *   | { type: "queued", videoId: string }
+ *   | { type: "ping" }
+ *   | { type: "playing", videoId: string }
+ *   | { type: "closed" }} PlayerMessage
  */
 
 const NAME = "ainews-player";

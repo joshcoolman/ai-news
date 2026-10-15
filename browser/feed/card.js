@@ -7,12 +7,16 @@ import { h, icon, ICONS } from "../shared/dom.js";
  *   note?: string,
  *   searching?: boolean,
  *   arriving?: boolean,
+ *   queued?: boolean,
+ *   onPlay?: () => void,
  *   onRemove?: () => void,
  *   onMore?: () => void,
  *   onFavorite?: () => void,
  *   onQueue?: () => void,
  *   onSearch?: (query: string) => void,
- * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player. `onSearch` is the click on a story with no source: run its search here.
+ * }} CardOptions `onQueue` is Home's shift-click on a video: queue it in the player. `onPlay` replaces the plain click on a video
+ * (Creators queues instead of playing while the player plays); `queued` marks a card the player has taken. `onSearch` is the click
+ * on a story with no source: run its search here.
  */
 
 /**
@@ -20,7 +24,7 @@ import { h, icon, ICONS } from "../shared/dom.js";
  * @param {Card} card
  * @param {CardOptions} [options]
  */
-export function cardTile(card, { note, searching, arriving, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
+export function cardTile(card, { note, searching, arriving, queued, onPlay, onRemove, onMore, onFavorite, onQueue, onSearch } = {}) {
   const open = (/** @type {MouseEvent} */ e) => {
     if (onQueue && card.videoId && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.button === 0) {
       e.preventDefault();
@@ -29,7 +33,8 @@ export function cardTile(card, { note, searching, arriving, onRemove, onMore, on
     // A plain click on the thumbnail plays in the player window; modified clicks keep the browser's own behaviour.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
-    if (card.videoId) openInPlayer(`/player?${new URLSearchParams({ v: card.videoId, t: card.title })}`);
+    if (card.videoId && onPlay) onPlay();
+    else if (card.videoId) playInPlayer(card);
     else if (card.search && onSearch) onSearch(card.search);
     else window.open(card.link, "_blank", "popup,noopener,width=1280,height=820");
   };
@@ -65,6 +70,7 @@ export function cardTile(card, { note, searching, arriving, onRemove, onMore, on
       card.thumbUrl ? h("img", { src: card.thumbUrl, alt: "", loading: "lazy" }) : h("span", {}, card.label),
       h("a", { class: "hit", href: card.link, target: "_blank", rel: "noopener", onclick: open, "aria-label": `Open: ${card.title}` }),
       card.isNew && h("span", { class: "new-tag" }, "New"),
+      queued && h("span", { class: "new-tag queued-tag" }, "Queued"),
       actions,
       card.duration && h("span", { class: "badge" }, card.duration),
     ),
@@ -97,7 +103,7 @@ export function slotTile(label, activity) {
 export function cardEntry(card, options) {
   return {
     key: card.id,
-    sig: JSON.stringify([card, options.note, options.searching, options.arriving]),
+    sig: JSON.stringify([card, options.note, options.searching, options.arriving, options.queued]),
     // A card redrawn in place has already arrived; only a new one animates in.
     make: (replacing) => cardTile(card, { ...options, arriving: options.arriving && !replacing }),
   };
@@ -121,6 +127,11 @@ export function slotEntries(prefix, count) {
   name once it lands there, and the next click opens a second window. No
   noopener either, for the same reason.
 */
+/** Play a video card in the player window. @param {Card} card */
+export function playInPlayer(card) {
+  openInPlayer(`/player?${new URLSearchParams({ v: card.videoId ?? "", t: card.title })}`);
+}
+
 /** @param {string} link */
 function openInPlayer(link) {
   const s = /** @type {Screen & { availLeft?: number, availTop?: number }} */ (screen);

@@ -1,9 +1,9 @@
 import { boot, del, load, patch, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { CREATORS_CHANGED_EVENT, handToHome } from "../shared/handoff.js";
-import { onPlayerMessage } from "../shared/player-link.js";
+import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
-import { cardEntry, slotEntries } from "../feed/card.js";
+import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
 import { busyLine } from "../feed/status.js";
 
 /*
@@ -33,6 +33,10 @@ const state = {
   topics: /** @type {PageTopic[] | null} */ (null),
   topic: /** @type {string | null} */ (null),
   days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? 7)),
+  /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
+  playing: /** @type {string | null} */ (null),
+  /** Videos the player has taken from this page, marked Queued; clicking one again does nothing. */
+  queued: /** @type {Set<string>} */ (new Set()),
 };
 
 /** Whether this document was loaded by reloading the page. */
@@ -152,7 +156,12 @@ function draw() {
   nothing.hidden = !none;
   grid.hidden = none;
   nothing.textContent = `Nothing in the last ${days} days${topic ? ` on ${topic}` : ""}${selected ? " from this creator" : ""}.`;
-  sync(grid, loading ? slotEntries("loading", PLACEHOLDERS) : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card) })));
+  sync(
+    grid,
+    loading
+      ? slotEntries("loading", PLACEHOLDERS)
+      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), queued: state.queued.has(r.card.videoId ?? "") })),
+  );
 
   noCreators.hidden = creators.length > 0;
   sync(
@@ -254,6 +263,20 @@ async function remove(c) {
 }
 
 /**
+ * A click on a video: the first one plays it in the player window; while the
+ * player is playing, each click queues the video right under the one playing
+ * and the card is marked once the player has it. A queued card, or the one
+ * playing, ignores the click.
+ * @param {Card} card
+ */
+function play(card) {
+  if (!card.videoId) return;
+  if (!state.playing) return playInPlayer(card);
+  if (state.queued.has(card.videoId) || card.videoId === state.playing) return;
+  announce({ type: "queue", videoId: card.videoId, title: card.title });
+}
+
+/**
  * Search the video's topic on home: go there now, and home runs it behind placeholders. Creators stays untouched.
  * @param {Card} card
  */
@@ -314,7 +337,16 @@ document.addEventListener("click", (e) => {
 });
 
 window.addEventListener(CREATORS_CHANGED_EVENT, () => void loadCreators());
-onPlayerMessage((msg) => msg.type === "creators" && void loadCreators());
+onPlayerMessage((msg) => {
+  if (msg.type === "creators") return void loadCreators();
+  if (msg.type === "playing") state.playing = msg.videoId;
+  else if (msg.type === "closed") state.playing = null;
+  else if (msg.type === "queued") state.queued.add(msg.videoId);
+  else return;
+  draw();
+});
+// Is a player already playing? One that is answers with "playing".
+announce({ type: "ping" });
 
 draw();
 void loadVideos(reloadedHere());
