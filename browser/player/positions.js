@@ -1,14 +1,13 @@
 /*
-  Where each video was left, in sessionStorage beside the history: coming back
-  to a video in this window picks it up there, and it is all gone when the
-  window closes.
+  Where each video was left, in localStorage beside the history: coming back to
+  a video picks it up there, and a row's × forgets it along with the row.
 */
 const KEY = "player-positions";
 
 /** @returns {Record<string, number>} */
 export function positions() {
   try {
-    return JSON.parse(sessionStorage.getItem(KEY) ?? "{}");
+    return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
     return {};
   }
@@ -28,7 +27,7 @@ export function setPosition(videoId, seconds) {
     const all = positions();
     if (seconds === undefined) delete all[videoId];
     else all[videoId] = seconds;
-    sessionStorage.setItem(KEY, JSON.stringify(all));
+    localStorage.setItem(KEY, JSON.stringify(all));
   } catch {}
 }
 

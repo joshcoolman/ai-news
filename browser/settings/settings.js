@@ -48,7 +48,7 @@ function guide() {
     "fieldset",
     { class: "setting guide" },
     h("legend", {}, "Keys and power moves"),
-    h("p", {}, "None of these has a button. When a video ends in the player, the next one down that you have not finished starts by itself."),
+    h("p", {}, "None of these has a button. When a video ends in the player, the next one down that you have not finished starts by itself. History is kept when the player closes; a row leaves only by its ×."),
     GUIDE.flatMap((section) => [
       h("h3", {}, section.where),
       h(
