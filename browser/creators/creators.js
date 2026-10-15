@@ -160,7 +160,7 @@ function draw() {
     grid,
     loading
       ? slotEntries("loading", PLACEHOLDERS)
-      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), queued: state.queued.has(r.card.videoId ?? "") })),
+      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), queued: inPlayer(r.card) })),
   );
 
   noCreators.hidden = creators.length > 0;
@@ -262,6 +262,9 @@ async function remove(c) {
   await del(`/api/creators/${c.channelId}`);
 }
 
+/** Queued from here, or the one playing: either way it is in the player's History. @param {Card} card */
+const inPlayer = (card) => !!card.videoId && (state.queued.has(card.videoId) || card.videoId === state.playing);
+
 /**
  * A click on a video: the first one plays it in the player window; while the
  * player is playing, each click queues the video right under the one playing
@@ -272,7 +275,7 @@ async function remove(c) {
 function play(card) {
   if (!card.videoId) return;
   if (!state.playing) return playInPlayer(card);
-  if (state.queued.has(card.videoId) || card.videoId === state.playing) return;
+  if (inPlayer(card)) return;
   announce({ type: "queue", videoId: card.videoId, title: card.title });
 }
 
