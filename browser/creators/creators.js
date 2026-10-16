@@ -2,7 +2,7 @@ import { boot, del, load, patch, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { CREATORS_CHANGED_EVENT, handToHome } from "../shared/handoff.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
-import { announce, onPlayerMessage } from "../shared/player-link.js";
+import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
 import { atRightEdge, movePick, nearestPick } from "../feed/pick.js";
@@ -420,6 +420,7 @@ document.addEventListener("click", (e) => {
 });
 
 window.addEventListener(CREATORS_CHANGED_EVENT, () => void loadCreators());
+toggleOnSpace();
 onPlayerMessage((msg) => {
   if (msg.type === "creators") return void loadCreators();
   if (msg.type === "playing") state.playing = msg.videoId;

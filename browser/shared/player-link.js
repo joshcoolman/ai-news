@@ -9,7 +9,7 @@
  * a video was taken into or dropped from its queue, it started playing a
  * video, or its window is going away. To the player, from a page: queue or
  * unqueue this video, or "ping", which a playing player answers with
- * "playing". Nobody answers a "queue" unless a player is playing something.
+ * "playing"; or "toggle", pause or play. Nobody answers a "queue" or "toggle" unless a player is playing something.
  * @typedef {{ type: "card", id: string }
  *   | { type: "creators" }
  *   | { type: "queue", videoId: string, title: string }
@@ -17,6 +17,7 @@
  *   | { type: "unqueue", videoId: string }
  *   | { type: "unqueued", videoId: string }
  *   | { type: "ping" }
+ *   | { type: "toggle" }
  *   | { type: "playing", videoId: string }
  *   | { type: "closed" }} PlayerMessage
  */
@@ -36,4 +37,14 @@ export function announce(msg) {
  */
 export function onPlayerMessage(handler) {
   new BroadcastChannel(NAME).onmessage = (e) => handler(e.data);
+}
+
+/** On Space outside anything that takes Space itself, tell the player to pause or play. */
+export function toggleOnSpace() {
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== " " || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.repeat) return;
+    if (e.target instanceof Element && e.target.closest("input, textarea, select, button, a, [contenteditable]")) return;
+    e.preventDefault();
+    announce({ type: "toggle" });
+  });
 }

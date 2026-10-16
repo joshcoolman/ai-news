@@ -40,7 +40,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     The player's keys, bare arrows and Delete. Up and down: play the row above
     or below in the column, stopping at its ends (each video resumes where this
     window left it); while the Chapters list is open they walk the chapters
-    instead. Left and right: back or forward 10 seconds. Delete (Backspace on a
+    instead. Space: pause or play. Left and right: back or forward 10 seconds. Delete (Backspace on a
     Mac keyboard, or forward Delete): remove the playing row, as its × does,
     and move on to the row below. They reach
     this page only while it has the keyboard: after a click inside the video,
@@ -58,6 +58,9 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
       player.seek(Math.max(0, player.time() + (e.key === "ArrowRight" ? SKIP : -SKIP)));
+    } else if (e.key === " " && !(e.target instanceof Element && e.target.closest("input, textarea, select, button, a"))) {
+      e.preventDefault();
+      player.toggle();
     } else if (e.key === "Backspace" || e.key === "Delete") {
       e.preventDefault();
       played.removeCurrent();
@@ -68,6 +71,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   // this one and the page hears "queued". They learn that something is playing from "playing", sent on load and in answer to a "ping";
   // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {
+    if (msg.type === "toggle") return player.toggle();
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
     if (msg.type === "unqueue") {

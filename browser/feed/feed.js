@@ -1,7 +1,7 @@
 import { boot, load, patch, post, send } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { FEED_CHANGED_EVENT, REFRESH_EVENT, SEARCH_EVENT, takeHandoff } from "../shared/handoff.js";
-import { announce, onPlayerMessage } from "../shared/player-link.js";
+import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries, slotTile } from "./card.js";
 import { favoritePrompt } from "./favorite-prompt.js";
@@ -281,6 +281,7 @@ window.addEventListener(FEED_CHANGED_EVENT, async (e) => {
 });
 
 // The player window: whether it is playing, a video it took into its queue, a card it favorited, removed or restored.
+toggleOnSpace();
 onPlayerMessage(async (msg) => {
   if (msg.type === "playing") return void (state.playing = msg.videoId);
   if (msg.type === "closed") return void (state.playing = null);
