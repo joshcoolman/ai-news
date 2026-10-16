@@ -18,6 +18,11 @@ const ON_FAVORITE = [
 /** @type {{ where: string, note?: string, moves: [keys: string[], does: string][] }[]} */
 const GUIDE = [
   {
+    where: "One window",
+    note: "Open /app for the app and the Player side by side in one browser window. Clicks queue and play in the right half exactly as with two windows; F on the video fills the whole display. The handle between the halves hides or shows the Player, and a video that loads into a hidden Player shows it. Keys go to whichever half has focus. The windowed Player still works.",
+    moves: [],
+  },
+  {
     where: "Home",
     moves: [
       [["click"], "On a video: while the player is playing, queue it right under the one playing; with nothing playing, play it. Either way the card leaves Home, as its × does."],

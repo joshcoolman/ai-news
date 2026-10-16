@@ -4,5 +4,5 @@ body { position: fixed; inset: 0; display: flex; overflow: hidden; }
 .app-rail { flex: none; width: 22px; display: flex; align-items: center; justify-content: center; background: var(--tray); border-inline: 1px solid var(--line); }
 .app-toggle { width: 22px; height: 56px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
 .app-toggle:hover { color: var(--fg); background: var(--chip-hover); }
-#ainews-player { flex: none; width: 45%; min-width: 320px; background: #000; }
+#ainews-player { flex: none; width: 50%; min-width: 320px; background: #000; }
 body.player-hidden #ainews-player { display: none; }
