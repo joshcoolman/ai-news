@@ -16,8 +16,8 @@ const SETTLE = 1500;
  * @param {string} videoId
  * @param {string} title
  * @param {() => void} onEnded Called once each time the video plays through to its end.
- * @returns {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void }}
- *   `time` is where playback is, as last reported; `seek` jumps there.
+ * @returns {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void, toggle: () => void }}
+ *   `time` is where playback is, as last reported; `seek` jumps there; `toggle` pauses a playing video and plays a paused one.
  */
 export function playerFrame(videoId, title, onEnded) {
   const params = new URLSearchParams({ autoplay: "1", enablejsapi: "1", origin: location.origin });
@@ -84,6 +84,10 @@ export function playerFrame(videoId, title, onEnded) {
       time = seconds;
       soughtAt = Date.now();
       frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [seconds, true] }), YOUTUBE);
+    },
+    toggle() {
+      const func = state === PLAYING ? "pauseVideo" : "playVideo";
+      frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), YOUTUBE);
     },
   };
 }

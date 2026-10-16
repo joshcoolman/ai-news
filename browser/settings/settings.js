@@ -32,6 +32,7 @@ const GUIDE = [
     moves: [
       [["↑", "↓"], "Play the video above or below in History. The playing one stays at the column's middle; the list slides. Each video picks up where you left it."],
       [["Delete"], "Remove the playing video from History and move on to the one below it. Home keeps its card."],
+      [["Space"], "Pause or play. Works on Home, Creators and Favorites too (not in a box), whichever window has the keyboard."],
       [["←", "→"], "Back or forward 10 seconds."],
       [["C"], "Open or close Chapters, for a video that has them."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
