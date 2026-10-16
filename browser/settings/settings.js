@@ -45,6 +45,8 @@ const GUIDE = [
       [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the same as its Delete, the next one plays."],
       [["click"], "On a creator in the sidebar: pick them. The grid shows their latest 30 videos whatever the day slider says, and the topic chips step aside. Click again, or an empty part of the page, to let go."],
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends."],
+      [["←"], "Highlight the first video in the grid. From then on the arrows walk the grid, stopping at its edges; → off the right edge, or Esc, goes back to the creator list."],
+      [["Enter"], "On the highlighted video: queue or play, as its click; on a Queued or Playing one: take it out again, as shift-click."],
     ],
   },
   {

@@ -35,3 +35,15 @@ export function movePick(ids, picked, key, columns) {
   const to = at + by;
   return to < 0 || to >= ids.length ? ids[at] : ids[to];
 }
+
+/**
+ * Whether the highlighted card is the last in its row (or the last card): on
+ * Creators, Right from there leaves the grid for the sidebar.
+ * @param {string[]} ids
+ * @param {string} picked
+ * @param {number} columns
+ */
+export function atRightEdge(ids, picked, columns) {
+  const at = ids.indexOf(picked);
+  return at >= 0 && (at === ids.length - 1 || at % columns === columns - 1);
+}
