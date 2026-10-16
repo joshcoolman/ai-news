@@ -1,8 +1,9 @@
 import { boot, del, load, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
-import { onPlayerMessage } from "../shared/player-link.js";
+import { historyIds, onHistoryChange } from "../shared/history-link.js";
+import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
-import { cardEntry, slotEntries } from "../feed/card.js";
+import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
 
 /** The most cards "more like this" adds, so this many placeholders sit after the card while it searches. */
 const MORE_SLOTS = 4;
@@ -16,6 +17,10 @@ const state = {
   notes: /** @type {Record<string, string>} */ ({}),
   /** Cards the last search added: they animate in where the placeholders were. */
   arrived: /** @type {Set<string>} */ (new Set()),
+  /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
+  playing: /** @type {string | null} */ (null),
+  /** Videos in the player's History, marked Queued; clicking one again does nothing. A favorite stays a favorite either way. */
+  queued: new Set(historyIds()),
 };
 
 const grid = h("div", { class: "grid" });
@@ -34,6 +39,9 @@ function draw() {
         note: notes[card.id],
         searching: searching.has(card.id),
         arriving: arrived.has(card.id),
+        mark: markOf(card),
+        onPlay: () => play(card),
+        onQueue: () => unqueue(card),
         onRemove: () => remove(card.id),
         onMore: () => more(card),
       }),
@@ -74,11 +82,46 @@ async function more(card) {
   draw();
 }
 
-// The player window starred or unstarred something.
+/* The player: as on Creators, a click plays or queues and the card says so; here it never leaves. */
+
+/** Playing in the sidecar, in its History, or neither. @param {Card} card @returns {"playing" | "queued" | undefined} */
+const markOf = (card) => (card.videoId && card.videoId === state.playing ? "playing" : card.videoId && state.queued.has(card.videoId) ? "queued" : undefined);
+
+/**
+ * A click on a video: with nothing playing it plays; while the player is
+ * playing it is queued right under the one playing. A marked card ignores the click.
+ * @param {Card} card
+ */
+function play(card) {
+  if (!card.videoId) return;
+  if (!state.playing) return playInPlayer(card);
+  if (markOf(card)) return;
+  announce({ type: "queue", videoId: card.videoId, title: card.title });
+}
+
+/**
+ * Shift-click on a queued or playing video: the player drops its row. Dropping the playing one plays the next.
+ * @param {Card} card
+ */
+function unqueue(card) {
+  if (!card.videoId || !markOf(card)) return;
+  announce({ type: "unqueue", videoId: card.videoId });
+}
+
+// The player window: whether it is playing, or that it starred or unstarred something.
 onPlayerMessage(async (msg) => {
-  if (msg.type !== "card") return;
-  state.cards = await load("/api/favorites");
+  if (msg.type === "playing") state.playing = msg.videoId;
+  else if (msg.type === "closed") state.playing = null;
+  else if (msg.type === "card") state.cards = await load("/api/favorites");
+  else return;
   draw();
 });
+// The marks follow the player's History itself, so its own × and Delete count too.
+onHistoryChange((ids) => {
+  state.queued = new Set(ids);
+  draw();
+});
+// Is a player already playing? One that is answers with "playing".
+announce({ type: "ping" });
 
 draw();
