@@ -26,6 +26,7 @@ export const pages = {
   "/favorites": "favorites.html",
   "/settings": "settings.html",
   "/player": "player.html",
+  "/app": "app.html",
 };
 
 /** @type {[method: string, path: string, handler: (ctx: Ctx) => Reply | void | Promise<Reply | void>][]} */
