@@ -1,4 +1,5 @@
 import { h } from "../shared/dom.js";
+import { HISTORY_KEY } from "../shared/history-link.js";
 import { setPosition, stopSaving } from "./positions.js";
 import { earlierFrom, neighbor, nextUp, queueAfter } from "./queue.js";
 
@@ -9,7 +10,7 @@ import { earlierFrom, neighbor, nextUp, queueAfter } from "./queue.js";
   is a curated list that outlives the window, and a row leaves it only by its ×.
   No cap and no expiry, by decision (#47): a cap is a silent expiry.
 */
-const KEY = "player-history";
+const KEY = HISTORY_KEY;
 /** Videos watched to the end: what auto-play skips. */
 const FINISHED = "player-finished";
 /** Each opening of the window is a session: a counter in localStorage, this window's number in sessionStorage (a step is a page load in the same window). */

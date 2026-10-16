@@ -1,6 +1,7 @@
 import { boot, del, load, patch, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { CREATORS_CHANGED_EVENT, handToHome } from "../shared/handoff.js";
+import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
@@ -35,8 +36,8 @@ const state = {
   days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? 7)),
   /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
   playing: /** @type {string | null} */ (null),
-  /** Videos the player has taken from this page, marked Queued; clicking one again does nothing. */
-  queued: /** @type {Set<string>} */ (new Set()),
+  /** Videos in the player's History, marked Queued; clicking one again does nothing. */
+  queued: new Set(historyIds()),
 };
 
 /** Whether this document was loaded by reloading the page. */
@@ -262,7 +263,7 @@ async function remove(c) {
   await del(`/api/creators/${c.channelId}`);
 }
 
-/** Playing in the sidecar, queued from here, or neither. @param {Card} card @returns {"playing" | "queued" | undefined} */
+/** Playing in the sidecar, in its History, or neither. @param {Card} card @returns {"playing" | "queued" | undefined} */
 const markOf = (card) => (card.videoId && card.videoId === state.playing ? "playing" : card.videoId && state.queued.has(card.videoId) ? "queued" : undefined);
 
 /**
@@ -354,9 +355,12 @@ onPlayerMessage((msg) => {
   if (msg.type === "creators") return void loadCreators();
   if (msg.type === "playing") state.playing = msg.videoId;
   else if (msg.type === "closed") state.playing = null;
-  else if (msg.type === "queued") state.queued.add(msg.videoId);
-  else if (msg.type === "unqueued") state.queued.delete(msg.videoId);
   else return;
+  draw();
+});
+// The marks follow the player's History itself, so its own × and Delete count too.
+onHistoryChange((ids) => {
+  state.queued = new Set(ids);
   draw();
 });
 // Is a player already playing? One that is answers with "playing".

@@ -46,6 +46,13 @@ const GUIDE = [
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."],
     ],
   },
+  {
+    where: "Favorites",
+    moves: [
+      [["click"], "On a video: as on Creators, queue or play, and the card says Queued or Playing while it is in the player's History. It stays a favorite."],
+      [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the next plays."],
+    ],
+  },
 ];
 
 function guide() {
