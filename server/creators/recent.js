@@ -39,14 +39,15 @@ async function durationOf(videoId) {
 }
 
 /**
- * Every video each creator published in the last MAX_DAYS, newest first, read
- * live from the channel lists. The page narrows it to the chosen window. Not
- * stored: nothing here is managed. A channel whose list fails is skipped.
+ * Each creator's cached list in full (their newest FEED_CAP videos), newest
+ * first, read live from the channel lists. The page narrows it to the chosen
+ * window, or shows all of one creator's when picked (#54). Not stored: nothing
+ * here is managed. A channel whose list fails is skipped.
  * @param {Creator[]} creators
  * @returns {Promise<Recent>}
  */
 export async function recentVideos(creators, fresh = false) {
-  const { entries, reach } = await recentEntries(creators, fresh);
+  const { entries, reach } = await recentEntries(creators, fresh, Infinity);
   /** @type {(number | undefined)[]} */
   const found = [];
   for (let n = 0; n < entries.length; n += 10) {
@@ -73,9 +74,10 @@ export async function cachedVideo(videoId) {
 
 /**
  * The raw videos behind the page, newest first, and how far each channel list reached.
+ * Trimmed to `days`: the topics are grouped over MAX_DAYS so the model reads the same list the slider can show.
  * @param {Creator[]} creators
  */
-export async function recentEntries(creators, fresh = false) {
+export async function recentEntries(creators, fresh = false, days = MAX_DAYS) {
   /** @type {FeedReach[]} */
   const reach = [];
   const { settings } = await read();
@@ -85,7 +87,7 @@ export async function recentEntries(creators, fresh = false) {
         // The cache holds every video, so changing the setting shows at once.
         const videos = playable(await feedOf(c.channelId, fresh), settings);
         reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
-        return videos.filter((v) => withinDays(v.publishedAt, MAX_DAYS)).map((video) => ({ c, video }));
+        return videos.filter((v) => withinDays(v.publishedAt, days)).map((video) => ({ c, video }));
       } catch (err) {
         console.log(`[creators] ${c.name} list failed: ${/** @type {Error} */ (err).message}`);
         return [];
