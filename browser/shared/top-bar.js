@@ -7,7 +7,7 @@ import { toast } from "./toast.js";
 
 /** @type {{ href: string, name: string, key: Page, shapes: string }[]} */
 const PAGES = [
-  { href: "/", name: "Home", key: "home", shapes: '<path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h4.5v-5.5h4V20h4.5V9.5" />' },
+  { href: "/home", name: "Home", key: "home", shapes: '<path d="M3.5 11 12 4l8.5 7M5.5 9.5V20h4.5v-5.5h4V20h4.5V9.5" />' },
   { href: "/favorites", name: "Favorites", key: "favorites", shapes: ICONS.star },
   { href: "/creators", name: "Creators", key: "creators", shapes: '<rect x="2.5" y="5.5" width="19" height="13" rx="4" /><path d="M10 9.5v5l4.2-2.5z" fill="currentColor" />' },
   {

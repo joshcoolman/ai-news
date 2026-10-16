@@ -22,7 +22,7 @@ const KEY = "ainews-handoff";
  */
 export function handToHome(task) {
   sessionStorage.setItem(KEY, JSON.stringify(task));
-  location.href = "/";
+  location.href = "/home";
 }
 
 /** @returns {HomeTask | null} */

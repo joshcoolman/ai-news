@@ -19,7 +19,7 @@ const read = () => {
   }
 };
 
-const app = h("iframe", { class: "app-frame", src: "/", title: "AI News" });
+const app = h("iframe", { class: "app-frame", src: "/home", title: "AI News" });
 const player = h("iframe", {
   id: "ainews-player",
   name: "ainews-player",
