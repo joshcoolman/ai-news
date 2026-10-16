@@ -2,7 +2,7 @@ import { toCard } from "../feed/cards.js";
 import { playable, withinDays } from "../feed/rules.js";
 import { read } from "../store.js";
 import { videoItem } from "../refresh/save.js";
-import { listChannelVideos, videoDuration } from "../youtube.js";
+import { listChannelVideos, videoDurations } from "../youtube.js";
 import { FEED_CAP, MAX_DAYS } from "./window.js";
 
 /*
@@ -30,12 +30,10 @@ function feedOf(channelId, fresh) {
   return videos;
 }
 
-/** @param {string} videoId */
-async function durationOf(videoId) {
-  if (durations.has(videoId)) return durations.get(videoId);
-  const d = await videoDuration(videoId);
-  if (d !== undefined) durations.set(videoId, d);
-  return d;
+/** Lengths for these videos: the remembered ones, and one batched request for the rest. @param {string[]} ids */
+async function durationsOf(ids) {
+  const missing = ids.filter((id) => !durations.has(id));
+  for (const [id, d] of await videoDurations(missing)) durations.set(id, d);
 }
 
 /**
@@ -48,15 +46,11 @@ async function durationOf(videoId) {
  */
 export async function recentVideos(creators, fresh = false) {
   const { entries, reach } = await recentEntries(creators, fresh, Infinity);
-  /** @type {(number | undefined)[]} */
-  const found = [];
-  for (let n = 0; n < entries.length; n += 10) {
-    found.push(...(await Promise.all(entries.slice(n, n + 10).map((r) => durationOf(r.video.videoId)))));
-  }
-  const cards = entries.map(({ c, video }, n) => ({
+  await durationsOf(entries.map((r) => r.video.videoId));
+  const cards = entries.map(({ c, video }) => ({
     channelId: c.channelId,
     publishedAt: video.publishedAt,
-    card: toCard(videoItem({ ...video, duration: found[n] }, video.publishedAt), undefined, false),
+    card: toCard(videoItem({ ...video, duration: durations.get(video.videoId) }, video.publishedAt), undefined, false),
   }));
   return { cards, reach };
 }

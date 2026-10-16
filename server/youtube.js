@@ -237,3 +237,22 @@ export async function videoDuration(videoId) {
     return undefined;
   }
 }
+
+/**
+ * Lengths in seconds for many videos, 50 to a request (the most the API takes). A video that fails is left out.
+ * @param {string[]} ids
+ * @returns {Promise<Map<string, number>>}
+ */
+export async function videoDurations(ids) {
+  /** @type {Map<string, number>} */
+  const out = new Map();
+  for (let n = 0; n < ids.length; n += 50) {
+    try {
+      for (const v of await videos(ids.slice(n, n + 50), "contentDetails")) {
+        const d = isoDurationSeconds(v.contentDetails?.duration);
+        if (d !== undefined) out.set(v.id, d);
+      }
+    } catch {}
+  }
+  return out;
+}
