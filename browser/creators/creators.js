@@ -97,7 +97,9 @@ function draw() {
   const listed = inWindow.filter((r) => creators.some((c) => c.channelId === r.channelId));
   const topicIds = new Set(state.topics?.find((t) => t.name === topic)?.ids);
   const inTopic = (/** @type {RecentCard} */ r) => !topic || topicIds.has(r.card.id);
-  const shown = listed.filter((r) => (!selected || r.channelId === selected) && inTopic(r));
+  // A picked creator is interest in them: their whole cached list (the newest FEED_CAP), whatever the slider or topic says (#54).
+  // The counts and status stay on the window, so the sidebar reads the same with or without a pick.
+  const shown = selected ? (recent?.cards ?? []).filter((r) => r.channelId === selected) : listed.filter(inTopic);
   // Sidebar counts follow the chosen topic; topic badges follow the chosen creator.
   const count = (/** @type {string} */ id) => listed.filter((r) => r.channelId === id && inTopic(r)).length;
   const badges = (state.topics ?? [])
@@ -115,7 +117,7 @@ function draw() {
     return !!r?.full && !!r.oldest && new Date(r.oldest).getTime() > cutoff;
   };
 
-  windowLabel.textContent = `Last ${days} days`;
+  windowLabel.textContent = selected ? `Latest ${config.feedCap}` : `Last ${days} days`;
 
   status.replaceChildren(
     loading
@@ -125,7 +127,8 @@ function draw() {
         : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
   );
 
-  topics.hidden = state.topics !== null && badges.length === 0;
+  // The topics are grouped over the window, so they do not fit a picked creator's full list.
+  topics.hidden = !!selected || (state.topics !== null && badges.length === 0);
   if (state.topics === null) {
     topics.setAttribute("aria-hidden", "true");
     topics.replaceChildren(...[96, 132, 84, 150, 110].map((w) => h("span", { class: "topic-ghost skeleton", style: { width: `${w}px` } })));
@@ -156,7 +159,7 @@ function draw() {
   const none = !loading && shown.length === 0;
   nothing.hidden = !none;
   grid.hidden = none;
-  nothing.textContent = `Nothing in the last ${days} days${topic ? ` on ${topic}` : ""}${selected ? " from this creator" : ""}.`;
+  nothing.textContent = selected ? "Nothing from this creator." : `Nothing in the last ${days} days${topic ? ` on ${topic}` : ""}.`;
   sync(
     grid,
     loading

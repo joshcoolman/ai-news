@@ -43,7 +43,8 @@ const GUIDE = [
     moves: [
       [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. A marked card ignores further clicks."],
       [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the same as its Delete, the next one plays."],
-      [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends. Click the picked creator again, or an empty part of the page, to let go."],
+      [["click"], "On a creator in the sidebar: pick them. The grid shows their latest 30 videos whatever the day slider says, and the topic chips step aside. Click again, or an empty part of the page, to let go."],
+      [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends."],
     ],
   },
   {
