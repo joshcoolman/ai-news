@@ -5,7 +5,7 @@ import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
-import { atRightEdge, movePick } from "../feed/pick.js";
+import { atRightEdge, movePick, nearestPick } from "../feed/pick.js";
 import { busyLine } from "../feed/status.js";
 
 /*
@@ -341,7 +341,8 @@ async function loadCreators() {
 /*
   Two keyboard zones (#56). The sidebar: while a creator is picked, up and down
   move the pick through the list, wrapping at both ends; with none picked they
-  are left alone. The grid: Left highlights the first card, then the arrows walk
+  are left alone. The grid: Left highlights the right-edge card beside the picked
+  creator's row (the nearest on screen), then the arrows walk
   the cards by Home's rules, stopping at the edges, except that Right off the
   right edge (or Escape) drops the highlight and gives the keys back to the
   sidebar. Enter on the highlighted card is its click, queue or play, or on a
@@ -380,10 +381,20 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (e.key === "ArrowLeft") {
-    const first = gridIds()[0];
-    if (!first) return;
+    // Land beside what the eye is on: the right-edge card nearest the picked creator's row, or the middle of the
+    // window when none is picked or the row is scrolled out of view. It is on screen already, so at most a nudge
+    // to bring a partly hidden card fully in, never a jump (#58).
+    const row = rows.querySelector("li.on")?.getBoundingClientRect();
+    const seen = row && row.bottom > 0 && row.top < window.innerHeight;
+    const y = seen ? (row.top + row.bottom) / 2 : window.innerHeight / 2;
+    const cards = [...grid.querySelectorAll(".card[data-id]")].map((c) => {
+      const r = c.getBoundingClientRect();
+      return { id: /** @type {string} */ (c.getAttribute("data-id")), top: r.top, bottom: r.bottom };
+    });
+    const id = nearestPick(y, cards, columns());
+    if (!id) return;
     e.preventDefault();
-    state.picked = first;
+    state.picked = id;
     draw();
     return grid.querySelector(".card.picked")?.scrollIntoView({ block: "nearest" });
   }
