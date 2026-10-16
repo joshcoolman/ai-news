@@ -47,3 +47,23 @@ export function atRightEdge(ids, picked, columns) {
   const at = ids.indexOf(picked);
   return at >= 0 && (at === ids.length - 1 || at % columns === columns - 1);
 }
+
+/**
+ * Where Left from the Creators sidebar lands: among the cards at the right
+ * edge of their row (nearest the sidebar), the one whose vertical middle is
+ * closest to `y`, so the highlight appears beside what the eye is on and the
+ * page need not scroll. `cards` is the grid in reading order with each card's
+ * top and bottom on screen.
+ * @param {number} y
+ * @param {{ id: string, top: number, bottom: number }[]} cards
+ * @param {number} columns
+ */
+export function nearestPick(y, cards, columns) {
+  const edge = cards.filter((c, i) => i === cards.length - 1 || i % columns === columns - 1);
+  let best;
+  for (const c of edge) {
+    const d = Math.abs((c.top + c.bottom) / 2 - y);
+    if (!best || d < best.d) best = { id: c.id, d };
+  }
+  return best?.id;
+}
