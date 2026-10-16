@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { movePick, nextPick } from "../browser/feed/pick.js";
+import { atRightEdge, movePick, nextPick } from "../browser/feed/pick.js";
 
 const ids = ["a", "b", "c", "d", "e"];
 
@@ -37,5 +37,19 @@ describe("movePick", () => {
     assert.strictEqual(movePick(ids, "e", "ArrowRight", 2), "e");
     assert.strictEqual(movePick(ids, "d", "ArrowDown", 2), "d");
     assert.strictEqual(movePick(ids, "a", "ArrowUp", 2), "a");
+  });
+});
+
+describe("atRightEdge", () => {
+  it("is the last card of a row, or the last card", () => {
+    assert.strictEqual(atRightEdge(ids, "b", 2), true);
+    assert.strictEqual(atRightEdge(ids, "d", 2), true);
+    assert.strictEqual(atRightEdge(ids, "e", 2), true);
+    assert.strictEqual(atRightEdge(ids, "a", 2), false);
+    assert.strictEqual(atRightEdge(ids, "c", 2), false);
+  });
+  it("is every card in a one-column grid, and nothing that is not in the grid", () => {
+    assert.strictEqual(atRightEdge(ids, "a", 1), true);
+    assert.strictEqual(atRightEdge(ids, "z", 2), false);
   });
 });

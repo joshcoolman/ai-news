@@ -5,6 +5,7 @@ import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { setRefreshing, topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
+import { atRightEdge, movePick } from "../feed/pick.js";
 import { busyLine } from "../feed/status.js";
 
 /*
@@ -38,7 +39,15 @@ const state = {
   playing: /** @type {string | null} */ (null),
   /** Videos in the player's History, marked Queued; clicking one again does nothing. */
   queued: new Set(historyIds()),
+  /** The card the keyboard is on, by card id; while set the arrows walk the grid instead of the creator list (#56). */
+  picked: /** @type {string | null} */ (null),
 };
+
+/** Pick a creator (or none), which lets go of any card the keyboard was on. @param {string | null} channelId */
+function pickCreator(channelId) {
+  state.selected = channelId;
+  state.picked = null;
+}
 
 /** Whether this document was loaded by reloading the page. */
 function reloadedHere() {
@@ -90,7 +99,7 @@ document.body.append(
 setRefreshing(config.refreshing);
 
 function draw() {
-  const { creators, selected, recent, failed, topic, days } = state;
+  const { creators, selected, recent, failed, topic, days, picked } = state;
   const cutoff = Date.now() - days * DAY;
   const loading = recent === null;
   const inWindow = (recent?.cards ?? []).filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
@@ -164,7 +173,7 @@ function draw() {
     grid,
     loading
       ? slotEntries("loading", PLACEHOLDERS)
-      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), onQueue: () => unqueue(r.card), mark: markOf(r.card) })),
+      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), onQueue: () => unqueue(r.card), mark: markOf(r.card), picked: r.card.id === picked })),
   );
 
   noCreators.hidden = creators.length > 0;
@@ -189,7 +198,7 @@ function draw() {
                 type: "button",
                 "aria-pressed": on,
                 onclick: () => {
-                  state.selected = on ? null : c.channelId;
+                  pickCreator(on ? null : c.channelId);
                   draw();
                 },
               },
@@ -261,7 +270,7 @@ function addCreatorForm(onAdded) {
 /** @param {Creator} c */
 async function remove(c) {
   state.creators = state.creators.filter((x) => x.channelId !== c.channelId);
-  if (state.selected === c.channelId) state.selected = null;
+  if (state.selected === c.channelId) pickCreator(null);
   draw();
   await del(`/api/creators/${c.channelId}`);
 }
@@ -330,26 +339,72 @@ async function loadCreators() {
 }
 
 /*
-  While a creator is picked, the up and down arrows move the pick through the
-  list, wrapping at both ends. With none picked the keys are left alone. A
-  click on empty page (not a card, a control or the sidebar) drops the pick,
+  Two keyboard zones (#56). The sidebar: while a creator is picked, up and down
+  move the pick through the list, wrapping at both ends; with none picked they
+  are left alone. The grid: Left highlights the first card, then the arrows walk
+  the cards by Home's rules, stopping at the edges, except that Right off the
+  right edge (or Escape) drops the highlight and gives the keys back to the
+  sidebar. Enter on the highlighted card is its click, queue or play, or on a
+  marked card its shift-click, unqueue. No Delete: cards never leave this page.
+  A click on a card moves the highlight there; a change of creator drops it.
+  A click on empty page (not a card, a control or the sidebar) drops the pick,
   as clicking the picked creator again does.
 */
+const ARROWS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+/** The grid's cards in reading order, as drawn. */
+const gridIds = () => [...grid.querySelectorAll(".card[data-id]")].map((c) => /** @type {string} */ (c.getAttribute("data-id")));
+/** How many cards share the grid's first row: read from layout, since the grid wraps to the window. */
+function columns() {
+  const tops = [...grid.querySelectorAll(".card")].map((c) => /** @type {HTMLElement} */ (c).offsetTop);
+  return Math.max(1, tops.filter((t) => t === tops[0]).length);
+}
 window.addEventListener("keydown", (e) => {
-  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
   if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
-  const { creators, selected } = state;
+  const { creators, selected, picked } = state;
+  const arrow = ARROWS.includes(e.key);
+  if (picked) {
+    if (arrow) {
+      e.preventDefault();
+      const ids = gridIds();
+      state.picked = e.key === "ArrowRight" && atRightEdge(ids, picked, columns()) ? null : (movePick(ids, picked, /** @type {any} */ (e.key), columns()) ?? null);
+      draw();
+      grid.querySelector(".card.picked")?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Escape") {
+      state.picked = null;
+      draw();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const card = state.recent?.cards.find((r) => r.card.id === picked)?.card;
+      if (card) markOf(card) ? unqueue(card) : play(card);
+    }
+    return;
+  }
+  if (e.key === "ArrowLeft") {
+    const first = gridIds()[0];
+    if (!first) return;
+    e.preventDefault();
+    state.picked = first;
+    draw();
+    return grid.querySelector(".card.picked")?.scrollIntoView({ block: "nearest" });
+  }
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
   const at = creators.findIndex((c) => c.channelId === selected);
   if (at < 0) return;
   e.preventDefault();
-  state.selected = creators[(at + (e.key === "ArrowDown" ? 1 : -1) + creators.length) % creators.length].channelId;
+  pickCreator(creators[(at + (e.key === "ArrowDown" ? 1 : -1) + creators.length) % creators.length].channelId);
   draw();
   rows.querySelector("li.on")?.scrollIntoView({ block: "nearest" });
+});
+grid.addEventListener("click", (e) => {
+  const tile = /** @type {Element} */ (e.target).closest(".card[data-id]");
+  if (!tile) return;
+  state.picked = tile.getAttribute("data-id");
+  draw();
 });
 document.addEventListener("click", (e) => {
   const at = /** @type {Element} */ (e.target);
   if (!state.selected || at.closest("aside, .card, button, a, input, label, dialog")) return;
-  state.selected = null;
+  pickCreator(null);
   draw();
 });
 
