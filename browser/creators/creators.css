@@ -46,18 +46,4 @@
   .count-ghost { width: 26px; height: 18px; }
 }
 
-/* Topics */
-.topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; min-height: 32px; }
-.topic-ghost { height: 32px; border-radius: 18px; }
-/* Each topic: a deep fill, a slightly hue-shifted border, and a near-white tint of the same hue for text. Fixed colours, like the icon buttons. */
-.topic {
-  --fill: hsl(var(--h) 42% 24%); --edge: hsl(calc(var(--h) + 14) 48% 40%); --ink: hsl(var(--h) 80% 94%);
-  display: inline-flex; align-items: center; gap: 8px; background: var(--fill); border: 1px solid var(--edge); border-radius: 18px;
-  padding: 5px 12px; font: inherit; font-size: 14px; font-weight: 500; color: var(--ink); cursor: pointer;
 
-  &:hover { background: hsl(var(--h) 46% 29%); }
-  span { font-size: 12px; color: var(--ink); opacity: .7; }
-  &.multi::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
-  &[aria-pressed="true"] { background: hsl(var(--h) 52% 33%); border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
-  &:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-}

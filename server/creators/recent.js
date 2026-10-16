@@ -1,9 +1,9 @@
 import { toCard } from "../feed/cards.js";
-import { playable, withinDays } from "../feed/rules.js";
+import { playable } from "../feed/rules.js";
 import { read } from "../store.js";
 import { videoItem } from "../refresh/save.js";
 import { listChannelVideos, videoDurations } from "../youtube.js";
-import { FEED_CAP, MAX_DAYS } from "./window.js";
+import { FEED_CAP } from "./window.js";
 
 /*
   Channel lists are cached for the day and durations for good (a video's length
@@ -45,7 +45,7 @@ async function durationsOf(ids) {
  * @returns {Promise<Recent>}
  */
 export async function recentVideos(creators, fresh = false) {
-  const { entries, reach } = await recentEntries(creators, fresh, Infinity);
+  const { entries, reach } = await recentEntries(creators, fresh);
   await durationsOf(entries.map((r) => r.video.videoId));
   const cards = entries.map(({ c, video }) => ({
     channelId: c.channelId,
@@ -68,10 +68,9 @@ export async function cachedVideo(videoId) {
 
 /**
  * The raw videos behind the page, newest first, and how far each channel list reached.
- * Trimmed to `days`: the topics are grouped over MAX_DAYS so the model reads the same list the slider can show.
  * @param {Creator[]} creators
  */
-export async function recentEntries(creators, fresh = false, days = MAX_DAYS) {
+export async function recentEntries(creators, fresh = false) {
   /** @type {FeedReach[]} */
   const reach = [];
   const { settings } = await read();
@@ -81,7 +80,7 @@ export async function recentEntries(creators, fresh = false, days = MAX_DAYS) {
         // The cache holds every video, so changing the setting shows at once.
         const videos = playable(await feedOf(c.channelId, fresh), settings);
         reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
-        return videos.filter((v) => withinDays(v.publishedAt, days)).map((video) => ({ c, video }));
+        return videos.map((video) => ({ c, video }));
       } catch (err) {
         console.log(`[creators] ${c.name} list failed: ${/** @type {Error} */ (err).message}`);
         return [];

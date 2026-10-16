@@ -9,9 +9,8 @@ import { atRightEdge, movePick, nearestPick } from "../feed/pick.js";
 import { busyLine } from "../feed/status.js";
 
 /*
-  The Creators page: recent videos on the left, the creators on the right, and
-  topics across the videos. The page draws before its videos: they load behind
-  placeholders, and the topics (a model call the first time) after them. The
+  The Creators page: recent videos on the left, the creators on the right. The
+  page draws before its videos: they load behind placeholders. The
   server keeps the day's lists, so coming back is quick; a reload of this page
   is the ask for fresh ones.
 */
@@ -31,9 +30,6 @@ const state = {
   /** Null while the videos load. */
   recent: /** @type {Recent | null} */ (null),
   failed: false,
-  /** Null while the topics are being grouped. */
-  topics: /** @type {PageTopic[] | null} */ (null),
-  topic: /** @type {string | null} */ (null),
   days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? 7)),
   /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
   playing: /** @type {string | null} */ (null),
@@ -55,13 +51,6 @@ function reloadedHere() {
   return nav?.type === "reload";
 }
 
-/** A stable hue per topic name, so a topic keeps its colour from visit to visit. */
-function hueOf(/** @type {string} */ name) {
-  let n = 7;
-  for (const c of name) n = (n * 31 + c.charCodeAt(0)) % 360;
-  return n;
-}
-
 /* The parts of the page that stay put; `draw` fills them. */
 
 const windowLabel = h("span");
@@ -79,7 +68,6 @@ const range = h("input", {
   onchange: () => void patch("/api/settings", { creatorsWindowDays: state.days }),
 });
 const status = h("p", { class: "status creators-status", "aria-live": "polite" });
-const topics = h("div", { class: "topics" });
 const grid = h("div", { class: "grid" });
 const nothing = h("p", { class: "empty" });
 const rows = h("ul", { class: "rows" });
@@ -93,33 +81,21 @@ document.body.append(
     h("h2", { class: "page-title" }, "Creators"),
     addCreatorForm(loadCreators),
     h("label", { class: "window" }, windowLabel, range),
-    h("div", { class: "creators-layout" }, h("section", {}, status, topics, nothing, grid), h("aside", {}, rows, noCreators)),
+    h("div", { class: "creators-layout" }, h("section", {}, status, nothing, grid), h("aside", {}, rows, noCreators)),
   ),
 );
 setRefreshing(config.refreshing);
 
 function draw() {
-  const { creators, selected, recent, failed, topic, days, picked } = state;
+  const { creators, selected, recent, failed, days, picked } = state;
   const cutoff = Date.now() - days * DAY;
   const loading = recent === null;
   const inWindow = (recent?.cards ?? []).filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
   const listed = inWindow.filter((r) => creators.some((c) => c.channelId === r.channelId));
-  const topicIds = new Set(state.topics?.find((t) => t.name === topic)?.ids);
-  const inTopic = (/** @type {RecentCard} */ r) => !topic || topicIds.has(r.card.id);
-  // A picked creator is interest in them: their whole cached list (the newest FEED_CAP), whatever the slider or topic says (#54).
+  // A picked creator is interest in them: their whole cached list (the newest FEED_CAP), whatever the slider says (#54).
   // The counts and status stay on the window, so the sidebar reads the same with or without a pick.
-  const shown = selected ? (recent?.cards ?? []).filter((r) => r.channelId === selected) : listed.filter(inTopic);
-  // Sidebar counts follow the chosen topic; topic badges follow the chosen creator.
-  const count = (/** @type {string} */ id) => listed.filter((r) => r.channelId === id && inTopic(r)).length;
-  const badges = (state.topics ?? [])
-    .map((t) => {
-      const ids = new Set(t.ids);
-      const videos = listed.filter((r) => ids.has(r.card.id) && (!selected || r.channelId === selected));
-      return { name: t.name, videos: videos.length, creators: new Set(videos.map((r) => r.channelId)).size };
-    })
-    .filter((b) => b.name === topic || b.videos >= (selected ? 1 : 2))
-    .sort((a, b) => b.creators - a.creators || b.videos - a.videos)
-    .slice(0, 12);
+  const shown = selected ? (recent?.cards ?? []).filter((r) => r.channelId === selected) : listed;
+  const count = (/** @type {string} */ id) => listed.filter((r) => r.channelId === id).length;
   // The list may have been cut off inside the window, so the count is a floor.
   const capped = (/** @type {string} */ id) => {
     const r = recent?.reach.find((x) => x.channelId === id);
@@ -131,44 +107,13 @@ function draw() {
   status.replaceChildren(
     loading
       ? busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)
-      : state.topics === null
-        ? busyLine(`${listed.length} videos · grouping topics`)
-        : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
+      : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
   );
-
-  // The topics are grouped over the window, so they do not fit a picked creator's full list.
-  topics.hidden = !!selected || (state.topics !== null && badges.length === 0);
-  if (state.topics === null) {
-    topics.setAttribute("aria-hidden", "true");
-    topics.replaceChildren(...[96, 132, 84, 150, 110].map((w) => h("span", { class: "topic-ghost skeleton", style: { width: `${w}px` } })));
-  } else {
-    topics.removeAttribute("aria-hidden");
-    topics.replaceChildren(
-      ...badges.map((b) =>
-        h(
-          "button",
-          {
-            class: `topic${b.creators > 1 ? " multi" : ""}`,
-            style: { "--h": hueOf(b.name) },
-            type: "button",
-            "aria-pressed": topic === b.name,
-            title: b.creators > 1 ? `${b.creators} creators` : undefined,
-            onclick: () => {
-              state.topic = topic === b.name ? null : b.name;
-              draw();
-            },
-          },
-          b.name,
-          h("span", {}, b.videos),
-        ),
-      ),
-    );
-  }
 
   const none = !loading && shown.length === 0;
   nothing.hidden = !none;
   grid.hidden = none;
-  nothing.textContent = selected ? "Nothing from this creator." : `Nothing in the last ${days} days${topic ? ` on ${topic}` : ""}.`;
+  nothing.textContent = selected ? "Nothing from this creator." : `Nothing in the last ${days} days.`;
   sync(
     grid,
     loading
@@ -312,7 +257,7 @@ function explore(card) {
 
 /* Loading */
 
-/** The videos, then the topics across them. `fresh` asks the server to read every list again. */
+/** The videos. `fresh` asks the server to read every list again. */
 async function loadVideos(fresh = false) {
   state.failed = false;
   try {
@@ -320,13 +265,6 @@ async function loadVideos(fresh = false) {
   } catch {
     state.failed = true;
     return draw();
-  }
-  state.topics = null;
-  draw();
-  try {
-    state.topics = (await load("/api/creators/topics")).topics;
-  } catch {
-    state.topics = [];
   }
   draw();
 }
