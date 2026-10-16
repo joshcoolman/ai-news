@@ -107,7 +107,9 @@ function draw() {
   status.replaceChildren(
     loading
       ? busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)
-      : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
+      : recent.failed
+        ? busyLine(`${recent.failed} Reload to try again.`)
+        : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
   );
 
   const none = !loading && shown.length === 0;
