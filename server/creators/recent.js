@@ -45,14 +45,14 @@ async function durationsOf(ids) {
  * @returns {Promise<Recent>}
  */
 export async function recentVideos(creators, fresh = false) {
-  const { entries, reach } = await recentEntries(creators, fresh);
+  const { entries, reach, failed } = await recentEntries(creators, fresh);
   await durationsOf(entries.map((r) => r.video.videoId));
   const cards = entries.map(({ c, video }) => ({
     channelId: c.channelId,
     publishedAt: video.publishedAt,
     card: toCard(videoItem({ ...video, duration: durations.get(video.videoId) }, video.publishedAt), undefined, false),
   }));
-  return { cards, reach };
+  return { cards, reach, ...(failed && { failed }) };
 }
 
 /**
@@ -73,6 +73,8 @@ export async function cachedVideo(videoId) {
 export async function recentEntries(creators, fresh = false) {
   /** @type {FeedReach[]} */
   const reach = [];
+  /** @type {string[]} */
+  const errors = [];
   const { settings } = await read();
   const perCreator = await Promise.all(
     creators.map(async (c) => {
@@ -82,11 +84,15 @@ export async function recentEntries(creators, fresh = false) {
         reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
         return videos.map((video) => ({ c, video }));
       } catch (err) {
-        console.log(`[creators] ${c.name} list failed: ${/** @type {Error} */ (err).message}`);
+        const message = /** @type {Error} */ (err).message;
+        errors.push(message);
+        console.log(`[creators] ${c.name} list failed: ${message}`);
         return [];
       }
     }),
   );
   const entries = perCreator.flat().sort((x, y) => y.video.publishedAt.localeCompare(x.video.publishedAt));
-  return { entries, reach };
+  // One list failing is that creator's problem; all of them failing is the page's, and it must say why rather than show an empty grid.
+  const failed = creators.length && errors.length === creators.length ? errors[0] : undefined;
+  return { entries, reach, failed };
 }

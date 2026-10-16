@@ -190,7 +190,8 @@ type RecentCard = { channelId: string; publishedAt: string; card: Card };
 /** Per channel: whether its list came back full, and the oldest video it showed. Tells the page when a count may be cut off. */
 type FeedReach = { channelId: string; full: boolean; oldest?: string };
 
-type Recent = { cards: RecentCard[]; reach: FeedReach[] };
+/** `failed`: why there are no cards, when every channel list failed (a used-up quota, most often). */
+type Recent = { cards: RecentCard[]; reach: FeedReach[]; failed?: string };
 
 /* Player */
 
