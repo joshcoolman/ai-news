@@ -16,11 +16,12 @@ const SETTLE = 1500;
  * @param {string} videoId
  * @param {string} title
  * @param {() => void} onEnded Called once each time the video plays through to its end.
+ * @param {boolean} [autoplay] False to load the video paused, as when the Player comes back to what was playing.
  * @returns {{ frame: HTMLIFrameElement, time: () => number, seek: (seconds: number) => void, toggle: () => void }}
  *   `time` is where playback is, as last reported; `seek` jumps there; `toggle` pauses a playing video and plays a paused one.
  */
-export function playerFrame(videoId, title, onEnded) {
-  const params = new URLSearchParams({ autoplay: "1", enablejsapi: "1", origin: location.origin });
+export function playerFrame(videoId, title, onEnded, autoplay = true) {
+  const params = new URLSearchParams({ autoplay: autoplay ? "1" : "0", enablejsapi: "1", origin: location.origin });
   const start = positions()[videoId];
   if (start) params.set("start", String(start));
   const frame = h("iframe", {

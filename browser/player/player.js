@@ -5,6 +5,10 @@ import { playerBar } from "./bar.js";
 import { chapters } from "./chapters.js";
 import { playerFrame } from "./frame.js";
 import { history, linkTo } from "./history.js";
+import { HISTORY_KEY } from "../shared/history-link.js";
+
+/** The last video the Player loaded, so a reload with nothing in the address comes back to it. */
+const LAST_KEY = "player-last";
 
 /*
   The player window's page: YouTube's embedded player, the History column beside
@@ -18,10 +22,27 @@ const v = query.get("v") ?? "";
 const t = query.get("t") ?? "";
 document.title = t || "Player";
 
-if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
+/** Where the Player was before it was closed or reloaded: the last video it played, else the newest row, while History still has it. */
+function resumeLink() {
+  try {
+    /** @type {{ videoId: string, title: string }[]} */
+    const list = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]");
+    const last = localStorage.getItem(LAST_KEY);
+    const row = list.find((e) => e.videoId === last) ?? list[0];
+    return row && `/player?${new URLSearchParams({ v: row.videoId, t: row.title, restore: "1" })}`;
+  } catch {}
+}
+
+const restore = !/^[A-Za-z0-9_-]{11}$/.test(v) && resumeLink();
+if (restore) {
+  location.replace(restore);
+} else if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   document.body.append(h("p", { class: "empty player-empty" }, "Nothing playing. Pick a video from Home."));
 } else {
   await boot();
+  try {
+    localStorage.setItem(LAST_KEY, v);
+  } catch {}
   /** @type {PlayerVideo} */
   const video = await load(`/api/player/video?${new URLSearchParams({ v, t })}`);
   const played = history(video);
@@ -29,7 +50,7 @@ if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
   const player = playerFrame(v, video.title || "Player", () => {
     const next = played.ended();
     if (next) location.href = linkTo(next);
-  });
+  }, query.get("restore") !== "1");
   const listed = chapters(v, player);
   document.body.append(
     h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, listed.panel), playerBar(video, listed.button)),
