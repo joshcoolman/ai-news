@@ -20,11 +20,13 @@ import { favoriteVideo, playerVideo } from "./server/player.js";
 
 /** @type {Record<string, string>} */
 export const pages = {
-  "/": "index.html",
+  "/": "app.html",
+  "/home": "index.html",
   "/creators": "creators.html",
   "/favorites": "favorites.html",
   "/settings": "settings.html",
   "/player": "player.html",
+  "/app": "app.html",
 };
 
 /** @type {[method: string, path: string, handler: (ctx: Ctx) => Reply | void | Promise<Reply | void>][]} */

@@ -31,7 +31,7 @@ export async function send(method, url, payload) {
     body: payload === undefined ? undefined : JSON.stringify(payload),
   });
   // The server wanted a key this browser no longer has: home is where they are added.
-  if (res.status === 401 && location.pathname !== "/") location.replace("/");
+  if (res.status === 401 && location.pathname !== "/home") location.replace("/home");
   return res;
 }
 
@@ -61,8 +61,8 @@ export async function boot() {
   const needed = /** @type {KeyName[]} */ (Object.keys(config.keys)).filter((name) => config.keys[name] === "browser");
   const have = savedKeys();
   if (needed.some((name) => !have[name])) {
-    if (location.pathname !== "/") {
-      location.replace("/");
+    if (location.pathname !== "/home") {
+      location.replace("/home");
       return new Promise(() => {});
     }
     await askForKeys(needed);

@@ -29,7 +29,7 @@ export function toast(kind, text) {
   const hold = { onmouseenter: () => clearTimeout(timer), onmouseleave: leaveLater };
   const body =
     kind === "done"
-      ? h("button", { class: "toast done", type: "button", onclick: () => (location.href = "/"), ...hold }, text)
+      ? h("button", { class: "toast done", type: "button", onclick: () => (location.href = "/home"), ...hold }, text)
       : h("div", { class: `toast ${kind}`, ...hold }, kind === "busy" && h("span", { class: "pulse", "aria-hidden": true }), text);
   wrap = h("div", { class: "toast-wrap", role: kind === "error" ? "alert" : "status" }, body);
   document.body.append(wrap);
