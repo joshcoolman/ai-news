@@ -192,9 +192,6 @@ type FeedReach = { channelId: string; full: boolean; oldest?: string };
 
 type Recent = { cards: RecentCard[]; reach: FeedReach[] };
 
-/** A topic as the page uses it: card ids (as on the Creators page), so the browser can filter its grid. */
-type PageTopic = { name: string; ids: string[] };
-
 /* Player */
 
 /** What the player window's bar needs about the video it is playing. */

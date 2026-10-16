@@ -5,7 +5,6 @@ import { favoriteCopy } from "./server/feed/rules.js";
 import { keyWorks as youtubeKeyWorks, resolveCreator, UserInputError, videoChapters } from "./server/youtube.js";
 import { keyWorks as claudeKeyWorks } from "./server/ai/client.js";
 import { recentVideos } from "./server/creators/recent.js";
-import { topicsFor } from "./server/creators/topics.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { MAX_NAMES, STORIES_PER_NAME } from "./server/refresh/events.js";
 import { cancelRefresh, RefreshBusyError, refreshRunning, startRefresh, subscribe } from "./server/refresh/run.js";
@@ -54,7 +53,6 @@ export const routes = [
   ["POST", "/api/creators", addCreator],
   ["POST", "/api/creators/resolve", lookUpCreator],
   ["GET", "/api/creators/recent", creatorsRecent],
-  ["GET", "/api/creators/topics", creatorsTopics],
   ["DELETE", "/api/creators/:id", deleteCreator],
 
   ["GET", "/api/settings", settings],
@@ -310,11 +308,6 @@ async function lookUpCreator({ body }) {
 /** @param {Ctx} ctx */
 function creatorsRecent({ query }) {
   return orFail("Could not read creator feeds.", 500, async () => json(await recentVideos((await read()).creators, query.has("fresh"))));
-}
-
-/** Topics across the Creators page's videos. Slow (a model call) the first time, so the page asks for it after it draws. */
-function creatorsTopics() {
-  return orFail("Could not group topics.", 500, async () => json({ topics: await topicsFor((await read()).creators) }));
 }
 
 /** Stops future fetches. */
