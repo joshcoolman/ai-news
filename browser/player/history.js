@@ -133,7 +133,7 @@ export function history(video) {
             "a",
             // The playing row has no link: a click on it would reload the Player and start the video over.
             { class: current ? "current" : undefined, href: current ? undefined : linkTo(e), "aria-current": current ? "true" : undefined },
-            h("span", { class: "history-thumb" }, h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }), e.chapters && h("span", { class: "chapters-mark" }, "ch")),
+            h("span", { class: "history-thumb" }, h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }), e.chapters && h("span", { class: "chapters-mark" }, "C")),
             h("span", { class: "history-text" }, h("span", { class: "history-title" }, e.title), e.channel && h("span", { class: "history-channel" }, e.channel)),
           ),
           h("button", { class: "history-remove", type: "button", onclick: () => remove(e.videoId), "aria-label": `Remove from history: ${e.title}`, title: "Remove" }, "×"),

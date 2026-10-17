@@ -22,8 +22,8 @@
   --chip-hover: #3a3a3a;
   --line: #303030;
   --pick: #ff4e45;
-  /* The chapters dot on thumbnails: hot pink, the one colour nothing else on a thumbnail uses. */
-  --chapters: #ff2d95;
+  /* The chapters dot on thumbnails: the app's green. */
+  --chapters: #2fe36a;
   --tray: #181818;
   --font: "Roboto", "Helvetica Neue", Arial, sans-serif;
   --mono: "Roboto Mono", ui-monospace, Menlo, monospace;
