@@ -1,1 +1,0 @@
-Pick YouTube results that are actually about the specific thing on the card, not merely similar tools or general news. Prefer recent ones. Pick at most 4. If only one or two are relevant, pick only those. If none are, pick none.

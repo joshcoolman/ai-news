@@ -2,40 +2,10 @@ import { del, post } from "../shared/api.js";
 import { h, icon, ICONS } from "../shared/dom.js";
 import { announce } from "../shared/player-link.js";
 
-/*
-  Which removals this window's star made, kept in sessionStorage: it lasts
-  while the window is open, across videos, so unstarring only ever restores a
-  card its own star removed (an earlier × stays removed).
-*/
-const KEY = "player-removed";
-
-/** @returns {Set<string>} */
-function starRemovals() {
-  try {
-    return new Set(JSON.parse(sessionStorage.getItem(KEY) ?? "[]"));
-  } catch {
-    return new Set();
-  }
-}
-
 /**
- * @param {string} id
- * @param {boolean} on
- */
-function setStarRemoved(id, on) {
-  try {
-    const ids = starRemovals();
-    if (on) ids.add(id);
-    else ids.delete(id);
-    sessionStorage.setItem(KEY, JSON.stringify([...ids]));
-  } catch {}
-}
-
-/**
- * The bar under the video: who made it (or Add creator) and a favorite star
- * that follows the "on favorite" setting. No link out to YouTube: loading
- * youtube.com here wipes the window's name, and the next thumbnail opens a
- * second window.
+ * The bar under the video: who made it (or Add creator) and a favorite star.
+ * No link out to YouTube: loading youtube.com here wipes the window's name,
+ * and the next thumbnail opens a second window.
  * @param {PlayerVideo} video
  * @param {HTMLElement} [tool] A button from elsewhere on the page (Chapters) that sits in the bar, left of the star.
  */
@@ -45,20 +15,8 @@ export function playerBar(video, tool) {
     adding: false,
     creatorNote: "",
     favorited: video.favorited,
-    /** The "Also remove from Home?" question is showing. */
-    asking: false,
-    removed: starRemovals().has(video.id),
   };
   const bar = h("div", { class: "player-bar" });
-
-  async function remove() {
-    state.asking = false;
-    state.removed = true;
-    setStarRemoved(video.id, true);
-    draw();
-    await post(`/api/items/${encodeURIComponent(video.id)}/remove`);
-    announce({ type: "card", id: video.id });
-  }
 
   async function toggleFavorite() {
     if (!state.favorited) {
@@ -69,25 +27,10 @@ export function playerBar(video, tool) {
         state.favorited = false;
         return draw();
       }
-      announce({ type: "card", id: video.id });
-      // Only a card showing on home can leave it.
-      if (!video.inFeed || video.removed) return;
-      if (video.onFavorite === "remove") await remove();
-      else if (video.onFavorite === "ask") {
-        state.asking = true;
-        draw();
-      }
-      return;
-    }
-    state.favorited = false;
-    state.asking = false;
-    draw();
-    await del(`/api/favorites/${encodeURIComponent(video.id)}`);
-    if (state.removed) {
-      state.removed = false;
-      setStarRemoved(video.id, false);
+    } else {
+      state.favorited = false;
       draw();
-      await post(`/api/items/${encodeURIComponent(video.id)}/restore`);
+      await del(`/api/favorites/${encodeURIComponent(video.id)}`);
     }
     announce({ type: "card", id: video.id });
   }
@@ -113,7 +56,7 @@ export function playerBar(video, tool) {
   }
 
   function draw() {
-    const { creator, adding, creatorNote, favorited, asking, removed } = state;
+    const { creator, adding, creatorNote, favorited } = state;
     bar.replaceChildren(
       h(
         "div",
@@ -128,7 +71,6 @@ export function playerBar(video, tool) {
       h(
         "div",
         { class: "player-actions" },
-        asking && h("button", { class: "link-btn", type: "button", onclick: remove }, "Also remove from Home?"),
         tool,
         h(
           "button",
@@ -138,7 +80,7 @@ export function playerBar(video, tool) {
             onclick: toggleFavorite,
             "aria-pressed": favorited,
             "aria-label": favorited ? "Unfavorite" : "Favorite",
-            title: favorited ? (removed ? "Unfavorite and put back on Home" : "Unfavorite") : "Favorite",
+            title: favorited ? "Unfavorite" : "Favorite",
           },
           icon(ICONS.star, { stroke: 2.2, fill: favorited ? "currentColor" : "none" }),
         ),

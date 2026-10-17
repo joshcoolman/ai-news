@@ -1,22 +1,8 @@
 /*
-  The two rules of the highlight on Home, pure so they are tested directly:
-  which card wears it after the highlighted one leaves, and where an arrow key
-  moves it. `ids` is the grid in reading order, as drawn.
+  The rules of the keyboard highlight on Creators, pure so they are tested
+  directly: where an arrow key moves it, when it is at the grid's right edge,
+  and where Left from the sidebar lands. `ids` is the grid in reading order, as drawn.
 */
-
-/**
- * The card to highlight once `picked` leaves the grid: the one after it, the
- * first from the last, nothing when it was the only card. Called with the
- * grid as it was, `picked` still in it.
- * @param {string[]} ids
- * @param {string} picked
- */
-export function nextPick(ids, picked) {
-  const at = ids.indexOf(picked);
-  if (at < 0) return undefined;
-  const next = ids[(at + 1) % ids.length];
-  return next === picked ? undefined : next;
-}
 
 /**
  * Where an arrow moves the highlight: left and right one card through reading
@@ -37,8 +23,8 @@ export function movePick(ids, picked, key, columns) {
 }
 
 /**
- * Whether the highlighted card is the last in its row (or the last card): on
- * Creators, Right from there leaves the grid for the sidebar.
+ * Whether the highlighted card is the last in its row (or the last card):
+ * Right from there leaves the grid for the sidebar.
  * @param {string[]} ids
  * @param {string} picked
  * @param {number} columns

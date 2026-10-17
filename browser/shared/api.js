@@ -1,18 +1,18 @@
 import { askForKeys, keyHeaders, savedKeys } from "./keys.js";
 
 /*
-  How pages talk to the server: every request carries the browser's keys (when
-  it has any), and every page starts with `boot`, which reads /api/config and
-  asks for keys first if the server has none.
+  How pages talk to the server: every request carries the browser's key (when
+  it has one), and every page starts with `boot`, which reads /api/config and
+  asks for the key first if the server has none.
 */
 
+/** Where the key is added when the browser must supply it. */
+const KEYS_PAGE = "/creators";
+
 /**
- * What /api/config answers: where each key comes from, whether a refresh is
- * running, and the numbers the server and the pages must agree on.
+ * What /api/config answers: where the key comes from, and the numbers the server and the pages must agree on.
  * @typedef {{
  *   keys: Record<KeyName, "server" | "browser">,
- *   refreshing: boolean,
- *   plan: { lanes: number, slots: number },
  *   days: { min: number, max: number },
  *   feedCap: number,
  * }} Config
@@ -30,8 +30,8 @@ export async function send(method, url, payload) {
     headers: { ...keyHeaders(), ...(payload !== undefined && { "Content-Type": "application/json" }) },
     body: payload === undefined ? undefined : JSON.stringify(payload),
   });
-  // The server wanted a key this browser no longer has: home is where they are added.
-  if (res.status === 401 && location.pathname !== "/home") location.replace("/home");
+  // The server wanted a key this browser no longer has.
+  if (res.status === 401 && location.pathname !== KEYS_PAGE) location.replace(KEYS_PAGE);
   return res;
 }
 
@@ -52,7 +52,7 @@ export async function load(url) {
 }
 
 /**
- * Every page's first step. Returns the config once the browser has whatever keys the server lacks.
+ * Every page's first step. Returns the config once the browser has whatever key the server lacks.
  * @returns {Promise<Config>}
  */
 export async function boot() {
@@ -61,8 +61,8 @@ export async function boot() {
   const needed = /** @type {KeyName[]} */ (Object.keys(config.keys)).filter((name) => config.keys[name] === "browser");
   const have = savedKeys();
   if (needed.some((name) => !have[name])) {
-    if (location.pathname !== "/home") {
-      location.replace("/home");
+    if (location.pathname !== KEYS_PAGE) {
+      location.replace(KEYS_PAGE);
       return new Promise(() => {});
     }
     await askForKeys(needed);

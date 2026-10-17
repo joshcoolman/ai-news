@@ -68,20 +68,6 @@ export function isoDurationSeconds(iso) {
   return d * 86_400 + h * 3600 + min * 60 + s || undefined;
 }
 
-/**
- * "3 days ago" for a publish time.
- * @param {string} publishedAt
- */
-export function ageText(publishedAt, now = Date.now()) {
-  const minutes = Math.max(0, Math.floor((now - Date.parse(publishedAt)) / 60_000));
-  const [n, unit] =
-    minutes < 60 ? [minutes, "minute"] :
-    minutes < 1440 ? [Math.floor(minutes / 60), "hour"] :
-    minutes < 43_200 ? [Math.floor(minutes / 1440), "day"] :
-    minutes < 525_600 ? [Math.floor(minutes / 43_200), "month"] :
-    [Math.floor(minutes / 525_600), "year"];
-  return `${n} ${unit}${n === 1 ? "" : "s"} ago`;
-}
 
 /**
  * The chapters a creator lists in a description: lines that open with a

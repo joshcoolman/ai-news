@@ -47,7 +47,6 @@ export function icon(shapes, { size = 18, stroke = 2, fill = "none" } = {}) {
 
 export const ICONS = {
   star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />',
-  search: '<circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5 21 21" />',
 };
 
 /** @typedef {{ key: string, sig: string, make: (replacing: boolean) => HTMLElement }} Tile */

@@ -1,1 +1,0 @@
-Write one YouTube search query that finds videos about the specific thing this card is about. The query is the thing's name, plus its maker only if the name alone is ambiguous. No model names, versions or other details from the title; no generic words like 'AI news'. Also give label: one to three words naming that thing, no numbers, no adjectives.

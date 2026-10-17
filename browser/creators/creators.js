@@ -1,18 +1,16 @@
 import { boot, del, load, patch, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
-import { CREATORS_CHANGED_EVENT, handToHome } from "../shared/handoff.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
-import { setRefreshing, topBar } from "../shared/top-bar.js";
-import { cardEntry, playInPlayer, slotEntries } from "../feed/card.js";
-import { atRightEdge, movePick, nearestPick } from "../feed/pick.js";
-import { busyLine } from "../feed/status.js";
+import { CREATORS_CHANGED_EVENT, topBar } from "../shared/top-bar.js";
+import { busyLine, cardEntry, playInPlayer, slotEntries } from "../shared/card.js";
+import { atRightEdge, movePick, nearestPick } from "../shared/pick.js";
 
 /*
   The Creators page: recent videos on the left, the creators on the right. The
-  page draws before its videos: they load behind placeholders. The
-  server keeps the day's lists, so coming back is quick; a reload of this page
-  is the ask for fresh ones.
+  page draws before its videos: they load behind placeholders. The server
+  reads each creator's list at most twice a day (#67); the status line says
+  when it last did, and a reload asks for nothing new.
 */
 
 const DAY = 86_400_000;
@@ -43,12 +41,6 @@ const state = {
 function pickCreator(channelId) {
   state.selected = channelId;
   state.picked = null;
-}
-
-/** Whether this document was loaded by reloading the page. */
-function reloadedHere() {
-  const nav = /** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType("navigation")[0]);
-  return nav?.type === "reload";
 }
 
 /* The parts of the page that stay put; `draw` fills them. */
@@ -84,7 +76,14 @@ document.body.append(
     h("div", { class: "creators-layout" }, h("section", {}, status, nothing, grid), h("aside", {}, rows, noCreators)),
   ),
 );
-setRefreshing(config.refreshing);
+
+/** "read 3 hours ago": when the oldest list on the page was read. @param {string} iso */
+function readAgo(iso) {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (minutes < 60) return "read just now";
+  const hours = Math.floor(minutes / 60);
+  return `read ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+}
 
 function draw() {
   const { creators, selected, recent, failed, days, picked } = state;
@@ -109,7 +108,7 @@ function draw() {
       ? busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)
       : recent.failed
         ? busyLine(`${recent.failed} Reload to try again.`)
-        : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators`,
+        : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators${recent.readAt ? ` · ${readAgo(recent.readAt)}` : ""}`,
   );
 
   const none = !loading && shown.length === 0;
@@ -120,7 +119,7 @@ function draw() {
     grid,
     loading
       ? slotEntries("loading", PLACEHOLDERS)
-      : shown.map((r) => cardEntry(r.card, { onMore: () => explore(r.card), onPlay: () => play(r.card), onQueue: () => unqueue(r.card), mark: markOf(r.card), picked: r.card.id === picked })),
+      : shown.map((r) => cardEntry(r.card, { onPlay: () => play(r.card), onQueue: () => unqueue(r.card), mark: markOf(r.card), picked: r.card.id === picked })),
   );
 
   noCreators.hidden = creators.length > 0;
@@ -132,7 +131,6 @@ function draw() {
       const cut = capped(c.channelId);
       return {
         key: c.channelId,
-        // Guidance is left out: the input holds its own text while this row stays on screen.
         sig: JSON.stringify([c.name, c.avatarUrl, on, loading, n, cut]),
         make: () =>
           h(
@@ -223,7 +221,7 @@ async function remove(c) {
 }
 
 /** Playing in the sidecar, in its History, or neither. @param {Card} card @returns {"playing" | "queued" | undefined} */
-const markOf = (card) => (card.videoId && card.videoId === state.playing ? "playing" : card.videoId && state.queued.has(card.videoId) ? "queued" : undefined);
+const markOf = (card) => (card.videoId === state.playing ? "playing" : state.queued.has(card.videoId) ? "queued" : undefined);
 
 /**
  * A click on a video: the first one plays it in the player window; while the
@@ -233,7 +231,6 @@ const markOf = (card) => (card.videoId && card.videoId === state.playing ? "play
  * @param {Card} card
  */
 function play(card) {
-  if (!card.videoId) return;
   if (!state.playing) return playInPlayer(card);
   if (markOf(card)) return;
   announce({ type: "queue", videoId: card.videoId, title: card.title });
@@ -245,25 +242,16 @@ function play(card) {
  * @param {Card} card
  */
 function unqueue(card) {
-  if (!card.videoId || !markOf(card)) return;
+  if (!markOf(card)) return;
   announce({ type: "unqueue", videoId: card.videoId });
-}
-
-/**
- * Search the video's topic on home: go there now, and home runs it behind placeholders. Creators stays untouched.
- * @param {Card} card
- */
-function explore(card) {
-  handToHome({ kind: "video", title: card.title, channel: card.meta.split(" · ")[0] });
 }
 
 /* Loading */
 
-/** The videos. `fresh` asks the server to read every list again. */
-async function loadVideos(fresh = false) {
+async function loadVideos() {
   state.failed = false;
   try {
-    state.recent = await load(`/api/creators/recent${fresh ? "?fresh=1" : ""}`);
+    state.recent = await load("/api/creators/recent");
   } catch {
     state.failed = true;
     return draw();
@@ -282,11 +270,10 @@ async function loadCreators() {
   Two keyboard zones (#56). The sidebar: while a creator is picked, up and down
   move the pick through the list, wrapping at both ends; with none picked they
   are left alone. The grid: Left highlights the right-edge card beside the picked
-  creator's row (the nearest on screen), then the arrows walk
-  the cards by Home's rules, stopping at the edges, except that Right off the
-  right edge (or Escape) drops the highlight and gives the keys back to the
-  sidebar. Enter on the highlighted card is its click, queue or play, or on a
-  marked card its shift-click, unqueue. No Delete: cards never leave this page.
+  creator's row (the nearest on screen), then the arrows walk the cards,
+  stopping at the edges, except that Right off the right edge (or Escape) drops
+  the highlight and gives the keys back to the sidebar. Enter on the highlighted
+  card is its click, queue or play, or on a marked card its shift-click, unqueue.
   A click on a card moves the highlight there; a change of creator drops it.
   A click on empty page (not a card, a control or the sidebar) drops the pick,
   as clicking the picked creator again does.
@@ -377,4 +364,4 @@ onHistoryChange((ids) => {
 announce({ type: "ping" });
 
 draw();
-void loadVideos(reloadedHere());
+void loadVideos();

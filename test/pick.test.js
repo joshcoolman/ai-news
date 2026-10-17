@@ -1,23 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { atRightEdge, movePick, nearestPick, nextPick } from "../browser/feed/pick.js";
+import { atRightEdge, movePick, nearestPick } from "../browser/shared/pick.js";
 
 const ids = ["a", "b", "c", "d", "e"];
-
-describe("nextPick", () => {
-  it("is the card after the one leaving", () => {
-    assert.strictEqual(nextPick(ids, "b"), "c");
-  });
-
-  it("wraps to the first from the last", () => {
-    assert.strictEqual(nextPick(ids, "e"), "a");
-  });
-
-  it("is nothing when the leaving card was the only one, or is not in the grid", () => {
-    assert.strictEqual(nextPick(["a"], "a"), undefined);
-    assert.strictEqual(nextPick(ids, "zz"), undefined);
-  });
-});
 
 describe("movePick", () => {
   it("starts at the first card when nothing is picked", () => {
