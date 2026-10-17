@@ -30,15 +30,15 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 
 ## Status
 
-**Focus:** live with the simplified app (#68) for a month before adding anything. The one candidate in the box is a Sync button against the YouTube account (noted on #68); it needs an OAuth client and is worth building only if it is still missed in mid-November.
+**Focus:** open #72 and build it: the Player hides when its History is empty, a show/hide button at the top right of the top bar replaces the rail's arrow, hidden stays hidden, the top bar is fixed, and the rail drags to resize the split. The issue is the spec.
 
 **Last shipped**
+- Chapters: a green C on the lower-left corner of card and History thumbnails whose description lists chapters, parsed from the cached lists at no YouTube cost (#70, #71). The playing History row ignores clicks.
 - The app is Creators, the Player and Favorites (#68): Home, Refresh, stories, every search and every model call are gone, and with them the Anthropic key. The Creators window is 3 to 14 days. `/` is the one-window app with Creators on the left.
 - YouTube optimization (#67): creator lists are read at most twice a day, lengths and chapters once ever, all kept in `data/cache.json` across restarts; the status line on Creators says when the lists were read; the server log counts the day's units.
 - One window: `/` with the app and the Player in two frames (#60).
 - Creators keyboard (#56, #58): Left from the sidebar highlights the video beside the picked creator's row, arrows walk the grid, Right off the edge or Escape goes back to the creator list, Enter queues, plays, or unqueues.
 - Creators: a picked creator shows their latest 30 videos whatever the day slider says (#54).
-- Favorites: a click plays or queues, the card stays and says Playing or Queued (#52).
 
 **Up next**
 - Open issues.
