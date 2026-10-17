@@ -1,14 +1,7 @@
 import { boot, load, patch } from "../shared/api.js";
 import { h } from "../shared/dom.js";
 import { deleteKeys } from "../shared/keys.js";
-import { setRefreshing, topBar } from "../shared/top-bar.js";
-
-/** @type {{ value: Settings["onFavorite"], label: string }[]} */
-const ON_FAVORITE = [
-  { value: "ask", label: "Ask each time" },
-  { value: "remove", label: "Delete from home" },
-  { value: "keep", label: "Keep on home" },
-];
+import { topBar } from "../shared/top-bar.js";
 
 /*
   The guide at the foot of the page: everything the app does that no button
@@ -23,21 +16,12 @@ const GUIDE = [
     moves: [],
   },
   {
-    where: "Home",
-    moves: [
-      [["click"], "On a video: while the player is playing, queue it right under the one playing; with nothing playing, play it. Either way the card leaves Home, as its × does."],
-      [["←", "→", "↑", "↓"], "Move the highlight through the grid; the first press highlights the first card. Esc drops it. A click on a card moves it there."],
-      [["Enter"], "On a highlighted topic: More like this, and the topic leaves; the results land where it was. On a video: the click, queue or play. The highlight moves to the next card, the first from the last."],
-      [["Delete"], "Remove the highlighted card, as its × does. The highlight moves on the same way."],
-    ],
-  },
-  {
     where: "Player",
     note: "The keys work while the player's own page has the keyboard. After a click on the video they go to YouTube; click the bar or the History column to get them back.",
     moves: [
       [["↑", "↓"], "Play the video above or below in History. The playing one stays at the column's middle; the list slides. Each video picks up where you left it."],
-      [["Delete"], "Remove the playing video from History and move on to the one below it. Home keeps its card."],
-      [["Space"], "Pause or play. Works on Home, Creators and Favorites too (not in a box), whichever window has the keyboard."],
+      [["Delete"], "Remove the playing video from History and move on to the one below it."],
+      [["Space"], "Pause or play. Works on Creators and Favorites too (not in a box), whichever window has the keyboard."],
       [["←", "→"], "Back or forward 10 seconds."],
       [["C"], "Open or close Chapters, for a video that has them."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
@@ -46,6 +30,7 @@ const GUIDE = [
   },
   {
     where: "Creators",
+    note: "Each creator's list is read from YouTube at most twice a day; the status line says when. A reload asks for nothing new. A creator added just now is read at once.",
     moves: [
       [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. A marked card ignores further clicks."],
       [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the same as its Delete, the next one plays."],
@@ -88,7 +73,7 @@ const settings = await load("/api/settings");
 
 const save = (/** @type {Partial<Settings>} */ change) => patch("/api/settings", change);
 
-/** Only where this browser holds the keys: on a server with its own, there is nothing here to delete. */
+/** Only where this browser holds the key: on a server with its own, there is nothing here to delete. */
 const ownKeys = Object.values(config.keys).includes("browser");
 
 document.body.append(
@@ -97,19 +82,6 @@ document.body.append(
     { class: "wrap narrow" },
     topBar("settings"),
     h("h2", { class: "page-title" }, "Settings"),
-    h(
-      "fieldset",
-      { class: "setting" },
-      h("legend", {}, "When I favorite a card"),
-      ON_FAVORITE.map((o) =>
-        h(
-          "label",
-          { class: "check" },
-          h("input", { type: "radio", name: "onFavorite", value: o.value, checked: settings.onFavorite === o.value, onchange: () => save({ onFavorite: o.value }) }),
-          o.label,
-        ),
-      ),
-    ),
     h(
       "fieldset",
       { class: "setting" },
@@ -130,8 +102,8 @@ document.body.append(
       h(
         "fieldset",
         { class: "setting" },
-        h("legend", {}, "API keys"),
-        h("p", {}, "Your keys are saved in this browser only. Deleting them brings back the Add your keys step."),
+        h("legend", {}, "API key"),
+        h("p", {}, "Your key is saved in this browser only. Deleting it brings back the Add your key step."),
         h(
           "button",
           {
@@ -139,12 +111,11 @@ document.body.append(
             type: "button",
             onclick: () => {
               deleteKeys();
-              location.href = "/home";
+              location.href = "/creators";
             },
           },
-          "Delete keys",
+          "Delete key",
         ),
       ),
   ),
 );
-setRefreshing(config.refreshing);

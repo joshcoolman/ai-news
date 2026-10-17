@@ -1,10 +1,11 @@
 import { key } from "./keys.js";
-import { ageText, isoDurationSeconds, parseChapters, parseYouTubeUrl } from "./youtube-parse.js";
+import { isoDurationSeconds, parseChapters, parseYouTubeUrl } from "./youtube-parse.js";
 
 /*
   Everything the app knows about YouTube lives here, read from the YouTube Data
-  API v3. The free quota is 10,000 units a day: a search page costs 100, every
-  other call costs 1.
+  API v3. The free quota is 10,000 units a day; every call here costs 1 (search,
+  at 100 a page, is gone with #68). `[youtube]` log lines count the day's units,
+  so when the quota runs out the server log says what spent it (#67).
 
   Two playlist ids the documentation does not list carry real behaviour (both
   checked against every saved creator, October 2026): UULF + the channel id's
@@ -28,12 +29,24 @@ class ApiError extends Error {
 
 export class UserInputError extends Error {}
 
+/** The day's spend, by Pacific date (the quota resets at midnight Pacific). In memory: a restart starts it over. */
+const spent = { day: "", units: 0 };
+
+/** @param {string} path */
+function count(path) {
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  if (spent.day !== day) Object.assign(spent, { day, units: 0 });
+  spent.units += 1;
+  console.log(`[youtube] ${path}: ${spent.units} units today`);
+}
+
 /**
  * @param {string} path
  * @param {Record<string, string>} params
  * @returns {Promise<any>}
  */
 async function api(path, params) {
+  count(path);
   const res = await fetch(`${API}${path}?${new URLSearchParams({ ...params, key: key("youtube") })}`, {
     signal: AbortSignal.timeout(15_000),
   });
@@ -79,7 +92,7 @@ async function channel(by, what) {
 }
 
 /**
- * Channel details for a known channel id (used to fill in missing avatars).
+ * Channel details for a known channel id.
  * @param {string} channelId
  */
 export function channelInfo(channelId) {
@@ -105,7 +118,7 @@ const LISTED = 30;
 /**
  * The latest long-form videos on a channel, newest first, with exact dates and
  * full descriptions: its 30 newest public ones, plus its members-only ones
- * (marked, so `playable` can leave them out).
+ * (marked, so `playable` can leave them out). Two units.
  * @param {string} channelId
  * @returns {Promise<FeedVideo[]>}
  */
@@ -154,88 +167,16 @@ async function videos(ids, part) {
   return ids.flatMap((id) => byId.get(id) ?? []);
 }
 
-const SEARCH_PAGE = 50;
-// Each page is 100 units of the day's 10,000.
-const MAX_SEARCH_PAGES = 4;
-
-/**
- * YouTube search, long-form videos only. Returns results `skip` through
- * `skip + count`, paging further down the results as needed. `pastMonth` keeps
- * the last 30 days.
- * @param {string} query
- * @returns {Promise<SearchResult[]>}
- */
-export async function search(query, { skip = 0, count = 20, pastMonth = false } = {}) {
-  /** @type {Record<string, string>} */
-  const params = { part: "id", q: query, type: "video", maxResults: String(SEARCH_PAGE) };
-  if (pastMonth) params.publishedAfter = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  /** @type {SearchResult[]} */
-  const out = [];
-  for (let pages = 0; pages < MAX_SEARCH_PAGES; pages++) {
-    const page = await api("search", params);
-    /** @type {string[]} */
-    const ids = (page.items ?? []).flatMap((/** @type {any} */ i) => i.id.videoId ?? []);
-    // Search titles arrive HTML-escaped and without lengths; the videos call has both right.
-    for (const v of await videos(ids, "snippet,contentDetails,statistics")) {
-      const r = toResult(v);
-      if (r) out.push(r);
-    }
-    if (out.length >= skip + count || !page.nextPageToken) break;
-    params.pageToken = page.nextPageToken;
-  }
-  return out.slice(skip, skip + count);
-}
-
-/**
- * @param {any} v
- * @returns {SearchResult | null}
- */
-function toResult(v) {
-  const seconds = isoDurationSeconds(v.contentDetails?.duration);
-  // Anything a minute or under is a Short in disguise.
-  if (seconds !== undefined && seconds <= 60) return null;
-  return {
-    videoId: v.id,
-    title: v.snippet.title,
-    channel: v.snippet.channelTitle,
-    duration: seconds,
-    publishedAt: v.snippet.publishedAt,
-    ageText: ageText(v.snippet.publishedAt),
-    // The API has no members-only field, but it withholds the view count of a members-only video.
-    ...(v.statistics && v.statistics.viewCount === undefined && { membersOnly: /** @type {const} */ (true) }),
-  };
-}
-
-/** A video's chapters never change once read, and the player asks each time it loads. */
-/** @type {Map<string, { start: number, title: string }[]>} */
-const chapters = new Map();
-
 /**
  * The chapters listed in a video's description; none when it lists none. The
  * API has no chapters of its own, so the ones YouTube generates by itself are
- * out of reach.
+ * out of reach. One unit; the caller caches, since chapters never change.
  * @param {string} videoId
+ * @returns {Promise<Chapter[]>}
  */
 export async function videoChapters(videoId) {
-  const known = chapters.get(videoId);
-  if (known) return known;
   const [video] = await videos([videoId], "snippet");
-  const found = parseChapters(video?.snippet.description ?? "");
-  chapters.set(videoId, found);
-  return found;
-}
-
-/**
- * Video length in seconds, or undefined when YouTube will not say.
- * @param {string} videoId
- */
-export async function videoDuration(videoId) {
-  try {
-    const [video] = await videos([videoId], "contentDetails");
-    return isoDurationSeconds(video?.contentDetails?.duration);
-  } catch {
-    return undefined;
-  }
+  return parseChapters(video?.snippet.description ?? "");
 }
 
 /**

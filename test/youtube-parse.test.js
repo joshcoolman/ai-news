@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { each } from "./each.js";
-import { ageText, isoDurationSeconds, parseYouTubeUrl } from "../server/youtube-parse.js";
+import { isoDurationSeconds, parseYouTubeUrl } from "../server/youtube-parse.js";
 
 describe("parseYouTubeUrl", () => {
   each([
@@ -65,15 +65,3 @@ describe("isoDurationSeconds", () => {
   });
 });
 
-describe("ageText", () => {
-  const now = Date.parse("2026-10-04T12:00:00Z");
-  each([
-    ["2026-10-04T11:59:00Z", "1 minute ago"],
-    ["2026-10-04T03:00:00Z", "9 hours ago"],
-    ["2026-10-01T12:00:00Z", "3 days ago"],
-    ["2026-08-01T12:00:00Z", "2 months ago"],
-    ["2024-10-01T12:00:00Z", "2 years ago"],
-  ])("%s reads %s", (at, text) => {
-    assert.strictEqual(ageText(at, now), text);
-  });
-});

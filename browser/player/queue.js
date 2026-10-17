@@ -1,6 +1,6 @@
 /*
   The two rules of the queue, pure so they are tested directly. The History
-  column is the queue: a video queued from Home goes right under the one
+  column is the queue: a video queued from Creators or Favorites goes right under the one
   playing, and when a video ends the player moves down the column.
 */
 

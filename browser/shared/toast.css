@@ -5,11 +5,6 @@
   box-shadow: 0 0 0 2px #101010, 0 0 22px 4px rgba(198, 255, 61, .65), 0 10px 30px rgba(0,0,0,.4);
   animation: toast-in .55s cubic-bezier(.3, 1.6, .5, 1) both, toast-glow 1.6s ease-in-out .55s 3;
 
-  &.busy { animation: toast-in .4s ease-out both; }
-  &.busy .pulse { background: #101010; }
-  &.done { cursor: pointer; }
-  &.done:hover { filter: brightness(1.08); }
-  &.info { animation: toast-in .4s ease-out both; }
   &.error {
     background: #ff5d5d; color: #101010;
     box-shadow: 0 0 0 2px #101010, 0 0 22px 4px rgba(255, 93, 93, .6), 0 10px 30px rgba(0,0,0,.4);

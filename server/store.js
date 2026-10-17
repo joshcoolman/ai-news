@@ -4,9 +4,8 @@ import path from "node:path";
 /*
   All persistence goes through this module so a hosted version can swap the
   JSON files for a database. Every change is read-modify-write through one
-  in-process queue, so a refresh that runs for minutes cannot overwrite a
-  removal made while it ran. DATA_DIR moves the files (a mounted volume when
-  hosted); the default is ./data.
+  in-process queue, so two requests cannot overwrite each other's writes.
+  DATA_DIR moves the files (a mounted volume when hosted); the default is ./data.
 */
 
 const DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
@@ -29,9 +28,9 @@ const DEFAULT_CREATORS = [
 /** @type {{ [K in keyof Data]: () => Data[K] }} */
 const FILES = {
   creators: () => DEFAULT_CREATORS,
-  items: () => [],
   favorites: () => [],
-  settings: () => ({ onFavorite: "ask" }),
+  settings: () => ({}),
+  cache: () => ({ lists: {}, durations: {}, chapters: {} }),
 };
 const KEYS = /** @type {(keyof Data)[]} */ (Object.keys(FILES));
 

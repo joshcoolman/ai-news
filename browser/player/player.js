@@ -13,7 +13,7 @@ const LAST_KEY = "player-last";
 /*
   The player window's page: YouTube's embedded player, the History column beside
   it and the bar under it. Thumbnails load into it (see openInPlayer in
-  feed/card.js): `?v=<video id>`, and `&t=<title>` for the window's title and
+  shared/card.js): `?v=<video id>`, and `&t=<title>` for the window's title and
   for a video the app knows nowhere else.
 */
 
@@ -37,7 +37,7 @@ const restore = !/^[A-Za-z0-9_-]{11}$/.test(v) && resumeLink();
 if (restore) {
   location.replace(restore);
 } else if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
-  document.body.append(h("p", { class: "empty player-empty" }, "Nothing playing. Pick a video from Home."));
+  document.body.append(h("p", { class: "empty player-empty" }, "Nothing playing. Pick a video on Creators."));
 } else {
   await boot();
   try {
@@ -88,7 +88,7 @@ if (restore) {
     }
   });
 
-  // Pages queue into this window while it plays (a plain click on Home or Creators): the video goes right under
+  // Pages queue into this window while it plays (a plain click on Creators or Favorites): the video goes right under
   // this one and the page hears "queued". They learn that something is playing from "playing", sent on load and in answer to a "ping";
   // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {

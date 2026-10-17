@@ -1,6 +1,6 @@
-/** Days of uploads the Creators page can show. Older videos are never fetched. */
-export const MIN_DAYS = 5;
-export const MAX_DAYS = 28;
+/** Days of uploads the Creators page can show. Nothing here is worth reading after two weeks (#68). */
+export const MIN_DAYS = 3;
+export const MAX_DAYS = 14;
 export const DEFAULT_DAYS = 7;
 
 /** Only this many of a channel's newest videos are listed, so a busy channel can be cut off inside the window. */
