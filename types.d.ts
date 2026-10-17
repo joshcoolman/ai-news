@@ -24,6 +24,8 @@ type VideoItem = {
   publishedAt: string;
   /** Seconds. Absent when unknown. */
   duration?: number;
+  /** Its description lists chapters. Absent when it does not, or was never read. */
+  chapters?: true;
 };
 
 type Favorite = { item: VideoItem; favoritedAt: string };
@@ -64,6 +66,8 @@ type Card = {
   thumbUrl: string;
   meta: string;
   duration?: string;
+  /** Draw the chapters glyph on the thumbnail. */
+  chapters?: true;
 };
 
 /* YouTube */
@@ -115,6 +119,8 @@ type PlayerVideo = {
   /** The saved creator behind this video, when there is one. */
   creator?: { name: string; avatarUrl: string };
   favorited: boolean;
+  /** Its description lists chapters: the History row wears the glyph. */
+  chapters?: true;
 };
 
 /* HTTP */

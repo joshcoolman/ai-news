@@ -1,8 +1,9 @@
 import { keySources, MissingKeyError } from "./server/keys.js";
 import { mutate, read } from "./server/store.js";
-import { favoriteCards } from "./server/cards.js";
+import { favoriteCards, hasChapters } from "./server/cards.js";
 import { keyWorks, resolveCreator, UserInputError, videoChapters } from "./server/youtube.js";
-import { recentVideos } from "./server/creators/recent.js";
+import { cachedVideo, recentVideos } from "./server/creators/recent.js";
+import { parseChapters } from "./server/youtube-parse.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
 
@@ -40,6 +41,7 @@ export const routes = [
 
   ["GET", "/api/player/video", playerInfo],
   ["GET", "/api/player/chapters", playerChapters],
+  ["GET", "/api/player/chaptered", playerChaptered],
   ["POST", "/api/player/favorite", playerFavorite],
 ];
 
@@ -204,11 +206,30 @@ async function playerChapters({ query }) {
   if (!VIDEO_ID.test(v)) return fail("Missing video id.", 400);
   const known = (await read()).cache.chapters[v];
   if (known) return json({ chapters: known });
+  // The cached channel lists carry full descriptions: a listed video's chapters cost no unit.
+  const cached = await cachedVideo(v);
+  if (cached) return json({ chapters: parseChapters(cached.video.description) });
   return orFail("Could not read chapters.", 502, async () => {
     const chapters = await videoChapters(v);
     await mutate((d) => void (d.cache.chapters[v] = chapters));
     return json({ chapters });
   });
+}
+
+/**
+ * Which of these videos (`?v=<id>,<id>,...`) list chapters, for History rows saved before the mark.
+ * Cached descriptions and favorites only: this never asks YouTube, so an unlisted video is simply not named.
+ * @param {Ctx} ctx
+ */
+async function playerChaptered({ query }) {
+  const ids = (query.get("v") ?? "").split(",").filter((v) => VIDEO_ID.test(v)).slice(0, 500);
+  const d = await read();
+  const chaptered = [];
+  for (const id of ids) {
+    const stored = d.favorites.find((f) => f.item.videoId === id)?.item;
+    if (stored?.chapters || hasChapters((await cachedVideo(id))?.video.description)) chaptered.push(id);
+  }
+  return json({ chaptered });
 }
 
 /** Favorite the video playing in the player window, by video id (Creators-page videos have no card). */

@@ -1,3 +1,4 @@
+import { parseChapters } from "./youtube-parse.js";
 import { thumbnailUrl } from "./youtube.js";
 
 /*
@@ -10,7 +11,7 @@ export function videoItemId(videoId) {
 }
 
 /**
- * @param {{ videoId: string, title: string, channel: string, publishedAt?: string, duration?: number }} v
+ * @param {{ videoId: string, title: string, channel: string, publishedAt?: string, duration?: number, description?: string }} v
  * @param {string} createdAt
  * @returns {VideoItem}
  */
@@ -25,7 +26,18 @@ export function videoItem(v, createdAt) {
     channel: v.channel,
     publishedAt: v.publishedAt ?? createdAt,
     ...(v.duration ? { duration: v.duration } : {}),
+    // Whether the description lists chapters is all a card needs; the Player reads the chapters themselves.
+    ...(hasChapters(v.description) ? { chapters: true } : {}),
   };
+}
+
+/**
+ * Whether a description lists chapters by YouTube's rule (`parseChapters`). The cached channel
+ * lists carry full descriptions, so this costs nothing from YouTube.
+ * @param {string} [description]
+ */
+export function hasChapters(description) {
+  return !!description && parseChapters(description).length > 0;
 }
 
 /**
@@ -55,6 +67,7 @@ export function toCard(item) {
     thumbUrl: thumbnailUrl(item.videoId),
     meta: `${item.channel} · ${shortDate(item.publishedAt)}`,
     duration: item.duration ? formatDuration(item.duration) : undefined,
+    ...(item.chapters && { chapters: true }),
   };
 }
 
