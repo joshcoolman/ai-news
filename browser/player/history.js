@@ -1,4 +1,5 @@
 import { h } from "../shared/dom.js";
+import { load } from "../shared/api.js";
 import { HISTORY_KEY } from "../shared/history-link.js";
 import { setPosition, stopSaving } from "./positions.js";
 import { earlierFrom, neighbor, nextUp, queueAfter } from "./queue.js";
@@ -58,12 +59,13 @@ function setFinished(videoId, on) {
  * @returns {Entry[]}
  */
 function remember(video) {
-  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel, session: SESSION_ID };
+  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel, chapters: video.chapters, session: SESSION_ID };
   try {
     /** @type {Entry[]} */
     const before = JSON.parse(localStorage.getItem(KEY) ?? "[]");
     // A video already listed keeps its place: the column is navigation, and rows that move under a click are hard to follow.
-    const list = before.some((e) => e.videoId === entry.videoId) ? before : [entry, ...before];
+    // It does learn whether it has chapters, for rows from before the mark.
+    const list = before.some((e) => e.videoId === entry.videoId) ? before.map((e) => (e.videoId === entry.videoId ? { ...e, chapters: entry.chapters } : e)) : [entry, ...before];
     localStorage.setItem(KEY, JSON.stringify(list));
     return list;
   } catch {
@@ -129,8 +131,9 @@ export function history(video) {
           { style: `view-transition-name: h-${e.videoId}` },
           h(
             "a",
-            { class: current ? "current" : undefined, href: linkTo(e), "aria-current": current ? "true" : undefined },
-            h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }),
+            // The playing row has no link: a click on it would reload the Player and start the video over.
+            { class: current ? "current" : undefined, href: current ? undefined : linkTo(e), "aria-current": current ? "true" : undefined },
+            h("span", { class: "history-thumb" }, h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }), e.chapters && h("span", { class: "chapters-mark" }, "ch")),
             h("span", { class: "history-text" }, h("span", { class: "history-title" }, e.title), e.channel && h("span", { class: "history-channel" }, e.channel)),
           ),
           h("button", { class: "history-remove", type: "button", onclick: () => remove(e.videoId), "aria-label": `Remove from history: ${e.title}`, title: "Remove" }, "×"),
@@ -149,6 +152,21 @@ export function history(video) {
     settled ||= column.isConnected;
   };
   draw();
+  markChapters();
+
+  /** Rows from before the mark do not say whether they have chapters; one request to the cache (never YouTube) tells them. */
+  async function markChapters() {
+    const unknown = list.filter((e) => e.chapters === undefined).map((e) => e.videoId);
+    if (!unknown.length) return;
+    try {
+      /** @type {{ chaptered: string[] }} */
+      const { chaptered } = await load(`/api/player/chaptered?${new URLSearchParams({ v: unknown.join(",") })}`);
+      const has = new Set(chaptered);
+      list = list.map((e) => (e.chapters === undefined && unknown.includes(e.videoId) ? { ...e, chapters: has.has(e.videoId) ? /** @type {const} */ (true) : false } : e));
+      localStorage.setItem(KEY, JSON.stringify(list));
+      draw();
+    } catch {}
+  }
 
   return {
     column,

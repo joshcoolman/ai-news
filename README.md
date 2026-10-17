@@ -17,7 +17,7 @@ Put `YOUTUBE_API_KEY` in `.env.local` (see `.env.example`), then `node server.js
 
 ## YouTube quota
 
-The free Data API quota is 10,000 units a day and every call the app makes costs 1. Each creator's list costs 2 and is read at most twice a day (`LIST_TTL_HOURS` in `server/creators/recent.js`); video lengths and chapters are read once ever. All of it is kept in `data/cache.json`, so a restart or a reload costs nothing. The server logs `[youtube] <call>: N units today` on every call, so when the quota runs out the log says what spent it.
+The free Data API quota is 10,000 units a day and every call the app makes costs 1. Each creator's list costs 2 and is read at most twice a day (`LIST_TTL_HOURS` in `server/creators/recent.js`); video lengths are read once ever, and chapters are parsed from the descriptions the lists already carry (a video found in no list costs one unit, once). All of it is kept in `data/cache.json`, so a restart or a reload costs nothing. The server logs `[youtube] <call>: N units today` on every call, so when the quota runs out the log says what spent it.
 
 ## How TypeScript is used
 

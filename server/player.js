@@ -1,6 +1,6 @@
 import { mutate, read } from "./store.js";
 import { cachedVideo } from "./creators/recent.js";
-import { videoItem, videoItemId } from "./cards.js";
+import { hasChapters, videoItem, videoItemId } from "./cards.js";
 import { thumbnailUrl } from "./youtube.js";
 
 /*
@@ -32,6 +32,7 @@ export async function playerVideo(videoId, title = "") {
     channel,
     creator: creator && { name: creator.name, avatarUrl: creator.avatarUrl },
     favorited: !!stored,
+    ...((stored?.chapters || hasChapters(cached?.video.description)) && { chapters: true }),
   };
 }
 

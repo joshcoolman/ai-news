@@ -102,7 +102,7 @@ if (restore) {
     if (msg.type !== "queue" || msg.videoId === v) return;
     /** @type {PlayerVideo} */
     const info = await load(`/api/player/video?${new URLSearchParams({ v: msg.videoId, t: msg.title })}`);
-    played.queue({ videoId: info.videoId, title: info.title, thumbUrl: info.thumbUrl, channel: info.channel });
+    played.queue({ videoId: info.videoId, title: info.title, thumbUrl: info.thumbUrl, channel: info.channel, chapters: info.chapters });
     announce({ type: "queued", videoId: msg.videoId });
   });
   announce({ type: "playing", videoId: v });
