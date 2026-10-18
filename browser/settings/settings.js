@@ -12,7 +12,7 @@ import { topBar } from "../shared/top-bar.js";
 const GUIDE = [
   {
     where: "One window",
-    note: "The app opens as one browser window with the Player beside it. Clicks queue and play in the right half exactly as with two windows; F on the video fills the whole display. The handle between the halves hides or shows the Player, and a video that loads into a hidden Player shows it. Keys go to whichever half has focus. The windowed Player still works.",
+    note: "The app opens as one browser window with the Player beside it. Clicks queue and play in the right half exactly as with two windows; F on the video fills the whole display. Drag the strip between the halves to resize them. The Player button in the top bar hides or shows the Player; hidden stays hidden while you queue and play. An empty History hides it. Keys go to whichever half has focus. The windowed Player still works.",
     moves: [],
   },
   {

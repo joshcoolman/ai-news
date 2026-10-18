@@ -10,6 +10,9 @@
  * video, or its window is going away. To the player, from a page: queue or
  * unqueue this video, or "ping", which a playing player answers with
  * "playing"; or "toggle", pause or play. Nobody answers a "queue" or "toggle" unless a player is playing something.
+ * Between the one-window shell and its pages: "toggle-player" from a page's
+ * button asks the shell to show or hide the Player frame, and "show-player" is
+ * the shell saying which it did.
  * @typedef {{ type: "card", id: string }
  *   | { type: "creators" }
  *   | { type: "queue", videoId: string, title: string }
@@ -19,10 +22,15 @@
  *   | { type: "ping" }
  *   | { type: "toggle" }
  *   | { type: "playing", videoId: string }
- *   | { type: "closed" }} PlayerMessage
+ *   | { type: "closed" }
+ *   | { type: "toggle-player" }
+ *   | { type: "show-player", on: boolean }} PlayerMessage
  */
 
 const NAME = "ainews-player";
+
+/** The one-window shell's saved choice to show the Player frame: "no" hides it, anything else shows it while History has rows. */
+export const PLAYER_SHOWN_KEY = "app-player-shown";
 
 /** @param {PlayerMessage} msg */
 export function announce(msg) {

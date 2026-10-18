@@ -18,7 +18,7 @@
   display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; align-items: start;
 
   /* The list scrolls by itself, so moving the pick down a long list never scrolls the videos out of view. */
-  aside { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  aside { position: sticky; top: var(--top-bar); max-height: calc(100vh - var(--top-bar) - 16px); overflow-y: auto; }
   .creators-status { margin: 0 0 12px; }
 
   .rows { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }

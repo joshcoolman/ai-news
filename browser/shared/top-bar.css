@@ -1,6 +1,13 @@
-/* Header */
+/*
+  Header. It stays put while the page scrolls under it (#72). The negative
+  margins take back the page frame's padding (.wrap in base.css) so the bar
+  covers the full width from the very top and nothing shows above or beside it.
+*/
+:root { --top-bar: 70px; }
 .top {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 14px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  position: sticky; top: 0; z-index: 2; background: var(--bg);
+  margin: -20px -16px 0; padding: 20px 16px 14px; min-height: var(--top-bar);
 
   nav { display: flex; align-items: center; gap: 10px; }
   nav.end { margin-left: auto; }
@@ -8,4 +15,5 @@
   nav a { color: var(--muted); text-decoration: none; }
   nav a:hover, nav a[aria-current="page"] { color: var(--fg); }
   nav a.icon-btn, nav a.icon-btn:hover, nav a.icon-btn[aria-current="page"] { color: #fff; }
+  .player-toggle[aria-pressed="true"] .panel { fill: currentColor; }
 }
