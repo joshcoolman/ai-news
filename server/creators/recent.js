@@ -2,7 +2,6 @@ import { toCard, videoItem } from "../cards.js";
 import { listFresh, playable } from "../rules.js";
 import { mutate, read } from "../store.js";
 import { listChannelVideos, videoDurations } from "../youtube.js";
-import { FEED_CAP } from "./window.js";
 
 /*
   Channel lists are read at most twice a day and lengths once ever (a video's
@@ -22,26 +21,24 @@ export const LIST_TTL_HOURS = 12;
  * @returns {Promise<Recent>}
  */
 export async function recentVideos(creators) {
-  const { entries, reach, failed, readAt } = await recentEntries(creators);
+  const { entries, failed, readAt } = await recentEntries(creators);
   const durations = await durationsOf(entries.map((r) => r.video.videoId));
   const cards = entries.map(({ c, video }) => ({
     channelId: c.channelId,
     publishedAt: video.publishedAt,
     card: toCard(videoItem({ ...video, duration: durations[video.videoId] }, video.publishedAt)),
   }));
-  return { cards, reach, readAt, ...(failed && { failed }) };
+  return { cards, readAt, ...(failed && { failed }) };
 }
 
 /**
- * The raw videos behind the page, newest first, how far each channel list
- * reached, and when the oldest list in use was read.
+ * The raw videos behind the page, newest first, and when the oldest list in
+ * use was read.
  * @param {Creator[]} creators
  */
 export async function recentEntries(creators) {
   const lists = await listsOf(creators);
   const { settings } = await read();
-  /** @type {FeedReach[]} */
-  const reach = [];
   /** @type {string[]} */
   const errors = [];
   const entries = creators
@@ -54,7 +51,6 @@ export async function recentEntries(creators) {
       }
       // The cache holds every video, so changing the setting shows at once.
       const videos = playable(hit.videos, settings);
-      reach.push({ channelId: c.channelId, full: videos.length >= FEED_CAP, oldest: videos.at(-1)?.publishedAt });
       return videos.map((video) => ({ c, video }));
     })
     .sort((x, y) => y.video.publishedAt.localeCompare(x.video.publishedAt));
@@ -63,7 +59,7 @@ export async function recentEntries(creators) {
   const readAt = Object.values(lists)
     .flatMap((hit) => ("readAt" in hit ? [hit.readAt] : []))
     .sort()[0];
-  return { entries, reach, failed, readAt };
+  return { entries, failed, readAt };
 }
 
 /**
