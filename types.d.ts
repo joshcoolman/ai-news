@@ -95,15 +95,12 @@ type KeyName = "youtube";
 
 type RecentCard = { channelId: string; publishedAt: string; card: Card };
 
-/** Per channel: whether its list came back full, and the oldest video it showed. Tells the page when a count may be cut off. */
-type FeedReach = { channelId: string; full: boolean; oldest?: string };
-
 /**
  * `failed`: why there are no cards, when every channel list failed (a used-up
  * quota, most often). `readAt`: when the oldest list in use was read, so the
  * page can say how current it is.
  */
-type Recent = { cards: RecentCard[]; reach: FeedReach[]; readAt?: string; failed?: string };
+type Recent = { cards: RecentCard[]; readAt?: string; failed?: string };
 
 /* Player */
 

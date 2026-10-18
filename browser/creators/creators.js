@@ -92,14 +92,10 @@ function draw() {
   const inWindow = (recent?.cards ?? []).filter((r) => new Date(r.publishedAt).getTime() >= cutoff);
   const listed = inWindow.filter((r) => creators.some((c) => c.channelId === r.channelId));
   // A picked creator is interest in them: their whole cached list (the newest FEED_CAP), whatever the slider says (#54).
-  // The counts and status stay on the window, so the sidebar reads the same with or without a pick.
+  // The gray rows and status stay on the window, so the sidebar reads the same with or without a pick.
   const shown = selected ? (recent?.cards ?? []).filter((r) => r.channelId === selected) : listed;
-  const count = (/** @type {string} */ id) => listed.filter((r) => r.channelId === id).length;
-  // The list may have been cut off inside the window, so the count is a floor.
-  const capped = (/** @type {string} */ id) => {
-    const r = recent?.reach.find((x) => x.channelId === id);
-    return !!r?.full && !!r.oldest && new Date(r.oldest).getTime() > cutoff;
-  };
+  // A creator with nothing in the window is grayed out; how many they have does not matter.
+  const active = new Set(listed.map((r) => r.channelId));
 
   windowLabel.textContent = selected ? `Latest ${config.feedCap}` : `Last ${days} days`;
 
@@ -127,20 +123,20 @@ function draw() {
     rows,
     creators.map((c) => {
       const on = selected === c.channelId;
-      const n = count(c.channelId);
-      const cut = capped(c.channelId);
+      const any = active.has(c.channelId);
       return {
         key: c.channelId,
-        sig: JSON.stringify([c.name, c.avatarUrl, on, loading, n, cut]),
+        sig: JSON.stringify([c.name, c.avatarUrl, on, loading, any]),
         make: () =>
           h(
             "li",
-            { class: `${on ? "on" : ""}${loading || n ? "" : " none"}` },
+            { class: `${on ? "on" : ""}${loading || any ? "" : " none"}` },
             h(
               "button",
               {
                 class: "creator-pick",
                 type: "button",
+                title: c.name,
                 "aria-pressed": on,
                 onclick: () => {
                   pickCreator(on ? null : c.channelId);
@@ -149,9 +145,6 @@ function draw() {
               },
               c.avatarUrl ? h("img", { class: "avatar", src: c.avatarUrl, alt: "", referrerPolicy: "no-referrer" }) : h("span", { class: "avatar" }),
               h("span", { class: "name" }, c.name),
-              loading
-                ? h("span", { class: "count count-ghost skeleton" })
-                : h("span", { class: "count", title: cut ? `Shows only the newest ${config.feedCap}` : undefined }, `${n}${cut ? "+" : ""}`),
             ),
             on &&
               h(
