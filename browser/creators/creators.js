@@ -270,7 +270,9 @@ async function loadCreators() {
   card is its click, queue or play, or on a marked card its shift-click, unqueue.
   A click on a card moves the highlight there; a change of creator drops it.
   A click on empty page (not a card, a control or the sidebar) drops the pick,
-  as clicking the picked creator again does.
+  as clicking the picked creator again does. C, from anywhere on the page,
+  picks the first creator, or with one picked lets go and highlights the first
+  card of everyone's; both from the top.
 */
 const ARROWS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
 /** The grid's cards in reading order, as drawn. */
@@ -284,6 +286,19 @@ window.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
   const { creators, selected, picked } = state;
   const arrow = ARROWS.includes(e.key);
+  // C toggles between the first creator, picked, and everyone, with the first card highlighted; either way from the top.
+  if (e.key === "c" && !e.repeat) {
+    e.preventDefault();
+    if (selected) {
+      pickCreator(null);
+      draw();
+      state.picked = gridIds()[0] ?? null;
+    } else if (creators[0]) pickCreator(creators[0].channelId);
+    draw();
+    window.scrollTo(0, 0);
+    rows.closest("aside")?.scrollTo(0, 0);
+    return;
+  }
   if (picked) {
     if (arrow) {
       e.preventDefault();

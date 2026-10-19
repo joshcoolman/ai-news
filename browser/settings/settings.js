@@ -44,6 +44,7 @@ const GUIDE = [
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends."],
       [["←"], "Highlight the video beside the picked creator, the nearest one on screen. From then on the arrows walk the grid, stopping at its edges; → off the right edge, or Esc, goes back to the creator list."],
       [["Enter"], "On the highlighted video: queue or play, as its click; on a Queued or Playing one: take it out again, as shift-click."],
+      [["C"], "Pick the first creator, from the top. With a creator picked: let go and highlight the first video of everyone's."],
     ],
   },
   {
