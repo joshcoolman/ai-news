@@ -61,6 +61,8 @@ function apply() {
   if (on === shown) return;
   shown = on;
   document.body.classList.toggle("player-hidden", !on);
+  // A hidden Player cannot keep the keyboard (the last row deleted, say): it goes left, to the highlight left there.
+  if (!on) app.contentWindow?.focus();
   announce({ type: "show-player", on });
 }
 
