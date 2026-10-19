@@ -5,6 +5,7 @@ import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer } from "../shared/card.js";
+import { movePick } from "../shared/pick.js";
 
 await boot();
 
@@ -15,6 +16,8 @@ const state = {
   playing: /** @type {string | null} */ (null),
   /** Videos in the player's History, marked Queued; clicking one again does nothing. A favorite stays a favorite either way. */
   queued: new Set(historyIds()),
+  /** The highlighted card, the keyboard's place in the grid. */
+  picked: /** @type {string | null} */ (null),
 };
 
 const grid = h("div", { class: "grid" });
@@ -27,13 +30,16 @@ function draw() {
   grid.hidden = cards.length === 0;
   sync(
     grid,
-    cards.map((card) => cardEntry(card, { mark: markOf(card), onPlay: () => play(card), onQueue: () => unqueue(card), onRemove: () => remove(card.id) })),
+    cards.map((card) =>
+      cardEntry(card, { mark: markOf(card), picked: card.id === state.picked, onPlay: () => play(card), onQueue: () => unqueue(card), onRemove: () => remove(card.id) }),
+    ),
   );
 }
 
 /** @param {string} id */
 async function remove(id) {
   state.cards = state.cards.filter((c) => c.id !== id);
+  if (state.picked === id) state.picked = null;
   draw();
   await del(`/api/favorites/${encodeURIComponent(id)}`);
 }
@@ -62,6 +68,40 @@ function unqueue(card) {
   if (!markOf(card)) return;
   announce({ type: "unqueue", videoId: card.videoId });
 }
+
+/*
+  The keyboard highlight, as on Creators' grid with no sidebar: an arrow
+  highlights the first card, then the arrows walk the cards, stopping at the
+  edges; Escape drops it. Enter is the card's click, queue or play, or on a
+  marked card its shift-click, unqueue. A click on a card moves it there.
+*/
+/** How many cards share the grid's first row: read from layout, since the grid wraps to the window. */
+function columns() {
+  const tops = [...grid.querySelectorAll(".card")].map((c) => /** @type {HTMLElement} */ (c).offsetTop);
+  return Math.max(1, tops.filter((t) => t === tops[0]).length);
+}
+window.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+    e.preventDefault();
+    state.picked = movePick(state.cards.map((c) => c.id), state.picked, e.key, columns()) ?? null;
+    draw();
+    grid.querySelector(".card.picked")?.scrollIntoView({ block: "nearest" });
+  } else if (e.key === "Escape") {
+    state.picked = null;
+    draw();
+  } else if (e.key === "Enter" && state.picked) {
+    e.preventDefault();
+    const card = state.cards.find((c) => c.id === state.picked);
+    if (card) markOf(card) ? unqueue(card) : play(card);
+  }
+});
+grid.addEventListener("click", (e) => {
+  const tile = /** @type {Element} */ (e.target).closest(".card[data-id]");
+  if (!tile) return;
+  state.picked = tile.getAttribute("data-id");
+  draw();
+});
 
 // The player window: whether it is playing, or that it starred or unstarred something.
 toggleOnSpace();

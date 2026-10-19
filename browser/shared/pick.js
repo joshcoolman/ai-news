@@ -1,5 +1,5 @@
 /*
-  The rules of the keyboard highlight on Creators, pure so they are tested
+  The rules of the keyboard highlight on Creators (and Favorites, which has no sidebar), pure so they are tested
   directly: where an arrow key moves it, when it is at the grid's right edge,
   and where Left from the sidebar lands. `ids` is the grid in reading order, as drawn.
 */

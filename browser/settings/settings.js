@@ -52,6 +52,8 @@ const GUIDE = [
     moves: [
       [["click"], "On a video: as on Creators, queue or play, and the card says Queued or Playing while it is in the player's History. It stays a favorite."],
       [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the next plays."],
+      [["←", "→", "↑", "↓"], "Highlight the first video, then walk the grid, stopping at its edges. Esc lets go."],
+      [["Enter"], "On the highlighted video: queue or play, as its click; on a Queued or Playing one: take it out again, as shift-click."],
     ],
   },
 ];
