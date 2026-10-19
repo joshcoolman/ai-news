@@ -12,17 +12,23 @@ import { topBar } from "../shared/top-bar.js";
 const GUIDE = [
   {
     where: "One window",
-    note: "The app opens as one browser window with the Player beside it. Clicks queue and play in the right half exactly as with two windows; F on the video fills the whole display. Drag the strip between the halves to resize them. The Player button in the top bar hides or shows the Player; hidden stays hidden while you queue and play. An empty History hides it. Keys go to whichever half has focus. The windowed Player still works.",
-    moves: [],
+    note: "The app opens as one browser window with the Player beside it. Clicks queue and play in the right half exactly as with two windows. Drag the strip between the halves to resize them. The Player button in the top bar hides or shows the Player; hidden stays hidden while you queue and play. An empty History hides it. Keys go to whichever half has focus. The windowed Player still works.",
+    moves: [
+      [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
+      [["Shift", "→"], "Give the keys to the Player, while it shows."],
+      [["F"], "From either half, while the Player shows: fill the display with the video. Every other key does nothing until F again, or Esc, comes back."],
+    ],
   },
   {
     where: "Player",
-    note: "The keys work while the player's own page has the keyboard. After a click on the video they go to YouTube; click the bar or the History column to get them back.",
+    note: "The keys work while the player's own page has the keyboard. The video never takes it: YouTube's own controls do not answer clicks, and these keys and clicks stand in for them.",
     moves: [
       [["↑", "↓"], "Play the video above or below in History. The playing one stays at the column's middle; the list slides. Each video picks up where you left it."],
       [["Delete"], "Remove the playing video from History and move on to the one below it."],
       [["Space"], "Pause or play. Works on Creators and Favorites too (not in a box), whichever window has the keyboard."],
       [["←", "→"], "Back or forward 10 seconds."],
+      [["click"], "On the video: pause or play."],
+      [["double-click"], "On the video, or F: fill the display with it. Esc comes back."],
       [["C"], "Open or close Chapters, for a video that has them."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
       [["Esc"], "Close Chapters."],

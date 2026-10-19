@@ -10,7 +10,12 @@
 .player-page { position: fixed; inset: 0; display: flex; flex-direction: column; background: #000; }
 .player-main { flex: 1; min-height: 0; display: flex; position: relative; }
 /* The video's own shape, centered: a paused embed shows its poster edge to edge, which in a tall frame is a crop. */
-.player { flex: 1 1 0; min-width: 0; height: auto; aspect-ratio: 16 / 9; max-height: 100%; align-self: center; border: 0; background: #000; }
+.player-video { flex: 1 1 0; min-width: 0; display: flex; align-items: center; background: #000; }
+.player { flex: 1; height: auto; aspect-ratio: 16 / 9; max-height: 100%; border: 0; background: #000; }
+/* The embed never takes the pointer, so it never takes the keyboard: a click lands on .player-video, which pauses or plays (#74). */
+.player { pointer-events: none; }
+/* The one window's F: the shell fills the display with this whole frame, and the video covers the rest of it. */
+.filled .player-video { position: fixed; inset: 0; z-index: 10; }
 .player-empty { padding: 16px; }
 
 .player-bar {

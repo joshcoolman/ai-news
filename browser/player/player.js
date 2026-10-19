@@ -52,8 +52,15 @@ if (restore) {
     if (next) location.href = linkTo(next);
   }, query.get("restore") !== "1");
   const listed = chapters(v, player);
+  /*
+    The video never has the keyboard (#74): the embed takes no pointer, so its own
+    controls are dead and these stand in. A click pauses or plays; a double-click,
+    or F, fills the display with the video, and Escape (the browser's) brings it back.
+  */
+  const fill = () => (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen()).catch(() => {});
+  const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame);
   document.body.append(
-    h("div", { class: "player-page" }, h("div", { class: "player-main" }, player.frame, played.column, listed.panel), playerBar(video, listed.button)),
+    h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel), playerBar(video, listed.button)),
   );
   played.center();
 
@@ -63,9 +70,7 @@ if (restore) {
     window left it); while the Chapters list is open they walk the chapters
     instead. Space: pause or play. Left and right: back or forward 10 seconds. Delete (Backspace on a
     Mac keyboard, or forward Delete): remove the playing row, as its × does,
-    and move on to the row below. They reach
-    this page only while it has the keyboard: after a click inside the video,
-    keys go to YouTube's embed.
+    and move on to the row below. F: fill the display.
   */
   const SKIP = 10;
   window.addEventListener("keydown", (e) => {
@@ -85,6 +90,9 @@ if (restore) {
     } else if (e.key === "Backspace" || e.key === "Delete") {
       e.preventDefault();
       played.removeCurrent();
+    } else if (e.key.toLowerCase() === "f" && !e.repeat && window.parent === window) {
+      // Inside the one window the shell owns F, from either half.
+      fill();
     }
   });
 

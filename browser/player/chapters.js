@@ -86,12 +86,11 @@ export function chapters(videoId, player) {
     () => {},
   );
 
-  // Clicking off closes it. A click on the video never reaches this page; the page losing the keyboard to the video is how it shows.
+  // Clicking off closes it, the video included.
   document.addEventListener("pointerdown", (e) => {
     const at = /** @type {Node} */ (e.target);
     if (!panel.hidden && !panel.contains(at) && !button.contains(at)) open(false);
   });
-  window.addEventListener("blur", () => setTimeout(() => document.activeElement === player.frame && open(false)));
   // Escape closes; C opens and closes, and does nothing for a video without chapters.
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
