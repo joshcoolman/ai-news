@@ -271,10 +271,12 @@ async function loadCreators() {
   A click on a card moves the highlight there; a change of creator drops it.
   A click on empty page (not a card, a control or the sidebar) drops the pick,
   as clicking the picked creator again does. C, from anywhere on the page,
-  picks the first creator, or with one picked lets go and highlights the first
-  card of everyone's; both from the top.
+  picks the first creator, or with one picked lets go and goes back to the card
+  highlighted before (else the first).
 */
 const ARROWS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+/** The card highlighted on everyone's view when C picked the first creator, to come back to on the next C. @type {string | null} */
+let before = null;
 /** The grid's cards in reading order, as drawn. */
 const gridIds = () => [...grid.querySelectorAll(".card[data-id]")].map((c) => /** @type {string} */ (c.getAttribute("data-id")));
 /** How many cards share the grid's first row: read from layout, since the grid wraps to the window. */
@@ -286,18 +288,24 @@ window.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
   const { creators, selected, picked } = state;
   const arrow = ARROWS.includes(e.key);
-  // C toggles between the first creator, picked, and everyone, with the first card highlighted; either way from the top.
+  // C toggles between the first creator, picked from the top, and everyone's, back on the card highlighted before
+  // the first C (else the first card, from the top).
   if (e.key === "c" && !e.repeat) {
     e.preventDefault();
+    rows.closest("aside")?.scrollTo(0, 0);
     if (selected) {
       pickCreator(null);
       draw();
-      state.picked = gridIds()[0] ?? null;
-    } else if (creators[0]) pickCreator(creators[0].channelId);
-    draw();
-    window.scrollTo(0, 0);
-    rows.closest("aside")?.scrollTo(0, 0);
-    return;
+      const ids = gridIds();
+      state.picked = before && ids.includes(before) ? before : (ids[0] ?? null);
+      draw();
+      if (state.picked === before) return grid.querySelector(".card.picked")?.scrollIntoView({ block: "center" });
+    } else if (creators[0]) {
+      before = picked;
+      pickCreator(creators[0].channelId);
+      draw();
+    }
+    return window.scrollTo(0, 0);
   }
   if (picked) {
     if (arrow) {
