@@ -1,6 +1,7 @@
 import { boot, del, load, patch, post } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
+import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { CREATORS_CHANGED_EVENT, topBar } from "../shared/top-bar.js";
 import { busyLine, cardEntry, playInPlayer, slotEntries } from "../shared/card.js";
@@ -341,6 +342,7 @@ document.addEventListener("click", (e) => {
 
 window.addEventListener(CREATORS_CHANGED_EVENT, () => void loadCreators());
 toggleOnSpace();
+markAway();
 onPlayerMessage((msg) => {
   if (msg.type === "creators") return void loadCreators();
   if (msg.type === "playing") state.playing = msg.videoId;

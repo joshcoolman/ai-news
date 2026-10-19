@@ -24,11 +24,14 @@
   --pick: #ff4e45;
   /* The chapters dot on thumbnails: the app's green. */
   --chapters: #2fe36a;
+  /* The keyboard's marks: the highlight, the picked creator, the playing row. Dark in the half without the keyboard (shared/away.js). */
+  --mark: #2fe36a;
   --tray: #181818;
   --font: "Roboto", "Helvetica Neue", Arial, sans-serif;
   --mono: "Roboto Mono", ui-monospace, Menlo, monospace;
   color-scheme: dark;
 }
+:root.away { --mark: transparent; }
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #ffffff;

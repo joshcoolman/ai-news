@@ -1,6 +1,7 @@
 import { boot, del, load } from "../shared/api.js";
 import { h, sync } from "../shared/dom.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
+import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { topBar } from "../shared/top-bar.js";
 import { cardEntry, playInPlayer } from "../shared/card.js";
@@ -64,6 +65,7 @@ function unqueue(card) {
 
 // The player window: whether it is playing, or that it starred or unstarred something.
 toggleOnSpace();
+markAway();
 onPlayerMessage(async (msg) => {
   if (msg.type === "playing") state.playing = msg.videoId;
   else if (msg.type === "closed") state.playing = null;

@@ -7,7 +7,7 @@
   &.queued .thumb { background: #000; }
   &.queued .thumb img { opacity: .2; transition: opacity .3s; }
   /* The keyboard highlight: the same green as the picked creator. Outside the thumbnail: the image is positioned, so it would paint over an inset outline. */
-  &.picked .thumb { outline: 3px solid #2fe36a; outline-offset: 3px; }
+  &.picked .thumb { outline: 3px solid var(--mark); outline-offset: 3px; }
 
   .title { font-size: 16px; font-weight: 500; line-height: 1.35; text-wrap: balance; }
   .title a { text-decoration: none; }

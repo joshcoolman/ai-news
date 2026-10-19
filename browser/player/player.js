@@ -1,5 +1,6 @@
 import { boot, load } from "../shared/api.js";
 import { h } from "../shared/dom.js";
+import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { playerBar } from "./bar.js";
 import { chapters } from "./chapters.js";
@@ -40,6 +41,7 @@ if (restore) {
   document.body.append(h("p", { class: "empty player-empty" }, "Nothing playing. Pick a video on Creators."));
 } else {
   await boot();
+  markAway();
   try {
     localStorage.setItem(LAST_KEY, v);
   } catch {}

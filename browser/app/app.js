@@ -134,6 +134,8 @@ const fill = () => player.contentDocument?.documentElement.classList.toggle("fil
 document.addEventListener("fullscreenchange", fill);
 player.addEventListener("load", fill);
 for (const frame of [app, player]) frame.addEventListener("load", () => frame.contentWindow?.addEventListener("keydown", onKey, true));
+// The window opens with the keyboard in the left half, so its green marks show from the start.
+app.addEventListener("load", () => app.contentWindow?.focus(), { once: true });
 
 document.body.append(app, rail, player);
 apply();
