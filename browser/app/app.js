@@ -107,15 +107,18 @@ rail.addEventListener("lostpointercapture", stop);
   shows. F, from either half, fills the display with the Player's video while
   it shows, and F again (or the browser's Escape) brings it back: only the shell
   may, being the page that holds both. None of them in a text box. While the
-  video fills the display every other key is swallowed: the shell listens in the
-  capture phase, ahead of the pages' own keys.
+  video fills the display every other key is swallowed, except Left and Right,
+  which skip as in the Player whichever half had the keyboard: the shell listens
+  in the capture phase, ahead of the pages' own keys.
 */
 /** @param {KeyboardEvent} e */
 function onKey(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   if (document.fullscreenElement && e.key.toLowerCase() !== "f" && e.key !== "Escape") {
     e.preventDefault();
-    return e.stopImmediatePropagation();
+    e.stopImmediatePropagation();
+    if (!e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) announce({ type: "skip", by: e.key === "ArrowLeft" ? -1 : 1 });
+    return;
   }
   if (e.repeat) return;
   // Not `instanceof Element`: a frame's elements belong to that frame's window.
