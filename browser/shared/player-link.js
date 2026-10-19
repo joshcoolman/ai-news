@@ -9,7 +9,8 @@
  * a video was taken into or dropped from its queue, it started playing a
  * video, or its window is going away. To the player, from a page: queue or
  * unqueue this video, or "ping", which a playing player answers with
- * "playing"; or "toggle", pause or play. Nobody answers a "queue" or "toggle" unless a player is playing something.
+ * "playing"; or "toggle", pause or play; or "skip", back (-1) or forward (1) as the Player's arrows, which the
+ * one-window shell sends while the video fills the display. Nobody answers a "queue" or "toggle" unless a player is playing something.
  * Between the one-window shell and its pages: "toggle-player" from a page's
  * button asks the shell to show or hide the Player frame, and "show-player" is
  * the shell saying which it did.
@@ -21,6 +22,7 @@
  *   | { type: "unqueued", videoId: string }
  *   | { type: "ping" }
  *   | { type: "toggle" }
+ *   | { type: "skip", by: -1 | 1 }
  *   | { type: "playing", videoId: string }
  *   | { type: "closed" }
  *   | { type: "toggle-player" }

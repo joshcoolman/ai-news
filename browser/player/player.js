@@ -75,6 +75,8 @@ if (restore) {
     and move on to the row below. F: fill the display.
   */
   const SKIP = 10;
+  /** @param {-1 | 1} dir */
+  const skip = (dir) => player.seek(Math.max(0, player.time() + dir * SKIP));
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -85,7 +87,7 @@ if (restore) {
       if (row) location.href = linkTo(row);
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
-      player.seek(Math.max(0, player.time() + (e.key === "ArrowRight" ? SKIP : -SKIP)));
+      skip(e.key === "ArrowRight" ? 1 : -1);
     } else if (e.key === " " && !(e.target instanceof Element && e.target.closest("input, textarea, select, button, a"))) {
       e.preventDefault();
       player.toggle();
@@ -103,6 +105,7 @@ if (restore) {
   // a step through History is a page load, so "closed" is followed by the next page's "playing".
   onPlayerMessage(async (msg) => {
     if (msg.type === "toggle") return player.toggle();
+    if (msg.type === "skip") return skip(msg.by);
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
     if (msg.type === "unqueue") {

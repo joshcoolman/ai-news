@@ -16,7 +16,7 @@ const GUIDE = [
     moves: [
       [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
       [["Shift", "→"], "Give the keys to the Player, while it shows."],
-      [["F"], "From either half, while the Player shows: fill the display with the video. Every other key does nothing until F again, or Esc, comes back."],
+      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; every other key does nothing until F again, or Esc, comes back."],
     ],
   },
   {
