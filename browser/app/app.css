@@ -7,4 +7,15 @@ body.dragging iframe { pointer-events: none; }
 .app-rail:hover, body.dragging .app-rail { background: var(--chip-hover); }
 /* Min wins over max, so a narrow window squeezes the app frame before the Player goes under 320px. */
 #ainews-player { flex: none; width: 50%; min-width: 320px; max-width: calc(100vw - 488px); border: 0; background: #000; }
-body.player-hidden :is(#ainews-player, .app-rail) { display: none; }
+body.player-empty .app-rail, body.player-hidden #ainews-player, body.app-hidden .app-frame { display: none; }
+body.app-hidden #ainews-player { flex: 1; max-width: none; }
+body:is(.player-hidden, .app-hidden) .app-rail { cursor: default; }
+/* The rail's arrows: a tab over its middle, shown on hover, and always while a half is collapsed (the way back). */
+.app-rail { position: relative; z-index: 1; }
+.rail-tab { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+.app-rail:hover .rail-tab, body:is(.player-hidden, .app-hidden) .rail-tab { opacity: 1; }
+body.app-hidden .rail-tab { left: 0; transform: translateY(-50%); }
+body.player-hidden .rail-tab { left: auto; right: 0; transform: translateY(-50%); }
+.rail-tab button { width: 18px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--chip); color: var(--fg); font: 18px/1 var(--font); cursor: pointer; }
+.rail-tab button:hover:not(:disabled) { background: var(--chip-hover); }
+.rail-tab button:disabled { opacity: 0.35; cursor: default; }

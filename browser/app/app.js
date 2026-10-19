@@ -14,9 +14,17 @@ import { announce, onPlayerMessage, PLAYER_SHOWN_KEY } from "../shared/player-li
   row into an empty History shows it and resets the saved choice to yes; after
   that the choice is whatever the top bar's button last set. Nothing else
   shows it: a video queued or played while hidden stays hidden.
+
+  Either half collapses: the rail's two arrows (and [ and ], from either half)
+  slide it left or right, one step at a time, between the left half alone,
+  both, and the Player alone. A collapsed half leaves the rail at the window's
+  edge to bring it back. Never both: hiding the Player, or History emptying,
+  shows the left half.
 */
 
 const WIDTH_KEY = "app-player-width";
+/** "no" collapses the left half, so the Player fills the window. */
+const LEFT_KEY = "app-left-shown";
 const MIN_APP = 480;
 const MIN_PLAYER = 320;
 
@@ -44,7 +52,12 @@ const player = h("iframe", {
   allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
   allowFullscreen: true,
 });
-const rail = h("div", { class: "app-rail", title: "Drag to resize" });
+/** @param {-1 | 1} dir */
+const arrow = (dir) =>
+  h("button", { type: "button", onpointerdown: (/** @type {Event} */ e) => e.stopPropagation(), onclick: () => slide(dir) }, dir < 0 ? "\u2039" : "\u203a");
+const toLeft = arrow(-1);
+const toRight = arrow(1);
+const rail = h("div", { class: "app-rail", title: "Drag to resize" }, h("div", { class: "rail-tab" }, toLeft, toRight));
 
 /** @param {number} px */
 const setWidth = (px) => (player.style.width = `${Math.round(px)}px`);
@@ -54,21 +67,47 @@ if (saved > 0) setWidth(saved);
 let empty = historyIds().length === 0;
 /** @type {boolean | undefined} */
 let shown;
+let leftShown = true;
 
-/** Show or hide the Player by the rule above, and tell the pages when that changes. */
+/** Show or hide each half by the rules above, and tell the pages when the Player's changes. */
 function apply() {
   const on = !empty && read(PLAYER_SHOWN_KEY) !== "no";
+  const left = !on || read(LEFT_KEY) !== "no";
+  document.body.classList.toggle("player-empty", empty);
+  document.body.classList.toggle("app-hidden", !left);
+  toLeft.disabled = on && !left;
+  toLeft.title = on ? "Hide the left half" : "Show the Player";
+  toRight.disabled = !on;
+  toRight.title = left ? "Hide the Player" : "Show the left half";
+  // A hidden half cannot keep the keyboard: it goes to the other, to the highlight left there.
+  if (left !== leftShown && !left) player.contentWindow?.focus();
+  leftShown = left;
   if (on === shown) return;
   shown = on;
   document.body.classList.toggle("player-hidden", !on);
-  // A hidden Player cannot keep the keyboard (the last row deleted, say): it goes left, to the highlight left there.
   if (!on) app.contentWindow?.focus();
   announce({ type: "show-player", on });
 }
 
+/**
+ * One step of the split toward the left (-1) or the right (1): ‹ from both hides the left half, from the left half alone shows the Player.
+ * @param {-1 | 1} dir
+ */
+function slide(dir) {
+  if (empty) return;
+  if (dir < 0 && !shown) save(PLAYER_SHOWN_KEY, "yes");
+  else if (dir < 0) save(LEFT_KEY, "no");
+  else if (!leftShown) save(LEFT_KEY, "yes");
+  else save(PLAYER_SHOWN_KEY, "no");
+  apply();
+}
+
 function watch() {
   const now = historyIds().length === 0;
-  if (empty && !now) save(PLAYER_SHOWN_KEY, "yes");
+  if (empty && !now) {
+    save(PLAYER_SHOWN_KEY, "yes");
+    save(LEFT_KEY, "yes");
+  }
   empty = now;
   apply();
 }
@@ -78,12 +117,14 @@ onPlayerMessage((msg) => {
   if (msg.type === "queued" || msg.type === "unqueued" || msg.type === "playing") watch();
   if (msg.type === "toggle-player" && !empty) {
     save(PLAYER_SHOWN_KEY, shown ? "no" : "yes");
+    save(LEFT_KEY, "yes");
     apply();
   }
 });
 
 // The rail drags the split. The iframes would swallow the moves, so they stop taking the pointer while it drags.
 rail.addEventListener("pointerdown", (e) => {
+  if (!shown || !leftShown) return;
   rail.setPointerCapture(e.pointerId);
   document.body.classList.add("dragging");
 });
@@ -106,10 +147,10 @@ rail.addEventListener("lostpointercapture", stop);
   Shift+Left gives the keyboard to the app, Shift+Right to the Player while it
   shows. F, from either half, fills the display with the Player's video while
   it shows, and F again (or the browser's Escape) brings it back: only the shell
-  may, being the page that holds both. None of them in a text box. While the
-  video fills the display every other key is swallowed, except Left and Right,
-  which skip as in the Player whichever half had the keyboard: the shell listens
-  in the capture phase, ahead of the pages' own keys.
+  may, being the page that holds both. [ and ] slide the split. None of them in
+  a text box. While the video fills the display every other key is swallowed,
+  except Left and Right, which skip as in the Player whichever half had the
+  keyboard: the shell listens in the capture phase, ahead of the pages' own keys.
 */
 /** @param {KeyboardEvent} e */
 function onKey(e) {
@@ -130,6 +171,9 @@ function onKey(e) {
   } else if (!e.shiftKey && e.key.toLowerCase() === "f" && (shown || document.fullscreenElement)) {
     e.preventDefault();
     (document.fullscreenElement ? document.exitFullscreen() : player.requestFullscreen()).catch(() => {});
+  } else if (!e.shiftKey && (e.key === "[" || e.key === "]")) {
+    e.preventDefault();
+    slide(e.key === "[" ? -1 : 1);
   }
 }
 window.addEventListener("keydown", onKey, true);
