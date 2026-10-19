@@ -290,7 +290,7 @@ window.addEventListener("keydown", (e) => {
   const arrow = ARROWS.includes(e.key);
   // C toggles between the first creator, picked from the top, and everyone's, back on the card highlighted before
   // the first C (else the first card, from the top).
-  if (e.key === "c" && !e.repeat) {
+  if (e.key.toLowerCase() === "c" && !e.repeat) {
     e.preventDefault();
     rows.closest("aside")?.scrollTo(0, 0);
     if (selected) {
