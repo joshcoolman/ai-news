@@ -8,7 +8,8 @@ import { listChannelVideos, videoDurations } from "../youtube.js";
   length never changes). Both live in the store's cache file, so a server
   restart costs nothing (#67). A list older than LIST_TTL_HOURS is read again
   on the next request, a creator added since is read at once, and one request
-  writes the cache once however many lists it read.
+  writes the cache once however many lists it read. The status line's refresh
+  reads every list again whatever its age: one unit a creator.
 */
 
 export const LIST_TTL_HOURS = 12;
@@ -18,10 +19,11 @@ export const LIST_TTL_HOURS = 12;
  * first. The page narrows it to the chosen window, or shows all of one
  * creator's when picked (#54). A channel whose list fails is skipped.
  * @param {Creator[]} creators
+ * @param {boolean} [force] read every list again, fresh or not
  * @returns {Promise<Recent>}
  */
-export async function recentVideos(creators) {
-  const { entries, failed, readAt } = await recentEntries(creators);
+export async function recentVideos(creators, force = false) {
+  const { entries, failed, readAt } = await recentEntries(creators, force);
   const durations = await durationsOf(entries.map((r) => r.video.videoId));
   const cards = entries.map(({ c, video }) => ({
     channelId: c.channelId,
@@ -35,9 +37,10 @@ export async function recentVideos(creators) {
  * The raw videos behind the page, newest first, and when the oldest list in
  * use was read.
  * @param {Creator[]} creators
+ * @param {boolean} [force]
  */
-export async function recentEntries(creators) {
-  const lists = await listsOf(creators);
+export async function recentEntries(creators, force = false) {
+  const lists = await listsOf(creators, force);
   const { settings } = await read();
   /** @type {string[]} */
   const errors = [];
@@ -66,9 +69,10 @@ export async function recentEntries(creators) {
  * Every creator's list: from the cache while fresh, the stale ones read from
  * YouTube at once and written back together. A failed read keeps its error.
  * @param {Creator[]} creators
+ * @param {boolean} force
  * @returns {Promise<Record<string, YouTubeCache["lists"][string] | { error: string }>>}
  */
-async function listsOf(creators) {
+async function listsOf(creators, force) {
   const { cache } = await read();
   /** @type {Record<string, YouTubeCache["lists"][string] | { error: string }>} */
   const out = {};
@@ -77,7 +81,7 @@ async function listsOf(creators) {
   await Promise.all(
     creators.map(async (c) => {
       const hit = cache.lists[c.channelId];
-      if (hit && listFresh(hit.readAt, LIST_TTL_HOURS)) return void (out[c.channelId] = hit);
+      if (hit && !force && listFresh(hit.readAt, LIST_TTL_HOURS)) return void (out[c.channelId] = hit);
       try {
         fresh[c.channelId] = out[c.channelId] = { readAt: new Date().toISOString(), videos: await listChannelVideos(c.channelId) };
       } catch (err) {
