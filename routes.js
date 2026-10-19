@@ -149,9 +149,11 @@ async function lookUpCreator({ body }) {
   return json({ creator, listed });
 }
 
-/** The Creators page's videos, from lists read at most twice a day. */
-function creatorsRecent() {
-  return orFail("Could not read creator feeds.", 500, async () => json(await recentVideos((await read()).creators)));
+/** The Creators page's videos, from lists read at most twice a day; `fresh=1` (the status line's refresh) reads them all now. */
+/** @param {Ctx} ctx */
+function creatorsRecent({ query }) {
+  const force = query.get("fresh") === "1";
+  return orFail("Could not read creator feeds.", 500, async () => json(await recentVideos((await read()).creators, force)));
 }
 
 /** Stops future fetches. The cached list stays until it ages out. */

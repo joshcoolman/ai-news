@@ -33,12 +33,12 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** #17 (Player: now-playing highlight, next/previous, snap back) is the only open issue; check it is still wanted before building it, much of it may have shipped since.
 
 **Last shipped**
+- Creators' status line has a refresh link: reads every creator's list now, past the twice-a-day cache (`?fresh=1`, about 60 units).
 - Collapse either half: `[` and `]` (or the ‹ › arrows on the rail) step between the left half alone, both, and the Player alone; Left and Right skip 10 seconds while the video fills the display (#76).
 - Keyboard across the one window (#74): Shift+Left/Right moves the keyboard between halves and green marks show only in the half that has it; the video never takes the keyboard (click pauses, F or double-click fills the display from either half, other keys blocked while full); C on Creators toggles the first creator; Favorites gets the arrow highlight; the Player hiding hands the keyboard left. Cards no longer show the chapters C; History rows still do.
 - Creators fits a narrow frame: thumbnails stay beside the list, shrinking to no fewer than two columns; under 640px the list is avatars only; the per-creator counts are gone, a creator with nothing in the window is still grayed.
 - One window (#72): an empty History hides the Player, a Player button in the top bar shows or hides it (hidden stays hidden), the top bar is fixed, the rail drags the split and remembers it.
 - Chapters: a green C on History thumbnails whose description lists chapters, parsed from the cached lists at no YouTube cost (#70, #71). The playing History row ignores clicks.
-- The app is Creators, the Player and Favorites (#68): Home, Refresh, stories, every search and every model call are gone, and with them the Anthropic key. The Creators window is 3 to 14 days. `/` is the one-window app with Creators on the left.
 
 **Up next**
 - Open issues.

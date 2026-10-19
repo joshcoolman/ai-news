@@ -26,6 +26,7 @@
   /* The list scrolls by itself, so moving the pick down a long list never scrolls the videos out of view. */
   aside { position: sticky; top: var(--top-bar); max-height: calc(100vh - var(--top-bar) - 16px); overflow-y: auto; }
   .creators-status { margin: 0 0 12px; }
+  .creators-status .link-btn { font-size: inherit; }
 
   .rows { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
   .rows li { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 0; border-bottom: 1px solid var(--line); }

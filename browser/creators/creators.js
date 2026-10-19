@@ -11,7 +11,8 @@ import { atRightEdge, movePick, nearestPick } from "../shared/pick.js";
   The Creators page: recent videos on the left, the creators on the right. The
   page draws before its videos: they load behind placeholders. The server
   reads each creator's list at most twice a day (#67); the status line says
-  when it last did, and a reload asks for nothing new.
+  when it last did, and a reload asks for nothing new. Its refresh link reads
+  every list now, one unit a creator.
 */
 
 const DAY = 86_400_000;
@@ -78,6 +79,8 @@ document.body.append(
   ),
 );
 
+const refresh = h("button", { class: "link-btn", type: "button", onclick: () => void loadVideos(true) }, "refresh");
+
 /** "read 3 hours ago": when the oldest list on the page was read. @param {string} iso */
 function readAgo(iso) {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -101,11 +104,14 @@ function draw() {
   windowLabel.textContent = selected ? `Latest ${config.feedCap}` : `Last ${days} days`;
 
   status.replaceChildren(
-    loading
-      ? busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)
+    ...(loading
+      ? [busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)]
       : recent.failed
-        ? busyLine(`${recent.failed} Reload to try again.`)
-        : `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators${recent.readAt ? ` · ${readAgo(recent.readAt)}` : ""}`,
+        ? [busyLine(`${recent.failed} Reload to try again.`)]
+        : [
+            `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators${recent.readAt ? ` · ${readAgo(recent.readAt)}` : ""} · `,
+            refresh,
+          ]),
   );
 
   const none = !loading && shown.length === 0;
@@ -242,10 +248,15 @@ function unqueue(card) {
 
 /* Loading */
 
-async function loadVideos() {
+/** @param {boolean} [fresh] read every creator's list now, however recently it was read */
+async function loadVideos(fresh = false) {
   state.failed = false;
+  if (fresh) {
+    state.recent = null;
+    draw();
+  }
   try {
-    state.recent = await load("/api/creators/recent");
+    state.recent = await load(`/api/creators/recent${fresh ? "?fresh=1" : ""}`);
   } catch {
     state.failed = true;
     return draw();
