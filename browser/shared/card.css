@@ -16,7 +16,7 @@
 .meta { font-size: 13px; color: var(--muted); line-height: 1.4; }
 
 .thumb {
-  /* Not clipped: the chapters dot hangs past the corner. The image carries the radius itself. */
+  /* Not clipped: the highlight's outline sits outside. The image carries the radius itself. */
   position: relative; aspect-ratio: 16 / 9; border-radius: 10px; background: var(--chip);
 
   &:hover { filter: brightness(1.12); }
@@ -29,11 +29,6 @@
   .badge {
     pointer-events: none; position: absolute; right: 6px; bottom: 6px; background: rgba(0,0,0,.8); color: #fff;
     font: 500 12px var(--mono); padding: 2px 5px; border-radius: 4px;
-  }
-  /* The video's description lists chapters: a green C hanging off the lower-left corner, caught while scanning the grid. Metadata, not a control. */
-  .chapters-mark {
-    pointer-events: none; position: absolute; left: -8px; bottom: -8px; width: 28px; height: 28px; border-radius: 50%;
-    background: var(--chapters); color: #000; font: 700 14px/28px var(--font); text-align: center; box-shadow: 0 0 0 2px var(--bg);
   }
   .tag {
     pointer-events: none; position: absolute; left: 6px; top: 6px; background: rgba(0,0,0,.8); color: #fff;

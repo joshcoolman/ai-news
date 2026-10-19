@@ -42,7 +42,6 @@ export function cardTile(card, { mark, picked, onPlay, onRemove, onQueue } = {})
       mark && h("span", { class: "tag" }, mark === "playing" ? "Playing" : "Queued"),
       onRemove && h("button", { class: "remove", type: "button", onclick: onRemove, "aria-label": `Remove: ${card.title}`, title: "Remove" }, "×"),
       card.duration && h("span", { class: "badge" }, card.duration),
-      card.chapters && h("span", { class: "chapters-mark", title: "Has chapters" }, "C"),
     ),
     h("div", { class: "title" }, h("a", { href: card.link, target: "_blank", rel: "noopener" }, card.title)),
     h("div", { class: "meta" }, card.meta),

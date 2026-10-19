@@ -22,7 +22,7 @@
   --chip-hover: #3a3a3a;
   --line: #303030;
   --pick: #ff4e45;
-  /* The chapters dot on thumbnails: the app's green. */
+  /* The chapters dot on History thumbnails: the app's green. */
   --chapters: #2fe36a;
   /* The keyboard's marks: the highlight, the picked creator, the playing row. Dark in the half without the keyboard (shared/away.js). */
   --mark: #2fe36a;

@@ -26,7 +26,7 @@ export function videoItem(v, createdAt) {
     channel: v.channel,
     publishedAt: v.publishedAt ?? createdAt,
     ...(v.duration ? { duration: v.duration } : {}),
-    // Whether the description lists chapters is all a card needs; the Player reads the chapters themselves.
+    // Whether the description lists chapters is all the Player's History row needs; the Player reads the chapters themselves.
     ...(hasChapters(v.description) ? { chapters: true } : {}),
   };
 }
@@ -67,7 +67,6 @@ export function toCard(item) {
     thumbUrl: thumbnailUrl(item.videoId),
     meta: `${item.channel} · ${shortDate(item.publishedAt)}`,
     duration: item.duration ? formatDuration(item.duration) : undefined,
-    ...(item.chapters && { chapters: true }),
   };
 }
 
