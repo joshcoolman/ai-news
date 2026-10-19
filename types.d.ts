@@ -66,8 +66,6 @@ type Card = {
   thumbUrl: string;
   meta: string;
   duration?: string;
-  /** Draw the chapters glyph on the thumbnail. */
-  chapters?: true;
 };
 
 /* YouTube */

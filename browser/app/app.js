@@ -61,6 +61,8 @@ function apply() {
   if (on === shown) return;
   shown = on;
   document.body.classList.toggle("player-hidden", !on);
+  // A hidden Player cannot keep the keyboard (the last row deleted, say): it goes left, to the highlight left there.
+  if (!on) app.contentWindow?.focus();
   announce({ type: "show-player", on });
 }
 
@@ -97,6 +99,45 @@ const stop = () => {
 };
 rail.addEventListener("pointerup", stop);
 rail.addEventListener("lostpointercapture", stop);
+
+/*
+  The shell's keys, heard in both halves (#74). Both frames are same-origin, so
+  the shell listens inside each page as it loads; the pages know nothing of it.
+  Shift+Left gives the keyboard to the app, Shift+Right to the Player while it
+  shows. F, from either half, fills the display with the Player's video while
+  it shows, and F again (or the browser's Escape) brings it back: only the shell
+  may, being the page that holds both. None of them in a text box. While the
+  video fills the display every other key is swallowed: the shell listens in the
+  capture phase, ahead of the pages' own keys.
+*/
+/** @param {KeyboardEvent} e */
+function onKey(e) {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (document.fullscreenElement && e.key.toLowerCase() !== "f" && e.key !== "Escape") {
+    e.preventDefault();
+    return e.stopImmediatePropagation();
+  }
+  if (e.repeat) return;
+  // Not `instanceof Element`: a frame's elements belong to that frame's window.
+  if (/** @type {Element} */ (e.target).closest?.("input, textarea, select, [contenteditable]")) return;
+  if (e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    e.preventDefault();
+    if (e.key === "ArrowLeft") app.contentWindow?.focus();
+    else if (shown) player.contentWindow?.focus();
+  } else if (!e.shiftKey && e.key.toLowerCase() === "f" && (shown || document.fullscreenElement)) {
+    e.preventDefault();
+    (document.fullscreenElement ? document.exitFullscreen() : player.requestFullscreen()).catch(() => {});
+  }
+}
+window.addEventListener("keydown", onKey, true);
+// The whole Player frame goes fullscreen; the page inside covers its column and bar with the video while it is
+// (`filled` in player.css), the next page too when up or down steps through History.
+const fill = () => player.contentDocument?.documentElement.classList.toggle("filled", document.fullscreenElement === player);
+document.addEventListener("fullscreenchange", fill);
+player.addEventListener("load", fill);
+for (const frame of [app, player]) frame.addEventListener("load", () => frame.contentWindow?.addEventListener("keydown", onKey, true));
+// The window opens with the keyboard in the left half, so its green marks show from the start.
+app.addEventListener("load", () => app.contentWindow?.focus(), { once: true });
 
 document.body.append(app, rail, player);
 apply();

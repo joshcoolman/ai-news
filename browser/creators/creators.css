@@ -47,7 +47,7 @@
 
   &:hover, &[aria-pressed="true"] { background: var(--chip); }
   /* The picked creator: the same green as the playing row in the player, drawn inside so nothing clips it. */
-  &[aria-pressed="true"] { outline: 2px solid #2fe36a; outline-offset: -2px; }
+  &[aria-pressed="true"] { outline: 2px solid var(--mark); outline-offset: -2px; }
   .avatar { width: 28px; height: 28px; flex: none; }
   .name { flex: 1; min-width: 0; }
 }

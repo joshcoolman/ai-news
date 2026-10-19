@@ -29,7 +29,8 @@ export function playerFrame(videoId, title, onEnded, autoplay = true) {
     src: `${YOUTUBE}/embed/${videoId}?${params}`,
     title,
     allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
-    allowFullscreen: true,
+    // Never the keyboard's: the CSS lets clicks through to the page, and Tab skips it (#74).
+    tabIndex: -1,
   });
 
   let heard = false;

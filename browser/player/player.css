@@ -10,7 +10,12 @@
 .player-page { position: fixed; inset: 0; display: flex; flex-direction: column; background: #000; }
 .player-main { flex: 1; min-height: 0; display: flex; position: relative; }
 /* The video's own shape, centered: a paused embed shows its poster edge to edge, which in a tall frame is a crop. */
-.player { flex: 1 1 0; min-width: 0; height: auto; aspect-ratio: 16 / 9; max-height: 100%; align-self: center; border: 0; background: #000; }
+.player-video { flex: 1 1 0; min-width: 0; display: flex; align-items: center; background: #000; }
+.player { flex: 1; height: auto; aspect-ratio: 16 / 9; max-height: 100%; border: 0; background: #000; }
+/* The embed never takes the pointer, so it never takes the keyboard: a click lands on .player-video, which pauses or plays (#74). */
+.player { pointer-events: none; }
+/* The one window's F: the shell fills the display with this whole frame, and the video covers the rest of it. */
+.filled .player-video { position: fixed; inset: 0; z-index: 10; }
 .player-empty { padding: 16px; }
 
 .player-bar {
@@ -49,7 +54,7 @@
   a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); background: #222; }
   a:hover, a:focus-visible { background: var(--chip-hover); outline: none; }
   /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
-  a.current, a.current:hover, a.current:focus-visible { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); cursor: default; }
+  a.current, a.current:hover, a.current:focus-visible { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); cursor: default; }
   .history-thumb { position: relative; display: flex; flex: none; }
   img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
   /* The same mark the cards wear: this video's description lists chapters. */
@@ -95,7 +100,7 @@
   }
   li button:hover, li button:focus-visible { background: var(--chip); outline: none; }
   /* The chapter playing: the same green as the playing row in History. */
-  li.current button { background: var(--chip); outline: 2px solid #2fe36a; outline-offset: -2px; }
+  li.current button { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
   .chapter-time { flex: none; min-width: 44px; font: 500 12px var(--mono); color: var(--muted); }
   .chapter-title { line-height: 1.3; }
 }
