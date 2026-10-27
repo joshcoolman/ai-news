@@ -58,9 +58,14 @@ if (restore) {
     YouTube's own controls answer clicks on the video (#79); the keyboard comes
     back to this page after each (frame.js). The black around the video: a click
     pauses or plays, a double-click, or F, fills the display with the video, and
-    Escape (the browser's) brings it back.
+    Escape (the browser's) brings it back. The whole document goes fullscreen,
+    not the stage, so Chapters can sit beside the video (`filled`, #81); inside
+    the one window the shell fullscreens this frame and sets `filled` itself.
   */
-  const fill = () => (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen()).catch(() => {});
+  const fill = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
+  if (window.parent === window) {
+    document.addEventListener("fullscreenchange", () => document.documentElement.classList.toggle("filled", document.fullscreenElement === document.documentElement));
+  }
   const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame);
   document.body.append(
     h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel), playerBar(video, listed.button)),
@@ -107,6 +112,8 @@ if (restore) {
   onPlayerMessage(async (msg) => {
     if (msg.type === "toggle") return player.toggle();
     if (msg.type === "skip") return skip(msg.by);
+    if (msg.type === "chapters") return listed.toggle();
+    if (msg.type === "chapter") return void listed.step(msg.by);
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
     if (msg.type === "unqueue") {

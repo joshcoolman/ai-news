@@ -47,6 +47,11 @@ export function chapters(videoId, player) {
     list.forEach((_, i) => rows.children[i]?.classList.toggle("current", i === at));
   }
 
+  /** Open it if closed, close it if open; nothing for a video without chapters. */
+  function toggle() {
+    if (list.length) open(panel.hidden !== false);
+  }
+
   function open(/** @type {boolean} */ on) {
     panel.hidden = !on;
     button.setAttribute("aria-expanded", String(on));
@@ -96,12 +101,13 @@ export function chapters(videoId, player) {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
     if (e.key === "Escape") open(false);
     // Not while the key repeats: holding C down would flick the list open and shut.
-    else if (e.key.toLowerCase() === "c" && !e.repeat && list.length) open(panel.hidden !== false);
+    else if (e.key.toLowerCase() === "c" && !e.repeat) toggle();
   });
 
   return {
     button,
     panel,
+    toggle,
     /**
      * Move to the chapter above or below the one playing. False when the list
      * is closed, so the key keeps its usual meaning; at either end it stays put.
