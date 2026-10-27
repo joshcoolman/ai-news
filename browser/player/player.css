@@ -12,8 +12,11 @@
 /* The video's own shape, centered: a paused embed shows its poster edge to edge, which in a tall frame is a crop. */
 .player-video { flex: 1 1 0; min-width: 0; display: flex; align-items: center; background: #000; }
 .player { flex: 1; height: auto; aspect-ratio: 16 / 9; max-height: 100%; border: 0; background: #000; }
-/* The one window's F: the shell fills the display with this whole frame, and the video covers the rest of it. */
+/* F: the display fills with this document (the shell's whole frame, in the one window), and the video covers the rest of it.
+   Chapters, opened with C, sits above it as a sidebar on the right, and the video fits the space left of it (#81). */
 .filled .player-video { position: fixed; inset: 0; z-index: 10; }
+.filled .chapters { position: fixed; z-index: 11; }
+.filled .player-main:has(.chapters:not([hidden])) .player-video { right: 340px; }
 .player-empty { padding: 16px; }
 
 .player-bar {

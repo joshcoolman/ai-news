@@ -16,7 +16,7 @@ const GUIDE = [
     moves: [
       [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
       [["Shift", "→"], "Give the keys to the Player, while it shows."],
-      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; every other key does nothing until F again, or Esc, comes back."],
+      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it and ↑ ↓ walk them; every other key does nothing until F again, or Esc, comes back."],
       [["[", "]"], "From either half: slide the split left or right a step, between the left half alone, both, and the Player alone. The arrows on the strip between the halves do the same."],
     ],
   },
@@ -30,7 +30,7 @@ const GUIDE = [
       [["←", "→"], "Back or forward 10 seconds."],
       [["click"], "On the black around the video: pause or play."],
       [["double-click"], "On the black around the video, or F: fill the display with it. Esc comes back."],
-      [["C"], "Open or close Chapters, for a video that has them."],
+      [["C"], "Open or close Chapters, for a video that has them. While the video fills the display it opens as a sidebar beside it."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
       [["Esc"], "Close Chapters."],
     ],
