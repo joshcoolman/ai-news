@@ -33,7 +33,7 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** empty. #17 (Player: now-playing highlight, next/previous, snap back) is the only open issue; check it is still wanted before building it, much of it may have shipped since.
 
 **Last shipped**
-- YouTube's own controls work on the video again, and the keyboard comes back to the app after a click (#79). While the video fills the display, C opens Chapters as a sidebar beside it and ↑ ↓ walk them; the windowed Player fullscreens its whole page the same way (#81).
+- YouTube's own controls work on the video again, and the keyboard comes back to the app after a click (#79). While the video fills the display, C opens Chapters as a sidebar beside it and ↑ ↓ walk them; the windowed Player fullscreens its whole page the same way (#81). Delete while full removes the video and the next plays in the normal view (#83).
 - Creators' status line has a refresh link: reads every creator's list now, past the twice-a-day cache (`?fresh=1`, about 60 units).
 - Collapse either half: `[` and `]` (or the ‹ › arrows on the rail) step between the left half alone, both, and the Player alone; Left and Right skip 10 seconds while the video fills the display (#76).
 - Keyboard across the one window (#74): Shift+Left/Right moves the keyboard between halves and green marks show only in the half that has it; the video never takes the keyboard (click pauses, F or double-click fills the display from either half, other keys blocked while full); C on Creators toggles the first creator; Favorites gets the arrow highlight; the Player hiding hands the keyboard left. Cards no longer show the chapters C; History rows still do.

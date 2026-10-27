@@ -16,7 +16,7 @@ const GUIDE = [
     moves: [
       [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
       [["Shift", "→"], "Give the keys to the Player, while it shows."],
-      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it and ↑ ↓ walk them; every other key does nothing until F again, or Esc, comes back."],
+      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it and ↑ ↓ walk them; Delete removes the video and the next plays in the normal view; every other key does nothing until F again, or Esc, comes back."],
       [["[", "]"], "From either half: slide the split left or right a step, between the left half alone, both, and the Player alone. The arrows on the strip between the halves do the same."],
     ],
   },
