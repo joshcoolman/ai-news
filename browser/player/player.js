@@ -79,8 +79,8 @@ if (restore) {
   /*
     The player's keys, bare arrows and Delete. Up and down: play the row above
     or below in the column, stopping at its ends (each video resumes where this
-    window left it); while the Chapters list is open they walk the chapters
-    instead. Space: pause or play. Left and right: back or forward 10 seconds. Delete (Backspace on a
+    window left it); while Chapters or the Transcript is open they walk its
+    chapters or paragraphs instead. Space: pause or play. Left and right: back or forward 10 seconds. Delete (Backspace on a
     Mac keyboard, or forward Delete): remove the playing row, as its × does,
     and move on to the row below. F: fill the display.
   */
@@ -92,7 +92,7 @@ if (restore) {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       const direction = e.key === "ArrowDown" ? 1 : -1;
-      if (listed.step(direction)) return;
+      if (listed.step(direction) || read.step(direction)) return;
       const row = played.step(direction);
       if (row) location.href = linkTo(row);
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -119,7 +119,7 @@ if (restore) {
     if (msg.type === "chapters") return listed.toggle();
     if (msg.type === "transcript") return read.toggle();
     if (msg.type === "remove") return played.removeCurrent();
-    if (msg.type === "chapter") return void listed.step(msg.by);
+    if (msg.type === "chapter") return void (listed.step(msg.by) || read.step(msg.by));
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
     if (msg.type === "unqueue") {

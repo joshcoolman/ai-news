@@ -17,7 +17,8 @@ function clock(seconds) {
  * readable: paragraphs headed by the chapters when the video has them, each
  * with a timestamp that seeks there. While it is open it follows along by
  * paragraph (#87): the one playing is marked and scrolls to the top when it
- * changes, unless the reader scrolled the panel in the last few seconds. The T key does
+ * changes, unless the reader scrolled the panel in the last few seconds; Up
+ * and Down seek to the paragraph before or after (`step`, #89). The T key does
  * what the button does; ×, Escape or T again closes it. The button stays
  * hidden until a transcript is stored; `fetch` asks the server once, which
  * asks YouTube once, and says whether one came.
@@ -108,6 +109,21 @@ export function transcript(videoId, player) {
     button,
     panel,
     toggle,
+    /**
+     * Seek to the paragraph above or below the one playing. False when the panel
+     * is closed, so the key keeps its usual meaning; at either end it stays put.
+     * @param {1 | -1} direction
+     */
+    step(direction) {
+      if (panel.hidden) return false;
+      const next = list[playing() + direction];
+      if (next) {
+        player.seek(next.start);
+        scrolledAt = 0;
+        follow();
+      }
+      return true;
+    },
     /** Ask the server for it (YouTube, the first time). True when one is here. */
     async fetch() {
       try {
