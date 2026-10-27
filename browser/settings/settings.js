@@ -32,7 +32,7 @@ const GUIDE = [
       [["double-click"], "On the black around the video, or F: fill the display with it. Esc comes back."],
       [["C"], "Open or close Chapters, for a video that has them. While the video fills the display it opens as a sidebar beside it."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
-      [["T"], "Open or close the Transcript, for a video YouTube has one for: asked for once when the video is queued or played, and a green T on the History row says it is here. Readable paragraphs, a timestamp on each that plays from there. Chapters and Transcript take turns in the same place."],
+      [["T"], "Open or close the Transcript, for a video YouTube has one for: asked for once when the video is queued or played, and a green T on the History row says it is here. Readable paragraphs, a timestamp on each that plays from there; the paragraph playing is marked and scrolls to the top as the video goes, unless you have just scrolled it yourself. Chapters and Transcript take turns in the same place."],
       [["Esc"], "Close Chapters or the Transcript."],
     ],
   },
