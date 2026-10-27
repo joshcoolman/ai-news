@@ -116,4 +116,7 @@
   .transcript-heading { display: block; margin: 16px 0 4px; font-size: 13px; letter-spacing: 0.02em; color: var(--muted); text-transform: uppercase; }
   .transcript-time { margin-right: 8px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--chip); color: var(--muted); font: 500 12px/18px var(--mono); cursor: pointer; vertical-align: 1px; }
   .transcript-time:hover { background: var(--chip-hover); color: var(--fg); }
+  /* The paragraph playing (#87): the same green as the playing row and chapter, so following reads as one thing. */
+  p { padding: 2px 6px; margin-inline: -6px; border-radius: 6px; scroll-margin-top: 6px; }
+  p.current { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
 }

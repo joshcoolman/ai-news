@@ -33,7 +33,7 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** empty. #17 (Player: now-playing highlight, next/previous, snap back) is the only open issue; check it is still wanted before building it, much of it may have shipped since.
 
 **Last shipped**
-- Transcript (#85): queueing or playing a video asks YouTube once for its ready caption track; a green T on the History row says one is stored, and T opens it beside the video (in the normal view and while it fills the display) as readable paragraphs headed by the chapters, each timestamp seeking there. Nothing is made: no track, no icon.
+- Transcript (#85): queueing or playing a video asks YouTube once for its ready caption track; a green T on the History row says one is stored, and T opens it beside the video (in the normal view and while it fills the display) as readable paragraphs headed by the chapters, each timestamp seeking there; the paragraph playing is marked and scrolls to the top as the video goes (#87). Nothing is made: no track, no icon.
 - YouTube's own controls work on the video again, and the keyboard comes back to the app after a click (#79). While the video fills the display, C opens Chapters as a sidebar beside it and ↑ ↓ walk them; the windowed Player fullscreens its whole page the same way (#81). Delete while full removes the video and the next plays in the normal view (#83).
 - Creators' status line has a refresh link: reads every creator's list now, past the twice-a-day cache (`?fresh=1`, about 60 units).
 - Collapse either half: `[` and `]` (or the ‹ › arrows on the rail) step between the left half alone, both, and the Player alone; Left and Right skip 10 seconds while the video fills the display (#76).
