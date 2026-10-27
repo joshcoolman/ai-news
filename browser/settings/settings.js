@@ -22,14 +22,14 @@ const GUIDE = [
   },
   {
     where: "Player",
-    note: "The keys work while the player's own page has the keyboard. The video never takes it: YouTube's own controls do not answer clicks, and these keys and clicks stand in for them.",
+    note: "The keys work while the player's own page has the keyboard. YouTube's own controls work on the video; after a click there the keyboard comes back to the app by itself.",
     moves: [
       [["↑", "↓"], "Play the video above or below in History. The playing one stays at the column's middle; the list slides. Each video picks up where you left it."],
       [["Delete"], "Remove the playing video from History and move on to the one below it."],
       [["Space"], "Pause or play. Works on Creators and Favorites too (not in a box), whichever window has the keyboard."],
       [["←", "→"], "Back or forward 10 seconds."],
-      [["click"], "On the video: pause or play."],
-      [["double-click"], "On the video, or F: fill the display with it. Esc comes back."],
+      [["click"], "On the black around the video: pause or play."],
+      [["double-click"], "On the black around the video, or F: fill the display with it. Esc comes back."],
       [["C"], "Open or close Chapters, for a video that has them."],
       [["↑", "↓"], "With Chapters open: the previous or next chapter."],
       [["Esc"], "Close Chapters."],
