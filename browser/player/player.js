@@ -55,9 +55,10 @@ if (restore) {
   }, query.get("restore") !== "1");
   const listed = chapters(v, player);
   /*
-    The video never has the keyboard (#74): the embed takes no pointer, so its own
-    controls are dead and these stand in. A click pauses or plays; a double-click,
-    or F, fills the display with the video, and Escape (the browser's) brings it back.
+    YouTube's own controls answer clicks on the video (#79); the keyboard comes
+    back to this page after each (frame.js). The black around the video: a click
+    pauses or plays, a double-click, or F, fills the display with the video, and
+    Escape (the browser's) brings it back.
   */
   const fill = () => (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen()).catch(() => {});
   const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame);

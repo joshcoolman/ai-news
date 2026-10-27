@@ -21,7 +21,8 @@ const SETTLE = 1500;
  *   `time` is where playback is, as last reported; `seek` jumps there; `toggle` pauses a playing video and plays a paused one.
  */
 export function playerFrame(videoId, title, onEnded, autoplay = true) {
-  const params = new URLSearchParams({ autoplay: autoplay ? "1" : "0", enablejsapi: "1", origin: location.origin });
+  // fs=0: YouTube's own fullscreen would fill the display with the iframe alone, outside the app's F (#79).
+  const params = new URLSearchParams({ autoplay: autoplay ? "1" : "0", enablejsapi: "1", fs: "0", origin: location.origin });
   const start = positions()[videoId];
   if (start) params.set("start", String(start));
   const frame = h("iframe", {
@@ -29,8 +30,19 @@ export function playerFrame(videoId, title, onEnded, autoplay = true) {
     src: `${YOUTUBE}/embed/${videoId}?${params}`,
     title,
     allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
-    // Never the keyboard's: the CSS lets clicks through to the page, and Tab skips it (#74).
+    // Tab skips it; a click still lands focus inside, which the blur below takes back (#74, #79).
     tabIndex: -1,
+  });
+  // YouTube's controls answer clicks (#79), and a click moves the keyboard into the embed, where none of the
+  // app's keys are heard. The page's window blurs when that happens; blurring the frame hands the keyboard back,
+  // after the click has done its work inside.
+  window.addEventListener("blur", () => {
+    setTimeout(() => {
+      if (document.activeElement === frame) {
+        frame.blur();
+        window.focus();
+      }
+    }, 0);
   });
 
   let heard = false;

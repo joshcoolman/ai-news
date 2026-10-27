@@ -86,7 +86,7 @@ export function chapters(videoId, player) {
     () => {},
   );
 
-  // Clicking off closes it, the video included.
+  // Clicking off closes it. Not a click on the video: that lands inside the embed and this page never hears it.
   document.addEventListener("pointerdown", (e) => {
     const at = /** @type {Node} */ (e.target);
     if (!panel.hidden && !panel.contains(at) && !button.contains(at)) open(false);
