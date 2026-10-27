@@ -113,6 +113,7 @@ if (restore) {
     if (msg.type === "toggle") return player.toggle();
     if (msg.type === "skip") return skip(msg.by);
     if (msg.type === "chapters") return listed.toggle();
+    if (msg.type === "remove") return played.removeCurrent();
     if (msg.type === "chapter") return void listed.step(msg.by);
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
     // Unqueueing the playing row is its Delete: the next row plays. Say so first, since removing the playing row leaves this page.
