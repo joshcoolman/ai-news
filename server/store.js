@@ -31,6 +31,7 @@ const FILES = {
   favorites: () => [],
   settings: () => ({}),
   cache: () => ({ lists: {}, durations: {}, chapters: {} }),
+  transcripts: () => ({}),
 };
 const KEYS = /** @type {(keyof Data)[]} */ (Object.keys(FILES));
 

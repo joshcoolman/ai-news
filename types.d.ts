@@ -39,6 +39,18 @@ type Settings = {
 
 type Chapter = { start: number; title: string };
 
+/* Transcripts (#85) */
+
+/** One caption of a timed-text track: a few words, when they start and for how long. */
+type Fragment = { start: number; dur: number; text: string };
+/** A paragraph of the readable transcript; `title` heads the first paragraph of a chapter. */
+type Paragraph = { start: number; title?: string; text: string };
+/**
+ * A video's transcript as YouTube had it, or the record of asking and finding none
+ * (`paragraphs` absent; asked again after a day). `kind`: the creator's own captions, or YouTube's.
+ */
+type Transcript = { readAt: string; kind?: "creator" | "auto"; paragraphs?: Paragraph[] };
+
 /** What YouTube said, kept on disk so neither a restart nor a reload asks again (#67). */
 type YouTubeCache = {
   /** Per channel id: its list and when it was read. Read again after LIST_TTL_HOURS. */
@@ -55,6 +67,8 @@ type Data = {
   favorites: Favorite[];
   settings: Settings;
   cache: YouTubeCache;
+  /** Per video id, its own file: a transcript is big and read rarely, and the cache is neither (#85). */
+  transcripts: Record<string, Transcript>;
 };
 
 /** What the browser needs to draw one card. */
@@ -116,6 +130,8 @@ type PlayerVideo = {
   favorited: boolean;
   /** Its description lists chapters: the History row wears the glyph. */
   chapters?: true;
+  /** A transcript is stored: the row wears the T. */
+  transcript?: true;
 };
 
 /* HTTP */

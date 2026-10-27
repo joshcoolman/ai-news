@@ -10,8 +10,9 @@
  * video, or its window is going away. To the player, from a page: queue or
  * unqueue this video, or "ping", which a playing player answers with
  * "playing"; or "toggle", pause or play; or "skip", back (-1) or forward (1) as the Player's arrows, "chapters",
- * open or close the Chapters sidebar, and "chapter", the one above (-1) or below (1) while it is open: the
- * one-window shell sends those three while the video fills the display (#81), and "remove", the Player's Delete (#83). Nobody answers a "queue" or "toggle" unless a player is playing something.
+ * open or close the Chapters sidebar, "chapter", the one above (-1) or below (1) while it is open, and
+ * "transcript", open or close the Transcript sidebar (#85): the one-window shell sends those while the video
+ * fills the display (#81), and "remove", the Player's Delete (#83). Nobody answers a "queue" or "toggle" unless a player is playing something.
  * Between the one-window shell and its pages: "toggle-player" from a page's
  * button asks the shell to show or hide the Player frame, and "show-player" is
  * the shell saying which it did.
@@ -26,6 +27,7 @@
  *   | { type: "skip", by: -1 | 1 }
  *   | { type: "chapters" }
  *   | { type: "chapter", by: -1 | 1 }
+ *   | { type: "transcript" }
  *   | { type: "remove" }
  *   | { type: "playing", videoId: string }
  *   | { type: "closed" }

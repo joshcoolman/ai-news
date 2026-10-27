@@ -33,6 +33,7 @@ export async function playerVideo(videoId, title = "") {
     creator: creator && { name: creator.name, avatarUrl: creator.avatarUrl },
     favorited: !!stored,
     ...((stored?.chapters || hasChapters(cached?.video.description)) && { chapters: true }),
+    ...(d.transcripts[videoId]?.paragraphs && { transcript: true }),
   };
 }
 

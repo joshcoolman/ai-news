@@ -4,7 +4,7 @@
   playing, and when a video ends the player moves down the column.
 */
 
-/** @typedef {{ videoId: string, title: string, thumbUrl: string, channel?: string, chapters?: true | false, session?: number }} Entry `chapters` false is a row the cache knew nothing about; absent is one from before the mark. `session` is the window opening that added the row; an unstamped row is from before sessions. */
+/** @typedef {{ videoId: string, title: string, thumbUrl: string, channel?: string, chapters?: true | false, transcript?: true | false, session?: number }} Entry `chapters` false is a row the cache knew nothing about; absent is one from before the mark. `transcript` the same, for a stored transcript (#85). `session` is the window opening that added the row; an unstamped row is from before sessions. */
 
 /**
  * The list with `entry` directly under the playing video. One already listed

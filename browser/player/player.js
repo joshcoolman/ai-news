@@ -4,6 +4,7 @@ import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage } from "../shared/player-link.js";
 import { playerBar } from "./bar.js";
 import { chapters } from "./chapters.js";
+import { fetchTranscript, transcript } from "./transcript.js";
 import { playerFrame } from "./frame.js";
 import { history, linkTo } from "./history.js";
 import { HISTORY_KEY } from "../shared/history-link.js";
@@ -54,6 +55,9 @@ if (restore) {
     if (next) location.href = linkTo(next);
   }, query.get("restore") !== "1");
   const listed = chapters(v, player);
+  const read = transcript(v, player);
+  // Playing is interest (#85): ask once for the transcript, and mark the row when one comes.
+  read.fetch().then((has) => has && played.markTranscript(v));
   /*
     YouTube's own controls answer clicks on the video (#79); the keyboard comes
     back to this page after each (frame.js). The black around the video: a click
@@ -68,7 +72,7 @@ if (restore) {
   }
   const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame);
   document.body.append(
-    h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel), playerBar(video, listed.button)),
+    h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel, read.panel), playerBar(video, [listed.button, read.button])),
   );
   played.center();
 
@@ -113,6 +117,7 @@ if (restore) {
     if (msg.type === "toggle") return player.toggle();
     if (msg.type === "skip") return skip(msg.by);
     if (msg.type === "chapters") return listed.toggle();
+    if (msg.type === "transcript") return read.toggle();
     if (msg.type === "remove") return played.removeCurrent();
     if (msg.type === "chapter") return void listed.step(msg.by);
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });
@@ -124,8 +129,10 @@ if (restore) {
     if (msg.type !== "queue" || msg.videoId === v) return;
     /** @type {PlayerVideo} */
     const info = await load(`/api/player/video?${new URLSearchParams({ v: msg.videoId, t: msg.title })}`);
-    played.queue({ videoId: info.videoId, title: info.title, thumbUrl: info.thumbUrl, channel: info.channel, chapters: info.chapters });
+    played.queue({ videoId: info.videoId, title: info.title, thumbUrl: info.thumbUrl, channel: info.channel, chapters: info.chapters, transcript: info.transcript });
     announce({ type: "queued", videoId: msg.videoId });
+    // Queueing is interest (#85): ask once for its transcript, and mark the row when one comes.
+    if (!info.transcript) fetchTranscript(info.videoId).then((has) => has && played.markTranscript(info.videoId));
   });
   announce({ type: "playing", videoId: v });
   window.addEventListener("pagehide", () => announce({ type: "closed" }));
