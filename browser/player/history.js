@@ -59,13 +59,15 @@ function setFinished(videoId, on) {
  * @returns {Entry[]}
  */
 function remember(video) {
-  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel, chapters: video.chapters, session: SESSION_ID };
+  const entry = { videoId: video.videoId, title: video.title, thumbUrl: video.thumbUrl, channel: video.channel, chapters: video.chapters, transcript: video.transcript, session: SESSION_ID };
   try {
     /** @type {Entry[]} */
     const before = JSON.parse(localStorage.getItem(KEY) ?? "[]");
     // A video already listed keeps its place: the column is navigation, and rows that move under a click are hard to follow.
-    // It does learn whether it has chapters, for rows from before the mark.
-    const list = before.some((e) => e.videoId === entry.videoId) ? before.map((e) => (e.videoId === entry.videoId ? { ...e, chapters: entry.chapters } : e)) : [entry, ...before];
+    // It does learn whether it has chapters, for rows from before the mark. A transcript it already knew of stays known.
+    const list = before.some((e) => e.videoId === entry.videoId)
+      ? before.map((e) => (e.videoId === entry.videoId ? { ...e, chapters: entry.chapters, transcript: entry.transcript || e.transcript } : e))
+      : [entry, ...before];
     localStorage.setItem(KEY, JSON.stringify(list));
     return list;
   } catch {
@@ -133,7 +135,13 @@ export function history(video) {
             "a",
             // The playing row has no link: a click on it would reload the Player and start the video over.
             { class: current ? "current" : undefined, href: current ? undefined : linkTo(e), "aria-current": current ? "true" : undefined },
-            h("span", { class: "history-thumb" }, h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }), e.chapters && h("span", { class: "chapters-mark" }, "C")),
+            h(
+              "span",
+              { class: "history-thumb" },
+              h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }),
+              e.chapters && h("span", { class: "chapters-mark" }, "C"),
+              e.transcript && h("span", { class: "chapters-mark transcript-mark" }, "T"),
+            ),
             h("span", { class: "history-text" }, h("span", { class: "history-title" }, e.title), e.channel && h("span", { class: "history-channel" }, e.channel)),
           ),
           h("button", { class: "history-remove", type: "button", onclick: () => remove(e.videoId), "aria-label": `Remove from history: ${e.title}`, title: "Remove" }, "×"),
@@ -152,18 +160,33 @@ export function history(video) {
     settled ||= column.isConnected;
   };
   draw();
-  markChapters();
+  mark();
 
-  /** Rows from before the mark do not say whether they have chapters; one request to the cache (never YouTube) tells them. */
-  async function markChapters() {
-    const unknown = list.filter((e) => e.chapters === undefined).map((e) => e.videoId);
-    if (!unknown.length) return;
+  const save = () => {
     try {
-      /** @type {{ chaptered: string[] }} */
-      const { chaptered } = await load(`/api/player/chaptered?${new URLSearchParams({ v: unknown.join(",") })}`);
-      const has = new Set(chaptered);
-      list = list.map((e) => (e.chapters === undefined && unknown.includes(e.videoId) ? { ...e, chapters: has.has(e.videoId) ? /** @type {const} */ (true) : false } : e));
       localStorage.setItem(KEY, JSON.stringify(list));
+    } catch {}
+  };
+
+  /**
+   * Rows from before a mark do not say whether they have chapters or a transcript; one request to what
+   * the server has stored (never YouTube) tells them. A transcript mark is asked every load: a row's
+   * transcript may have arrived since, for a video queued while this page was elsewhere.
+   */
+  async function mark() {
+    const ids = list.filter((e) => e.chapters === undefined || !e.transcript).map((e) => e.videoId);
+    if (!ids.length) return;
+    try {
+      /** @type {{ chaptered: string[], transcribed: string[] }} */
+      const { chaptered, transcribed } = await load(`/api/player/marks?${new URLSearchParams({ v: ids.join(",") })}`);
+      const has = new Set(chaptered);
+      const read = new Set(transcribed);
+      list = list.map((e) => ({
+        ...e,
+        chapters: e.chapters === undefined && ids.includes(e.videoId) ? (has.has(e.videoId) ? /** @type {const} */ (true) : false) : e.chapters,
+        transcript: e.transcript || (read.has(e.videoId) ? /** @type {const} */ (true) : e.transcript),
+      }));
+      save();
       draw();
     } catch {}
   }
@@ -188,6 +211,12 @@ export function history(video) {
     },
     /** The row to step to by key. @param {1 | -1} direction */
     step: (direction) => neighbor(list, video.videoId, direction),
+    /** A transcript arrived for this row (the playing one, or one just queued): it wears the T. @param {string} videoId */
+    markTranscript(videoId) {
+      list = list.map((e) => (e.videoId === videoId ? { ...e, transcript: /** @type {const} */ (true) } : e));
+      save();
+      draw();
+    },
     /** The Delete key: the playing row's ×. */
     removeCurrent: () => remove(video.videoId),
     /** A page unqueueing a row: its ×, the playing row's included. @param {string} videoId */

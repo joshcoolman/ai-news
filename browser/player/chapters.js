@@ -57,6 +57,8 @@ export function chapters(videoId, player) {
     button.setAttribute("aria-expanded", String(on));
     clearInterval(ticking);
     if (!on) return;
+    // Transcript shares the slot (#85): opening this closes that.
+    document.dispatchEvent(new CustomEvent("sidebar", { detail: panel }));
     mark();
     ticking = setInterval(mark, 500);
     rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
@@ -91,6 +93,9 @@ export function chapters(videoId, player) {
     () => {},
   );
 
+  document.addEventListener("sidebar", (e) => {
+    if (/** @type {CustomEvent} */ (e).detail !== panel) open(false);
+  });
   // Clicking off closes it. Not a click on the video: that lands inside the embed and this page never hears it.
   document.addEventListener("pointerdown", (e) => {
     const at = /** @type {Node} */ (e.target);

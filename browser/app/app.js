@@ -150,7 +150,8 @@ rail.addEventListener("lostpointercapture", stop);
   may, being the page that holds both. [ and ] slide the split. None of them in
   a text box. While the video fills the display every other key is swallowed,
   except Left and Right, which skip as in the Player, C, Up and Down, which
-  open Chapters beside the video and walk them (#81), and Delete, which removes
+  open Chapters beside the video and walk them (#81), T, which opens the
+  Transcript there (#85), and Delete, which removes
   the playing row and comes back so the next plays in the normal view (#83),
   whichever half had the keyboard: the shell listens in the capture phase,
   ahead of the pages' own keys.
@@ -165,6 +166,7 @@ function onKey(e) {
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") announce({ type: "skip", by: e.key === "ArrowLeft" ? -1 : 1 });
     else if (e.key === "ArrowUp" || e.key === "ArrowDown") announce({ type: "chapter", by: e.key === "ArrowUp" ? -1 : 1 });
     else if (e.key.toLowerCase() === "c" && !e.repeat) announce({ type: "chapters" });
+    else if (e.key.toLowerCase() === "t" && !e.repeat) announce({ type: "transcript" });
     else if ((e.key === "Delete" || e.key === "Backspace") && !e.repeat) {
       announce({ type: "remove" });
       document.exitFullscreen().catch(() => {});

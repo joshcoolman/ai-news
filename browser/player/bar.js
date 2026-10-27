@@ -7,9 +7,9 @@ import { announce } from "../shared/player-link.js";
  * No link out to YouTube: loading youtube.com here wipes the window's name,
  * and the next thumbnail opens a second window.
  * @param {PlayerVideo} video
- * @param {HTMLElement} [tool] A button from elsewhere on the page (Chapters) that sits in the bar, left of the star.
+ * @param {HTMLElement[]} [tools] Buttons from elsewhere on the page (Chapters, Transcript) that sit in the bar, left of the star.
  */
-export function playerBar(video, tool) {
+export function playerBar(video, tools = []) {
   const state = {
     creator: video.creator,
     adding: false,
@@ -71,7 +71,7 @@ export function playerBar(video, tool) {
       h(
         "div",
         { class: "player-actions" },
-        tool,
+        ...tools,
         h(
           "button",
           {

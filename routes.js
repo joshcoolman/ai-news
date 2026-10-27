@@ -6,6 +6,7 @@ import { cachedVideo, recentVideos } from "./server/creators/recent.js";
 import { parseChapters } from "./server/youtube-parse.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
+import { transcribed, transcript } from "./server/transcript.js";
 
 /*
   Every URL the app answers, in one place. Pages are files in browser/; an API
@@ -41,7 +42,8 @@ export const routes = [
 
   ["GET", "/api/player/video", playerInfo],
   ["GET", "/api/player/chapters", playerChapters],
-  ["GET", "/api/player/chaptered", playerChaptered],
+  ["GET", "/api/player/marks", playerMarks],
+  ["GET", "/api/player/transcript", playerTranscript],
   ["POST", "/api/player/favorite", playerFavorite],
 ];
 
@@ -219,11 +221,12 @@ async function playerChapters({ query }) {
 }
 
 /**
- * Which of these videos (`?v=<id>,<id>,...`) list chapters, for History rows saved before the mark.
- * Cached descriptions and favorites only: this never asks YouTube, so an unlisted video is simply not named.
+ * Which of these videos (`?v=<id>,<id>,...`) list chapters, and which have a transcript stored, for
+ * History rows saved before either mark. Cached descriptions, favorites and stored transcripts only:
+ * this never asks YouTube, so an unlisted video is simply not named.
  * @param {Ctx} ctx
  */
-async function playerChaptered({ query }) {
+async function playerMarks({ query }) {
   const ids = (query.get("v") ?? "").split(",").filter((v) => VIDEO_ID.test(v)).slice(0, 500);
   const d = await read();
   const chaptered = [];
@@ -231,7 +234,21 @@ async function playerChaptered({ query }) {
     const stored = d.favorites.find((f) => f.item.videoId === id)?.item;
     if (stored?.chapters || hasChapters((await cachedVideo(id))?.video.description)) chaptered.push(id);
   }
-  return json({ chaptered });
+  return json({ chaptered, transcribed: await transcribed(ids) });
+}
+
+/**
+ * The transcript of a video (`?v=<video id>`), fetched from YouTube and stored the first time it is asked for (#85).
+ * `{ paragraphs: undefined }` when YouTube has none; a failed ask is a 502 and is asked again next time.
+ * @param {Ctx} ctx
+ */
+async function playerTranscript({ query }) {
+  const v = query.get("v") ?? "";
+  if (!VIDEO_ID.test(v)) return fail("Missing video id.", 400);
+  return orFail("Could not read the transcript.", 502, async () => {
+    const found = await transcript(v);
+    return json({ paragraphs: found?.paragraphs, kind: found?.kind });
+  });
 }
 
 /** Favorite the video playing in the player window, by video id (Creators-page videos have no card). */

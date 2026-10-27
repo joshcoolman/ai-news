@@ -15,8 +15,8 @@
 /* F: the display fills with this document (the shell's whole frame, in the one window), and the video covers the rest of it.
    Chapters, opened with C, sits above it as a sidebar on the right, and the video fits the space left of it (#81). */
 .filled .player-video { position: fixed; inset: 0; z-index: 10; }
-.filled .chapters { position: fixed; z-index: 11; }
-.filled .player-main:has(.chapters:not([hidden])) .player-video { right: 340px; }
+.filled :is(.chapters, .transcript) { position: fixed; z-index: 11; }
+.filled .player-main:has(:is(.chapters, .transcript):not([hidden])) .player-video { right: 340px; }
 .player-empty { padding: 16px; }
 
 .player-bar {
@@ -60,6 +60,9 @@
   img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
   /* The same mark the cards wear: this video's description lists chapters. */
   .chapters-mark { position: absolute; left: -5px; bottom: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--chapters); color: #000; font: 700 11px/20px var(--font); text-align: center; box-shadow: 0 0 0 2px #222; }
+  /* A transcript is stored (#85): the T sits right of the C, or where the C would be. */
+  .transcript-mark { left: -5px; }
+  .chapters-mark:not(.transcript-mark) + .transcript-mark { left: 18px; }
   a.current img { width: 160px; }
   a.current .history-title { font-size: 15px; }
 
@@ -83,8 +86,8 @@
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 }
 
-/* Chapters: opens over the History column, same width, so the video stays in full view */
-.chapters {
+/* Chapters and Transcript: open over the History column, same width, so the video stays in full view */
+.chapters, .transcript {
   position: absolute; top: 0; right: 0; bottom: 0; width: 340px; display: flex; flex-direction: column;
   background: var(--tray); border-left: 1px solid var(--line); color: var(--fg);
 
@@ -104,4 +107,13 @@
   li.current button { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
   .chapter-time { flex: none; min-width: 44px; font: 500 12px var(--mono); color: var(--muted); }
   .chapter-title { line-height: 1.3; }
+}
+
+/* The transcript, readable (#85): paragraphs, a chapter heading over the first of its chapter, a timestamp that seeks. */
+.transcript-body {
+  flex: 1; overflow-y: auto; padding: 4px 14px 14px; font-size: 14px; line-height: 1.5;
+  p { margin: 12px 0 0; }
+  .transcript-heading { display: block; margin: 16px 0 4px; font-size: 13px; letter-spacing: 0.02em; color: var(--muted); text-transform: uppercase; }
+  .transcript-time { margin-right: 8px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--chip); color: var(--muted); font: 500 12px/18px var(--mono); cursor: pointer; vertical-align: 1px; }
+  .transcript-time:hover { background: var(--chip-hover); color: var(--fg); }
 }
