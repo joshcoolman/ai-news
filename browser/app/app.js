@@ -20,6 +20,12 @@ import { announce, onPlayerMessage, PLAYER_SHOWN_KEY } from "../shared/player-li
   both, and the Player alone. A collapsed half leaves the rail at the window's
   edge to bring it back. Never both: hiding the Player, or History emptying,
   shows the left half.
+
+  Mini (#93): I, while the Player has a video, pins its frame small in the
+  lower right over the left half, shown at full width, and gives the left half
+  the keyboard; I again puts back the view it left. Only CSS moves: moving an
+  iframe in the page reloads it. The saved halves are never touched, so coming
+  back is leaving the class off, and filling the display again if it was.
 */
 
 const WIDTH_KEY = "app-player-width";
@@ -68,11 +74,14 @@ let empty = historyIds().length === 0;
 /** @type {boolean | undefined} */
 let shown;
 let leftShown = true;
+/** While mini, whether the video filled the display when I was pressed; null when not mini. @type {boolean | null} */
+let mini = null;
 
 /** Show or hide each half by the rules above, and tell the pages when the Player's changes. */
 function apply() {
   const on = !empty && read(PLAYER_SHOWN_KEY) !== "no";
   const left = !on || read(LEFT_KEY) !== "no";
+  if (empty) setMini(false);
   document.body.classList.toggle("player-empty", empty);
   document.body.classList.toggle("app-hidden", !left);
   toLeft.disabled = on && !left;
@@ -94,7 +103,7 @@ function apply() {
  * @param {-1 | 1} dir
  */
 function slide(dir) {
-  if (empty) return;
+  if (empty || mini !== null) return;
   if (dir < 0 && !shown) save(PLAYER_SHOWN_KEY, "yes");
   else if (dir < 0) save(LEFT_KEY, "no");
   else if (!leftShown) save(LEFT_KEY, "yes");
@@ -115,7 +124,7 @@ function watch() {
 onHistoryChange(watch);
 onPlayerMessage((msg) => {
   if (msg.type === "queued" || msg.type === "unqueued" || msg.type === "playing") watch();
-  if (msg.type === "toggle-player" && !empty) {
+  if (msg.type === "toggle-player" && !empty && mini === null) {
     save(PLAYER_SHOWN_KEY, shown ? "no" : "yes");
     save(LEFT_KEY, "yes");
     apply();
@@ -156,9 +165,33 @@ rail.addEventListener("lostpointercapture", stop);
   whichever half had the keyboard: the shell listens in the capture phase,
   ahead of the pages' own keys.
 */
+/**
+ * Go mini, or come back from it to the view I left (#93).
+ * @param {boolean} on
+ */
+function setMini(on) {
+  if (on === (mini !== null)) return;
+  const full = mini;
+  mini = on ? document.fullscreenElement === player : null;
+  if (on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  document.body.classList.toggle("mini", on);
+  miniDoc();
+  if (on) app.contentWindow?.focus();
+  else if (full && !empty) player.requestFullscreen().catch(() => {});
+}
+/** Tell the Player's page it is mini, the next page too when a video ends or Next steps. */
+const miniDoc = () => player.contentDocument?.documentElement.classList.toggle("mini", mini !== null);
+
 /** @param {KeyboardEvent} e */
 function onKey(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  // I, from either half, full or not: only a Player page with a video goes mini (an empty or restoring one has no `.player-page`).
+  if (!e.shiftKey && e.key.toLowerCase() === "i" && !e.repeat && !(/** @type {Element} */ (e.target).closest?.("input, textarea, select, [contenteditable]"))) {
+    if (mini === null && (empty || !player.contentDocument?.querySelector(".player-page"))) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return setMini(mini === null);
+  }
   if (document.fullscreenElement && e.key.toLowerCase() !== "f" && e.key !== "Escape") {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -180,10 +213,10 @@ function onKey(e) {
     e.preventDefault();
     if (e.key === "ArrowLeft") app.contentWindow?.focus();
     else if (shown) player.contentWindow?.focus();
-  } else if (!e.shiftKey && e.key.toLowerCase() === "f" && (shown || document.fullscreenElement)) {
+  } else if (!e.shiftKey && e.key.toLowerCase() === "f" && mini === null && (shown || document.fullscreenElement)) {
     e.preventDefault();
     (document.fullscreenElement ? document.exitFullscreen() : player.requestFullscreen()).catch(() => {});
-  } else if (!e.shiftKey && (e.key === "[" || e.key === "]")) {
+  } else if (!e.shiftKey && (e.key === "[" || e.key === "]") && mini === null) {
     e.preventDefault();
     slide(e.key === "[" ? -1 : 1);
   }
@@ -194,6 +227,7 @@ window.addEventListener("keydown", onKey, true);
 const fill = () => player.contentDocument?.documentElement.classList.toggle("filled", document.fullscreenElement === player);
 document.addEventListener("fullscreenchange", fill);
 player.addEventListener("load", fill);
+player.addEventListener("load", miniDoc);
 for (const frame of [app, player]) frame.addEventListener("load", () => frame.contentWindow?.addEventListener("keydown", onKey, true));
 // The window opens with the keyboard in the left half, so its green marks show from the start.
 app.addEventListener("load", () => app.contentWindow?.focus(), { once: true });

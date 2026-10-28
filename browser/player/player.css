@@ -18,6 +18,14 @@
 .filled :is(.chapters, .transcript) { position: fixed; z-index: 11; }
 .filled .player-main:has(:is(.chapters, .transcript):not([hidden])) .player-video { right: 340px; }
 .player-empty { padding: 16px; }
+/* I, in the one window (#93): the shell pins this frame small in a corner and sets `mini`; only the video shows,
+   with back and next on hover, top left, clear of YouTube's own play button. Chapters and the Transcript keep their state underneath, hidden. */
+.mini-controls { display: none; }
+.mini :is(.player-bar, .history, .chapters, .transcript) { display: none !important; }
+.mini .mini-controls { display: flex; position: fixed; left: 8px; top: 8px; z-index: 1; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+.mini body:hover .mini-controls { opacity: 1; }
+.mini-controls button { padding: 4px 10px; border: 0; border-radius: 6px; background: rgb(0 0 0 / 0.7); color: #fff; font: 13px/1.2 var(--font); cursor: pointer; }
+.mini-controls button:hover { background: rgb(0 0 0 / 0.9); }
 
 .player-bar {
   flex: none; display: flex; align-items: center; gap: 16px; padding: 12px 16px;
