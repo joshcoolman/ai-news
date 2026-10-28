@@ -70,7 +70,19 @@ if (restore) {
   if (window.parent === window) {
     document.addEventListener("fullscreenchange", () => document.documentElement.classList.toggle("filled", document.fullscreenElement === document.documentElement));
   }
-  const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame);
+  const SKIP = 10;
+  /** @param {-1 | 1} dir */
+  const skip = (dir) => player.seek(Math.max(0, player.time() + dir * SKIP));
+  const next = () => {
+    const row = played.step(1);
+    if (row) location.href = linkTo(row);
+  };
+  // The mini player's two buttons (#93): the shell sets `mini` on this document, and player.css shows only the video and these.
+  /** @param {string} label @param {string} text @param {() => void} act */
+  const miniButton = (label, text, act) =>
+    h("button", { type: "button", title: label, "aria-label": label, onclick: (/** @type {Event} */ e) => (e.stopPropagation(), act()), ondblclick: (/** @type {Event} */ e) => e.stopPropagation() }, text);
+  const controls = h("div", { class: "mini-controls" }, miniButton("Back 10 seconds", "\u21ba 10", () => skip(-1)), miniButton("Next video", "Next \u203a", next));
+  const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame, controls);
   document.body.append(
     h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel, read.panel), playerBar(video, [listed.button, read.button])),
   );
@@ -84,9 +96,6 @@ if (restore) {
     Mac keyboard, or forward Delete): remove the playing row, as its × does,
     and move on to the row below. F: fill the display.
   */
-  const SKIP = 10;
-  /** @param {-1 | 1} dir */
-  const skip = (dir) => player.seek(Math.max(0, player.time() + dir * SKIP));
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
