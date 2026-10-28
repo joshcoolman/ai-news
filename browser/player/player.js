@@ -81,7 +81,7 @@ if (restore) {
   /** @param {string} label @param {string} text @param {() => void} act */
   const miniButton = (label, text, act) =>
     h("button", { type: "button", title: label, "aria-label": label, onclick: (/** @type {Event} */ e) => (e.stopPropagation(), act()), ondblclick: (/** @type {Event} */ e) => e.stopPropagation() }, text);
-  const controls = h("div", { class: "mini-controls" }, miniButton("Back 10 seconds", "\u21ba 10", () => skip(-1)), miniButton("Next video", "Next \u203a", next));
+  const controls = h("div", { class: "mini-controls" }, miniButton("Back 10 seconds", "\u21ba", () => skip(-1)), miniButton("Next video", "\u203a", next));
   const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame, controls);
   document.body.append(
     h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel, read.panel), playerBar(video, [listed.button, read.button])),
