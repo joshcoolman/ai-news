@@ -22,4 +22,4 @@ body.player-hidden .rail-tab { left: auto; right: 0; transform: translateY(-50%)
 /* Mini (#93): the left half at full width whatever the split, the Player a small video over its lower right. */
 body.mini .app-frame { display: block; }
 body.mini .app-rail { display: none; }
-body.mini #ainews-player { display: block; position: fixed; right: 16px; bottom: 16px; z-index: 2; width: 400px; min-width: 0; max-width: none; height: auto; aspect-ratio: 16 / 9; border-radius: 8px; box-shadow: 0 8px 32px rgb(0 0 0 / 0.5); }
+body.mini #ainews-player { display: block; position: fixed; right: 16px; bottom: 16px; z-index: 2; width: 120px; min-width: 0; max-width: none; height: auto; aspect-ratio: 16 / 9; border-radius: 6px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.5); }
