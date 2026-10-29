@@ -69,6 +69,19 @@ const grid = h("div", { class: "grid" });
 const nothing = h("p", { class: "empty" });
 const rows = h("ul", { class: "rows" });
 const noCreators = h("p", { class: "empty" }, "No creators. Paste a YouTube URL above to add one.");
+/** Pinned above the list: lets go of the picked creator, back to everyone's videos. */
+const everyone = h(
+  "button",
+  {
+    class: "creator-pick all-creators",
+    type: "button",
+    onclick: () => {
+      pickCreator(null);
+      draw();
+    },
+  },
+  "All creators",
+);
 
 document.body.append(
   h(
@@ -78,7 +91,7 @@ document.body.append(
     h("h2", { class: "page-title" }, "Creators"),
     addCreatorForm(loadCreators),
     h("label", { class: "window" }, windowLabel, range),
-    h("div", { class: "creators-layout" }, h("section", {}, status, nothing, grid), h("aside", {}, rows, noCreators)),
+    h("div", { class: "creators-layout" }, h("section", {}, status, nothing, grid), h("aside", {}, everyone, rows, noCreators)),
   ),
 );
 
@@ -129,6 +142,8 @@ function draw() {
   );
 
   noCreators.hidden = creators.length > 0;
+  everyone.hidden = !creators.length;
+  everyone.setAttribute("aria-pressed", String(!selected));
   sync(
     rows,
     creators.map((c) => {
@@ -176,7 +191,7 @@ function draw() {
 
 /**
  * Paste a video, Shorts, youtu.be, /@handle or /channel/UC… URL.
- * @param {() => void} onAdded
+ * @param {(channelId: string) => void} onAdded
  */
 function addCreatorForm(onAdded) {
   const url = h("input", { class: "field url", placeholder: "Paste a YouTube video or channel URL", "aria-label": "YouTube URL" });
@@ -207,7 +222,7 @@ function addCreatorForm(onAdded) {
           else {
             say("ok", data.added ? `Added ${data.creator.name}.` : `${data.creator.name} is already listed.`);
             url.value = "";
-            onAdded();
+            onAdded(data.creator.channelId);
           }
         } catch {
           say("error", "Could not reach the server.");
@@ -273,10 +288,16 @@ async function loadVideos(fresh = false) {
   draw();
 }
 
-/** The list of creators changed (added here, in the header, or from the player): read it and their videos again. */
-async function loadCreators() {
+/**
+ * The list of creators changed (added here, in the header, or from the player): read it and their videos again.
+ * A creator just added is picked, so their videos are what the grid shows.
+ * @param {string} [added]
+ */
+async function loadCreators(added) {
   state.creators = await load("/api/creators");
+  if (added && state.creators.some((c) => c.channelId === added)) pickCreator(added);
   draw();
+  rows.querySelector("li.on")?.scrollIntoView({ block: "nearest" });
   await loadVideos();
 }
 
@@ -290,7 +311,10 @@ async function loadCreators() {
   card is its click, queue or play, or on a marked card its shift-click, unqueue.
   A click on a card moves the highlight there; a change of creator drops it.
   A click on empty page (not a card, a control or the sidebar) drops the pick,
-  as clicking the picked creator again does. C, from anywhere on the page,
+  as clicking the picked creator again does, and so does All creators, pinned
+  above the list, or Escape once no card is highlighted, unless Escape is
+  someone else's: a dialog open, a text box, the video filling the display.
+  C, from anywhere on the page,
   picks the first creator, or with one picked lets go and goes back to the card
   highlighted before (else the first).
 */
@@ -305,7 +329,8 @@ function columns() {
   return Math.max(1, tops.filter((t) => t === tops[0]).length);
 }
 window.addEventListener("keydown", (e) => {
-  if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.target instanceof HTMLInputElement) return;
+  if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
+  if (/** @type {Element} */ (e.target).closest?.("input, textarea, select, [contenteditable], dialog")) return;
   const { creators, selected, picked } = state;
   const arrow = ARROWS.includes(e.key);
   // C toggles between the first creator, picked from the top, and everyone's, back on the card highlighted before
@@ -343,6 +368,12 @@ window.addEventListener("keydown", (e) => {
       if (card) markOf(card) ? unqueue(card) : play(card);
     }
     return;
+  }
+  if (e.key === "Escape") {
+    // Not while a dialog is open (the header's Add creator) or the one window's video fills the display.
+    if (!selected || document.querySelector("dialog[open]") || window.top?.document.fullscreenElement) return;
+    pickCreator(null);
+    return draw();
   }
   if (e.key === "ArrowLeft") {
     // Land beside what the eye is on: the right-edge card nearest the picked creator's row, or the middle of the
@@ -383,11 +414,11 @@ document.addEventListener("click", (e) => {
   draw();
 });
 
-window.addEventListener(CREATORS_CHANGED_EVENT, () => void loadCreators());
+window.addEventListener(CREATORS_CHANGED_EVENT, (e) => void loadCreators(/** @type {CustomEvent} */ (e).detail?.channelId));
 toggleOnSpace();
 markAway();
 onPlayerMessage((msg) => {
-  if (msg.type === "creators") return void loadCreators();
+  if (msg.type === "creators") return void loadCreators(msg.channelId);
   if (msg.type === "playing") state.playing = msg.videoId;
   else if (msg.type === "closed") state.playing = null;
   else return;

@@ -28,6 +28,10 @@
   .creators-status { margin: 0 0 12px; }
   .creators-status .link-btn { font-size: inherit; }
 
+  /* Pinned at the top of the list as it scrolls; outlined like a picked creator while nobody is picked. */
+  .all-creators { position: sticky; top: 0; z-index: 1; width: 100%; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); border-radius: 0; font-weight: 600; }
+  .all-creators[aria-pressed="true"] { outline: 0; background: var(--bg); color: var(--muted); }
+
   .rows { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
   .rows li { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 0; border-bottom: 1px solid var(--line); }
   .rows li.on .name { font-weight: 700; }
@@ -46,6 +50,7 @@
   .creators-layout { grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; }
   .creators-layout .creator-pick { justify-content: center; }
   .creators-layout .creator-pick .name, .creators-layout .row-main, .creators-layout .x-link { display: none; }
+  .creators-layout .all-creators { font-size: 11px; padding: 6px 0; text-align: center; }
 }
 
 .creator-pick {
