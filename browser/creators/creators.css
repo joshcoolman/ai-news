@@ -32,7 +32,8 @@
   .all-creators { position: sticky; top: 0; z-index: 1; width: 100%; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); border-radius: 0; font-weight: 600; }
   .all-creators[aria-pressed="true"] { outline: 0; background: var(--bg); color: var(--muted); }
 
-  .rows { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+  /* Room below the last creator, so it scrolls up to about the middle, clear of the bottom edge and the mini player (#102). */
+  .rows { list-style: none; padding: 0 0 calc((100vh - var(--top-bar)) / 2); margin: 0; display: flex; flex-direction: column; }
   .rows li { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 0; border-bottom: 1px solid var(--line); }
   .rows li.on .name { font-weight: 700; }
   .rows li.none .creator-pick { opacity: .5; }
