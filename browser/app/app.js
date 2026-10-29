@@ -23,7 +23,8 @@ import { announce, onPlayerMessage, PLAYER_SHOWN_KEY } from "../shared/player-li
 
   Mini (#93): I, while the Player has a video, pins its frame small in the
   lower right over the left half, shown at full width, and gives the left half
-  the keyboard; I again puts back the view it left. Only CSS moves: moving an
+  the keyboard; I again puts back the view it left, with the keyboard in the
+  Player. Only CSS moves: moving an
   iframe in the page reloads it. The saved halves are never touched, so coming
   back is leaving the class off, and filling the display again if it was.
 */
@@ -177,7 +178,9 @@ function setMini(on) {
   document.body.classList.toggle("mini", on);
   miniDoc();
   if (on) app.contentWindow?.focus();
-  else if (full && !empty) player.requestFullscreen().catch(() => {});
+  // Back from mini, the keyboard goes to the Player, so the arrows step History at once (#98).
+  else if (shown) player.contentWindow?.focus();
+  if (!on && full && !empty) player.requestFullscreen().catch(() => {});
 }
 /** Tell the Player's page it is mini, the next page too when a video ends or Next steps. */
 const miniDoc = () => player.contentDocument?.documentElement.classList.toggle("mini", mini !== null);
