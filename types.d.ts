@@ -10,6 +10,10 @@ type Creator = {
   name: string;
   channelUrl: string;
   avatarUrl: string;
+  /** The X profile the channel's About page links (#91). Absent when it links none. */
+  xUrl?: string;
+  /** When the About page was read for `xUrl`; absent until it has been, once a creator. */
+  linksReadAt?: string;
 };
 
 /** A stored video: what a favorite is a copy of. */

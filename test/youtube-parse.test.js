@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { each } from "./each.js";
-import { isoDurationSeconds, parseYouTubeUrl } from "../server/youtube-parse.js";
+import { isoDurationSeconds, parseXUrl, parseYouTubeUrl } from "../server/youtube-parse.js";
 
 describe("parseYouTubeUrl", () => {
   each([
@@ -65,3 +65,39 @@ describe("isoDurationSeconds", () => {
   });
 });
 
+
+/** An About page's data as YouTube embeds it, with these links. */
+const about = (/** @type {[string, string][]} */ links) =>
+  `var ytInitialData = {"aboutChannelViewModel":{"links":[${links
+    .map(([title, link]) => `{"channelExternalLinkViewModel":{"title":{"content":${JSON.stringify(title)}},"link":{"content":${JSON.stringify(link)},"commandRuns":[]}}}`)
+    .join(",")}]}};`;
+
+describe("parseXUrl", () => {
+  each([
+    ["x.com/matthewberman", "https://x.com/matthewberman"],
+    ["twitter.com/rileybrown", "https://x.com/rileybrown"],
+    ["https://www.twitter.com/neuralnine/", "https://x.com/neuralnine"],
+    ["mobile.twitter.com/@Some_One?lang=en", "https://x.com/Some_One"],
+    ["x.com/someone/status/123", "https://x.com/someone"],
+  ])("reads %s", (link, url) => {
+    assert.strictEqual(parseXUrl(about([["X", link]])), url);
+  });
+
+  it("takes the first X link after other links", () => {
+    const html = about([["Site", "forwardfuture.com"], ["My Twitter", "x.com/matthewberman"], ["Company", "x.com/ForwardFuture"]]);
+    assert.strictEqual(parseXUrl(html), "https://x.com/matthewberman");
+  });
+
+  each([
+    [[["Site", "anthropic.com"], ["Instagram", "instagram.com/x.com"]]],
+    [[["Share", "x.com/intent/tweet?text=hi"]]],
+    [[["Lookalike", "notx.com/someone"]]],
+    [[]],
+  ])("finds none in %j", (links) => {
+    assert.strictEqual(parseXUrl(about(links)), undefined);
+  });
+
+  it("ignores an X link that is only in the page's text", () => {
+    assert.strictEqual(parseXUrl('<p>follow me at https://x.com/someone</p>'), undefined);
+  });
+});

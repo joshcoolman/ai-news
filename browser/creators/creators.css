@@ -33,13 +33,19 @@
   .rows li.on .name { font-weight: 700; }
   .rows li.none .creator-pick { opacity: .5; }
 
+  .creator-line { display: flex; align-items: center; gap: 4px; }
+  .creator-line .creator-pick { flex: 1; min-width: 0; }
+  /* A creator's X profile, when their YouTube About page lists one (#91). */
+  .x-link { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--muted); }
+  .x-link:hover { background: var(--chip); color: var(--fg); }
+
   .row-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-left: 42px; }
 }
 /* A narrow frame: the list shrinks to avatars (the name is the tooltip), leaving the room to the thumbnails. */
 @media (max-width: 640px) {
   .creators-layout { grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; }
   .creators-layout .creator-pick { justify-content: center; }
-  .creators-layout .creator-pick .name, .creators-layout .row-main { display: none; }
+  .creators-layout .creator-pick .name, .creators-layout .row-main, .creators-layout .x-link { display: none; }
 }
 
 .creator-pick {

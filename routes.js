@@ -3,6 +3,7 @@ import { mutate, read } from "./server/store.js";
 import { favoriteCards, hasChapters } from "./server/cards.js";
 import { keyWorks, resolveCreator, UserInputError, videoChapters } from "./server/youtube.js";
 import { cachedVideo, recentVideos } from "./server/creators/recent.js";
+import { creatorsWithLinks } from "./server/creators/links.js";
 import { parseChapters } from "./server/youtube-parse.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
@@ -109,8 +110,9 @@ async function deleteFavorite({ params }) {
 
 /* Creators */
 
+/** The saved creators; a creator whose About page was never read for an X link has it read first (#91). */
 async function creators() {
-  return json((await read()).creators);
+  return json(await creatorsWithLinks());
 }
 
 /**

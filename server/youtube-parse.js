@@ -1,6 +1,7 @@
 /*
-  The pure half of the YouTube module: reading pasted URLs and the API's
-  duration and date formats. No I/O, so it is tested directly.
+  The pure half of the YouTube module: reading pasted URLs, the API's
+  duration and date formats, and a channel's About links. No I/O, so it is
+  tested directly.
 */
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -87,4 +88,24 @@ export function parseChapters(description) {
   }
   const forward = chapters.every((c, i) => i === 0 || c.start > chapters[i - 1].start);
   return chapters.length >= 3 && chapters[0].start === 0 && forward ? chapters : [];
+}
+
+/** Paths on x.com that are not a profile. */
+const X_NOT_PROFILE = new Set(["home", "i", "intent", "share", "search", "hashtag", "explore", "settings", "messages", "notifications"]);
+
+/**
+ * The X profile a channel's About page links, as `https://x.com/<handle>`, or
+ * undefined when it links none (#91). Only the links the creator put there
+ * (`channelExternalLinkViewModel` in the page's data); the first X one wins.
+ * x.com and twitter.com both count; a link to a post opens its author.
+ * @param {string} html
+ */
+export function parseXUrl(html) {
+  for (const m of html.matchAll(/"channelExternalLinkViewModel":\{.*?"link":\{"content":("(?:[^"\\]|\\.)*")/g)) {
+    /** @type {string} */
+    const link = JSON.parse(m[1]);
+    const x = link.match(/^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:x|twitter)\.com\/@?([A-Za-z0-9_]{1,15})(?:[/?#]|$)/i);
+    if (x && !X_NOT_PROFILE.has(x[1].toLowerCase())) return `https://x.com/${x[1]}`;
+  }
+  return undefined;
 }
