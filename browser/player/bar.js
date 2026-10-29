@@ -46,7 +46,7 @@ export function playerBar(video, tools = []) {
       else {
         state.creator = { name: data.creator.name, avatarUrl: data.creator.avatarUrl };
         state.creatorNote = data.added ? "Added" : "";
-        announce({ type: "creators" });
+        announce({ type: "creators", channelId: data.creator.channelId });
       }
     } catch {
       state.creatorNote = "Could not add";

@@ -6,7 +6,7 @@ import { toast } from "./toast.js";
 
 /** @typedef {"creators" | "favorites" | "settings"} Page */
 
-/** The list of creators changed: Creators reads it and their videos again. */
+/** The list of creators changed: Creators reads it and their videos again, and picks the one `detail.channelId` names. */
 export const CREATORS_CHANGED_EVENT = "ainews:creators-changed";
 
 /** @type {{ href: string, name: string, key: Page, shapes: string }[]} */
@@ -79,7 +79,7 @@ export function topBar(current) {
       onclick: () =>
         addCreatorDialog((result) => {
           if (!result) return;
-          window.dispatchEvent(new Event(CREATORS_CHANGED_EVENT));
+          window.dispatchEvent(new CustomEvent(CREATORS_CHANGED_EVENT, { detail: { channelId: result.channelId } }));
           toast("done", `Added ${result.name}`);
         }),
     },

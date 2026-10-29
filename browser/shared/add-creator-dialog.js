@@ -5,7 +5,7 @@ import { h } from "./dom.js";
  * Add a creator from the header. Paste a URL and the dialog says who it found;
  * Add then saves the creator. `onClose` gets the result, or nothing when the
  * dialog was cancelled.
- * @param {(result?: { name: string }) => void} onClose
+ * @param {(result?: { name: string, channelId: string }) => void} onClose
  */
 export function addCreatorDialog(onClose) {
   /** @type {{ name: string, avatarUrl: string, listed: boolean } | null} */
@@ -13,7 +13,7 @@ export function addCreatorDialog(onClose) {
   let looking = false;
   let error = "";
   let busy = false;
-  /** @type {{ name: string } | undefined} */
+  /** @type {{ name: string, channelId: string } | undefined} */
   let result;
   // Each lookup gets a number; an answer for an older one is dropped.
   let lookup = 0;
@@ -90,7 +90,7 @@ export function addCreatorDialog(onClose) {
             const res = await post("/api/creators", { url: url.value });
             const data = await res.json();
             if (res.ok) {
-              result = { name: data.creator.name };
+              result = { name: data.creator.name, channelId: data.creator.channelId };
               return dialog.close();
             }
             error = data.error ?? "Could not add that creator.";

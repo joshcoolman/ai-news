@@ -5,7 +5,7 @@
 */
 
 /**
- * From the player: a card's favorite or removal changed, a creator was added,
+ * From the player: a card's favorite or removal changed, a creator was added (the Creators page picks them),
  * a video was taken into or dropped from its queue, it started playing a
  * video, or its window is going away. To the player, from a page: queue or
  * unqueue this video, or "ping", which a playing player answers with
@@ -17,7 +17,7 @@
  * button asks the shell to show or hide the Player frame, and "show-player" is
  * the shell saying which it did.
  * @typedef {{ type: "card", id: string }
- *   | { type: "creators" }
+ *   | { type: "creators", channelId?: string }
  *   | { type: "queue", videoId: string, title: string }
  *   | { type: "queued", videoId: string }
  *   | { type: "unqueue", videoId: string }
