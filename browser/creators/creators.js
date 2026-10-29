@@ -1,11 +1,14 @@
 import { boot, del, load, patch, post } from "../shared/api.js";
-import { h, sync } from "../shared/dom.js";
+import { h, icon, sync } from "../shared/dom.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { markAway } from "../shared/away.js";
 import { announce, onPlayerMessage, toggleOnSpace } from "../shared/player-link.js";
 import { CREATORS_CHANGED_EVENT, topBar } from "../shared/top-bar.js";
 import { busyLine, cardEntry, playInPlayer, slotEntries } from "../shared/card.js";
 import { atRightEdge, movePick, nearestPick } from "../shared/pick.js";
+
+/** X's logo, for a creator's X link (#91). */
+const X_LOGO = '<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />';
 
 /*
   The Creators page: recent videos on the left, the creators on the right. The
@@ -133,25 +136,31 @@ function draw() {
       const any = active.has(c.channelId);
       return {
         key: c.channelId,
-        sig: JSON.stringify([c.name, c.avatarUrl, on, loading, any]),
+        sig: JSON.stringify([c.name, c.avatarUrl, c.xUrl, on, loading, any]),
         make: () =>
           h(
             "li",
             { class: `${on ? "on" : ""}${loading || any ? "" : " none"}` },
             h(
-              "button",
-              {
-                class: "creator-pick",
-                type: "button",
-                title: c.name,
-                "aria-pressed": on,
-                onclick: () => {
-                  pickCreator(on ? null : c.channelId);
-                  draw();
+              "div",
+              { class: "creator-line" },
+              h(
+                "button",
+                {
+                  class: "creator-pick",
+                  type: "button",
+                  title: c.name,
+                  "aria-pressed": on,
+                  onclick: () => {
+                    pickCreator(on ? null : c.channelId);
+                    draw();
+                  },
                 },
-              },
-              c.avatarUrl ? h("img", { class: "avatar", src: c.avatarUrl, alt: "", referrerPolicy: "no-referrer" }) : h("span", { class: "avatar" }),
-              h("span", { class: "name" }, c.name),
+                c.avatarUrl ? h("img", { class: "avatar", src: c.avatarUrl, alt: "", referrerPolicy: "no-referrer" }) : h("span", { class: "avatar" }),
+                h("span", { class: "name" }, c.name),
+              ),
+              // Only the X profile the creator's own YouTube About page lists (#91); none there, none here.
+              c.xUrl && h("a", { class: "x-link", href: c.xUrl, target: "_blank", rel: "noopener noreferrer", title: `${c.name} on X`, "aria-label": `${c.name} on X` }, icon(X_LOGO, { size: 14, stroke: 0, fill: "currentColor" })),
             ),
             on &&
               h(

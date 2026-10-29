@@ -1,9 +1,10 @@
 import { key } from "./keys.js";
-import { isoDurationSeconds, parseChapters, parseYouTubeUrl } from "./youtube-parse.js";
+import { isoDurationSeconds, parseChapters, parseXUrl, parseYouTubeUrl } from "./youtube-parse.js";
 
 /*
   Everything the app knows about YouTube lives here, read from the YouTube Data
-  API v3. The free quota is 10,000 units a day; every call here costs 1 (search,
+  API v3, but for a channel's About page (`channelXUrl`), which the API does
+  not carry and which costs no unit. The free quota is 10,000 units a day; every call here costs 1 (search,
   at 100 a page, is gone with #68). `[youtube]` log lines count the day's units,
   so when the quota runs out the server log says what spent it (#67).
 
@@ -111,6 +112,25 @@ export async function resolveCreator(input) {
   const [video] = await videos([parsed.videoId], "snippet");
   if (!video) throw new Error("YouTube has no video at that URL.");
   return channelInfo(video.snippet.channelId);
+}
+
+/**
+ * The X profile a channel's About page links, or undefined when it links none
+ * (#91). The Data API does not carry a channel's links, so this is one plain
+ * request for the About page, outside the API and its quota, as transcripts
+ * are (#85). The caller reads it once a creator. A page with no About data at
+ * all means YouTube moved it: logged, so the empty links have an explanation.
+ * @param {string} channelId
+ */
+export async function channelXUrl(channelId) {
+  const res = await fetch(`https://www.youtube.com/channel/${channelId}/about`, {
+    headers: { "accept-language": "en" },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`${res.status} from ${channelId}'s About page`);
+  const html = await res.text();
+  if (!html.includes("aboutChannelViewModel")) console.warn(`[links] ${channelId}: no About data, changed shape?`);
+  return parseXUrl(html);
 }
 
 const LISTED = 30;
