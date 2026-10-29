@@ -17,7 +17,7 @@ const GUIDE = [
       [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
       [["Shift", "→"], "Give the keys to the Player, while it shows."],
       [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it, T the Transcript, and ↑ ↓ walk whichever is open; Delete removes the video and the next plays in the normal view; every other key does nothing until F again, or Esc, comes back."],
-      [["I"], "From either half, while a video is in the Player: shrink it to a small video in the lower right over the left half, which takes the keyboard; hover it for back 10 seconds and Next. I again puts back the view you left, filled display and Chapters included."],
+      [["I"], "From either half, while a video is in the Player: shrink it to a small video in the lower right over the left half, which takes the keyboard; hover it for back 10 seconds and Next. I again puts back the view you left, filled display and Chapters included, with the keyboard in the Player."],
       [["[", "]"], "From either half: slide the split left or right a step, between the left half alone, both, and the Player alone. The arrows on the strip between the halves do the same."],
     ],
   },
