@@ -95,6 +95,8 @@
 }
 
 /* Chapters and Transcript: open over the History column, same width, so the video stays in full view */
+/* A size container, so the chapter list can pad its end by half the panel's height (cqh). */
+.chapters { container-type: size; }
 .chapters, .transcript {
   position: absolute; top: 0; right: 0; bottom: 0; width: 340px; display: flex; flex-direction: column;
   background: var(--tray); border-left: 1px solid var(--line); color: var(--fg);
@@ -105,7 +107,8 @@
   }
   .chapters-close:hover { background: var(--pick); color: #fff; }
 
-  ol { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 6px; }
+  /* Half the list's height below the last chapter, so it can sit at the middle like the rest (#104). */
+  ol { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 6px 6px 50cqh; }
   li button {
     display: flex; gap: 10px; align-items: baseline; width: 100%; padding: 8px; border: 0; border-radius: 8px;
     background: none; color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
