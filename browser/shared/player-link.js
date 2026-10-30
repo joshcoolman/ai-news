@@ -28,6 +28,7 @@
  *   | { type: "chapters" }
  *   | { type: "chapter", by: -1 | 1 }
  *   | { type: "transcript" }
+ *   | { type: "summary" }
  *   | { type: "remove" }
  *   | { type: "playing", videoId: string }
  *   | { type: "closed" }

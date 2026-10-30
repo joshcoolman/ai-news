@@ -1,4 +1,4 @@
-import { load } from "../shared/api.js";
+import { load, post } from "../shared/api.js";
 import { h } from "../shared/dom.js";
 
 /** @param {number} seconds */
@@ -22,6 +22,11 @@ function clock(seconds) {
  * what the button does; ×, Escape or T again closes it. The button stays
  * hidden until a transcript is stored; `fetch` asks the server once, which
  * asks YouTube once, and says whether one came.
+ *
+ * With it open, S (or the header's Summary button) shows its summary instead
+ * (#108): the first time for a video the server has the Claude API make one,
+ * after that it is the stored copy; S again goes back to the transcript. One
+ * line on what the video is about, then its takeaways, each with a timestamp.
  * @param {string} videoId
  * @param {{ time: () => number, seek: (seconds: number) => void }} player
  */
@@ -36,11 +41,19 @@ export function transcript(videoId, player) {
   const HANDS_OFF = 5000;
   let current = -1;
   const body = h("div", { class: "transcript-body" });
+  /** The summary, once asked for (#108); `asking` while the server makes it. */
+  /** @type {Summary | undefined} */
+  let made;
+  let asking = false;
+  const summaryBody = h("div", { class: "transcript-body summary-body", hidden: true });
+  const heading = h("span", {}, "Transcript");
+  const flip = h("button", { class: "summary-flip", type: "button", title: "Summary (S)", onclick: () => summarize() }, "Summary");
   const panel = h(
     "aside",
     { class: "transcript", hidden: true, "aria-label": "Transcript" },
-    h("header", {}, h("span", {}, "Transcript"), h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close transcript", title: "Close" }, "×")),
+    h("header", {}, heading, h("span", { class: "transcript-actions" }, flip, h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close transcript", title: "Close" }, "×"))),
     body,
+    summaryBody,
   );
   const button = h("button", { class: "btn", type: "button", hidden: true, title: "Transcript (T)", "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Transcript");
 
@@ -73,6 +86,47 @@ export function transcript(videoId, player) {
     if (stored) open(panel.hidden !== false);
   };
 
+  /** Show the summary or the transcript in the panel. */
+  function view(/** @type {"summary" | "transcript"} */ which) {
+    const summarized = which === "summary";
+    summaryBody.hidden = !summarized;
+    body.hidden = summarized;
+    heading.textContent = summarized ? "Summary" : "Transcript";
+    flip.textContent = summarized ? "Transcript" : "Summary";
+    flip.title = `${flip.textContent} (S)`;
+    if (!summarized) follow(true);
+  }
+
+  /** The summary, or a line saying why there is none (yet). */
+  function drawSummary(/** @type {string} */ note = "") {
+    if (note || !made) return summaryBody.replaceChildren(h("p", { class: "summary-note" }, note));
+    summaryBody.replaceChildren(
+      h("p", { class: "summary-gist" }, made.gist),
+      ...made.points.map((p) => h("p", {}, h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)), h("span", {}, p.text))),
+    );
+  }
+
+  /** S: only with the transcript open. Make the summary the first time, show it after; from the summary, back to the transcript. */
+  async function summarize() {
+    if (!stored || panel.hidden) return;
+    if (body.hidden) return view("transcript");
+    view("summary");
+    if (made || asking) return;
+    asking = true;
+    drawSummary("Summarizing\u2026");
+    try {
+      const res = await post(`/api/player/summary?${new URLSearchParams({ v: videoId })}`);
+      /** @type {{ summary?: Summary, error?: string }} */
+      const found = await res.json();
+      made = found.summary;
+      drawSummary(made ? "" : found.error ?? "Could not summarize the transcript.");
+    } catch {
+      drawSummary("Could not reach the server.");
+    } finally {
+      asking = false;
+    }
+  }
+
   /** @param {Paragraph[]} paragraphs */
   function show(paragraphs) {
     list = paragraphs;
@@ -103,12 +157,14 @@ export function transcript(videoId, player) {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
     if (e.key === "Escape") open(false);
     else if (e.key.toLowerCase() === "t" && !e.repeat) toggle();
+    else if (e.key.toLowerCase() === "s" && !e.repeat && !e.shiftKey) summarize();
   });
 
   return {
     button,
     panel,
     toggle,
+    summarize,
     /**
      * Seek to the paragraph above or below the one playing. False when the panel
      * is closed, so the key keeps its usual meaning; at either end it stays put.

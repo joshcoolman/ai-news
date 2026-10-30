@@ -55,6 +55,13 @@ type Paragraph = { start: number; title?: string; text: string };
  */
 type Transcript = { readAt: string; kind?: "creator" | "auto"; paragraphs?: Paragraph[] };
 
+/* Summaries (#108) */
+
+/** One takeaway, with the start of the paragraph it is made in, so it seeks there. */
+type SummaryPoint = { start: number; text: string };
+/** A transcript's summary, made once when asked for: a line on what the video is about, then its takeaways. */
+type Summary = { madeAt: string; model: string; gist: string; points: SummaryPoint[] };
+
 /** What YouTube said, kept on disk so neither a restart nor a reload asks again (#67). */
 type YouTubeCache = {
   /** Per channel id: its list and when it was read. Read again after LIST_TTL_HOURS. */
@@ -73,6 +80,8 @@ type Data = {
   cache: YouTubeCache;
   /** Per video id, its own file: a transcript is big and read rarely, and the cache is neither (#85). */
   transcripts: Record<string, Transcript>;
+  /** Per video id, its own file: made only when asked for, from the stored transcript (#108). */
+  summaries: Record<string, Summary>;
 };
 
 /** What the browser needs to draw one card. */

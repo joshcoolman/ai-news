@@ -131,3 +131,12 @@
   p { padding: 2px 6px; margin-inline: -6px; border-radius: 6px; scroll-margin-top: 6px; }
   p.current { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
 }
+
+/* The summary (#108): in the Transcript's panel, S or its header button flips between them. */
+.transcript-actions { display: flex; align-items: center; gap: 8px; }
+.summary-flip { height: 26px; padding: 0 10px; border: 0; border-radius: 13px; background: var(--chip); color: var(--fg); font: 500 12px var(--font); cursor: pointer; }
+.summary-flip:hover { background: var(--chip-hover); }
+.summary-body {
+  .summary-note { color: var(--muted); }
+  .summary-gist { font-weight: 500; }
+}

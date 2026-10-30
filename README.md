@@ -8,7 +8,7 @@ It is also an experiment in building without frameworks (#21): a Node server and
 
 ## Run it
 
-Put `YOUTUBE_API_KEY` in `.env.local` (see `.env.example`), then `node server.js` and open http://localhost:3000. Node 22.13 or newer; nothing to install. With no key in the environment, the app asks for it in the browser and keeps it there.
+Put `YOUTUBE_API_KEY` in `.env.local` (see `.env.example`; `ANTHROPIC_API_KEY` there too is optional, for transcript summaries), then `node server.js` and open http://localhost:3000. Node 22.13 or newer; nothing to install. With no key in the environment, the app asks for it in the browser and keeps it there.
 
 - `pnpm dev` restarts the server when a file changes.
 - `pnpm install` once, then `pnpm check` (types) and `pnpm test`. Both are for working on the code, not for running it.
@@ -33,6 +33,7 @@ Every file is plain JavaScript and runs exactly as written, in Node and in the b
 **Focus:** empty. #17 (Player: now-playing highlight, next/previous, snap back) is the only open issue; check it is still wanted before building it, much of it may have shipped since.
 
 **Last shipped**
+- Transcript summary (#108): with the Transcript open, S shows what to take away from the video, a line and a few timestamped points; the first S has Claude (Haiku) make it from the stored transcript, once, kept in `data/summaries.json`. Needs `ANTHROPIC_API_KEY` in `.env.local`.
 - X link (#91): a creator whose YouTube About page lists an X account gets the X logo on their Creators sidebar row, opening that profile; no link there, nothing shown. Read once a creator, outside the Data API's quota.
 - Mini player (#93): I, while a video is in the Player, shrinks it to a small video in the lower right over Creators at full width; hover for back 10 seconds and Next; I again restores the view it left, fullscreen and Chapters included.
 - Transcript (#85): queueing or playing a video asks YouTube once for its ready caption track; a green T on the History row says one is stored, and T opens it beside the video (in the normal view and while it fills the display) as readable paragraphs headed by the chapters, each timestamp seeking there; the paragraph playing is marked and scrolls to the top as the video goes (#87). Nothing is made: no track, no icon.
