@@ -93,6 +93,7 @@ export function transcript(videoId, player) {
     body.hidden = summarized;
     heading.textContent = summarized ? "Summary" : "Transcript";
     flip.textContent = summarized ? "Transcript" : "Summary";
+    flip.classList.toggle("back", summarized);
     flip.title = `${flip.textContent} (S)`;
     if (!summarized) follow(true);
   }
