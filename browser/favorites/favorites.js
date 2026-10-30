@@ -51,11 +51,13 @@ const markOf = (card) => (card.videoId === state.playing ? "playing" : state.que
 
 /**
  * A click on a video: with nothing playing it plays; while the player is
- * playing it is queued right under the one playing. A marked card ignores the click.
+ * playing it is queued right under the one playing. A click on a queued card takes it
+ * out again (#106); the one playing ignores the click.
  * @param {Card} card
  */
 function play(card) {
   if (!state.playing) return playInPlayer(card);
+  if (markOf(card) === "queued") return unqueue(card);
   if (markOf(card)) return;
   announce({ type: "queue", videoId: card.videoId, title: card.title });
 }
