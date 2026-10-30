@@ -1,11 +1,41 @@
 /*
-  The summary's two pure halves (#108): the transcript as the model reads it,
-  and the model's reply as the app stores it. Pure and tested (rule 3): a reply
-  that does not parse throws, so nothing malformed is ever stored.
+  The summary's pure parts (#108): the prompt with the reader's guidance (#110),
+  the transcript as the model reads it, and the model's reply as the app
+  stores it. Pure and tested (rule 3): a reply that does not parse throws, so
+  nothing malformed is ever stored.
 */
 
 const MIN_POINTS = 1;
-const MAX_POINTS = 7;
+/** Room for guidance that asks for a list ("every company mentioned"); the default asks for 3 to 7. */
+const MAX_POINTS = 20;
+/** Guidance past this is cut: it is a note, not a second prompt. */
+export const MAX_GUIDANCE = 1000;
+
+const PROMPT = `Below is the transcript of a YouTube video, one paragraph a line, each led by its start in seconds in square brackets; "##" lines are chapter titles.
+
+Summarize what a viewer should take away from it: the salient points, claims, numbers, recommendations and conclusions, not a play-by-play. Skip sponsor reads, greetings and calls to subscribe.
+
+Answer with JSON only, no other words:
+{"gist": "<one sentence: what the video is about>", "points": [{"start": <seconds of the paragraph where the point is made>, "text": "<one takeaway, one or two plain sentences>"}]}
+
+Give 3 to 7 points, in the order the video makes them.`;
+
+/**
+ * The instructions the model gets, with the reader's guidance (#110) when there is
+ * some: it wins over the defaults on what to pick and how to word it, never on the
+ * JSON shape, which the app reads.
+ * @param {string} guidance
+ */
+export function summaryPrompt(guidance) {
+  const said = guidance.trim().slice(0, MAX_GUIDANCE);
+  if (!said) return PROMPT;
+  return `${PROMPT}
+
+The reader asked for this; follow it over the defaults above on what to include, how many points and how to word them (a point can be a name with a short note), but keep the JSON shape, a gist and a start on every point (where it is first mentioned):
+<guidance>
+${said}
+</guidance>`;
+}
 
 /**
  * The transcript as the model reads it: one paragraph a line, each led by its

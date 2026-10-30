@@ -8,7 +8,7 @@ import { parseChapters } from "./server/youtube-parse.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
 import { transcribed, transcript } from "./server/transcript.js";
-import { summary, SummaryUnavailable } from "./server/summary.js";
+import { storedSummary, summarize, SummaryUnavailable } from "./server/summary.js";
 
 /*
   Every URL the app answers, in one place. Pages are files in browser/; an API
@@ -46,6 +46,7 @@ export const routes = [
   ["GET", "/api/player/chapters", playerChapters],
   ["GET", "/api/player/marks", playerMarks],
   ["GET", "/api/player/transcript", playerTranscript],
+  ["GET", "/api/player/summary", playerSummary],
   ["POST", "/api/player/summary", makeSummary],
   ["POST", "/api/player/favorite", playerFavorite],
 ];
@@ -256,15 +257,26 @@ async function playerTranscript({ query }) {
 }
 
 /**
- * Summarize a video's stored transcript (`?v=<video id>`), once: the Claude API the first time, the stored copy after (#108).
- * No key or no transcript is a 409 whose error says so; a failed ask is a 502 and is asked again next time.
+ * A video's stored summary (`?v=<video id>`), if one was made, and the guidance used last (#110). Never asks anyone.
  * @param {Ctx} ctx
  */
-async function makeSummary({ query }) {
+async function playerSummary({ query }) {
   const v = query.get("v") ?? "";
   if (!VIDEO_ID.test(v)) return fail("Missing video id.", 400);
+  return json(await storedSummary(v));
+}
+
+/**
+ * Summarize a video's stored transcript (`?v=<video id>`) now, with the body's `guidance`, replacing any stored summary (#108, #110).
+ * No key or no transcript is a 409 whose error says so; a failed ask is a 502 and the old summary stays.
+ * @param {Ctx} ctx
+ */
+async function makeSummary({ query, body }) {
+  const v = query.get("v") ?? "";
+  if (!VIDEO_ID.test(v)) return fail("Missing video id.", 400);
+  if (body.guidance !== undefined && typeof body.guidance !== "string") return fail("guidance must be text.", 400);
   try {
-    return json({ summary: await summary(v) });
+    return json({ summary: await summarize(v, body.guidance ?? "") });
   } catch (err) {
     if (err instanceof SummaryUnavailable) return fail(err.message, 409);
     console.error(err);

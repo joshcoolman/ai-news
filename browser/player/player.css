@@ -142,4 +142,15 @@
 .summary-body {
   .summary-note { color: var(--muted); }
   .summary-gist { font-weight: 500; }
+  /* The guidance box (#110) and Resummarize under a summary. */
+  .summary-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .summary-form label { font-weight: 500; }
+  .summary-guidance {
+    width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--fg); font: 14px/1.4 var(--font); resize: vertical;
+  }
+  .summary-guidance:focus { outline: 2px solid var(--mark); outline-offset: -1px; }
+  .summary-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+  .summary-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .summary-foot .summary-note { margin: 0; padding: 0; font-size: 13px; }
 }

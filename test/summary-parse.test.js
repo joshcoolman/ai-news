@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseSummary, transcriptText } from "../server/summary-parse.js";
+import { parseSummary, summaryPrompt, transcriptText } from "../server/summary-parse.js";
 
 /** @type {Paragraph[]} */
 const paragraphs = [
@@ -12,6 +12,18 @@ const paragraphs = [
 describe("transcriptText", () => {
   it("leads each paragraph with its start in seconds and heads chapters", () => {
     assert.equal(transcriptText(paragraphs), "## Intro\n[0] Hello there.\n[42] The main point.\n## Wrap up\n[95] Goodbye.");
+  });
+});
+
+describe("summaryPrompt", () => {
+  it("is the default prompt with no guidance, blank counting as none", () => {
+    assert.equal(summaryPrompt("  \n "), summaryPrompt(""));
+    assert.doesNotMatch(summaryPrompt(""), /<guidance>/);
+  });
+
+  it("adds the reader's guidance, trimmed and capped", () => {
+    assert.match(summaryPrompt("  bullets only\n"), /<guidance>\nbullets only\n<\/guidance>$/);
+    assert.equal(summaryPrompt("x".repeat(5000)).match(/x+/g)?.at(-1)?.length, 1000);
   });
 });
 
@@ -27,12 +39,12 @@ describe("parseSummary", () => {
     });
   });
 
-  it("drops malformed points and keeps at most seven", () => {
-    const points = [{ start: "x", text: "bad" }, { start: 1 }, ...Array.from({ length: 9 }, (_, i) => ({ start: 0, text: `p${i}` }))];
+  it("drops malformed points and keeps at most twenty", () => {
+    const points = [{ start: "x", text: "bad" }, { start: 1 }, ...Array.from({ length: 25 }, (_, i) => ({ start: 0, text: `p${i}` }))];
     const out = parseSummary(JSON.stringify({ gist: "g", points }), paragraphs);
     assert.deepStrictEqual(
       out.points.map((p) => p.text),
-      ["p0", "p1", "p2", "p3", "p4", "p5", "p6"],
+      Array.from({ length: 20 }, (_, i) => `p${i}`),
     );
   });
 
