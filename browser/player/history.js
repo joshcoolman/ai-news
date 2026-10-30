@@ -106,6 +106,8 @@ export const linkTo = (/** @type {Entry} */ e) => `/player?${new URLSearchParams
 export function history(video) {
   let list = remember(video);
   const column = h("ol", { class: "history", "aria-label": "History" });
+  const count = h("span", { class: "panel-count" });
+  const panel = h("section", { class: "history-panel" }, h("header", { class: "panel-head" }, h("h2", {}, "History"), count), column);
 
   const remove = (/** @type {string} */ videoId) => {
     if (videoId !== video.videoId) {
@@ -139,16 +141,17 @@ export function history(video) {
               "span",
               { class: "history-thumb" },
               h("img", { src: e.thumbUrl, alt: "", loading: "lazy" }),
-              e.chapters && h("span", { class: "chapters-mark" }, "C"),
-              e.transcript && h("span", { class: "chapters-mark transcript-mark" }, "T"),
+              (e.chapters || e.transcript) &&
+                h("span", { class: "history-marks" }, e.chapters && h("span", { class: "history-mark" }, "C"), e.transcript && h("span", { class: "history-mark" }, "T")),
             ),
             h("span", { class: "history-text" }, h("span", { class: "history-title" }, e.title), e.channel && h("span", { class: "history-channel" }, e.channel)),
           ),
           h("button", { class: "history-remove", type: "button", onclick: () => remove(e.videoId), "aria-label": `Remove from history: ${e.title}`, title: "Remove" }, "×"),
         );
-        return i === earlier ? [h("li", { class: "history-divider", style: "view-transition-name: h-divider", "aria-hidden": "true" }, "Earlier"), row] : [row];
+        return i === earlier ? [h("li", { class: "history-divider eyebrow", style: "view-transition-name: h-divider", "aria-hidden": "true" }, "Earlier"), row] : [row];
       }),
     );
+    count.textContent = String(list.length);
     center();
   };
   // The playing row sits at the column's vertical middle: the column is padded half its height at both ends so the first and last rows get there too.
@@ -192,7 +195,8 @@ export function history(video) {
   }
 
   return {
-    column,
+    /** The header and the list, for the page. */
+    panel,
     /** Scroll the playing row to the middle; call once the column is on the page. */
     center,
     /** @param {Entry} entry */

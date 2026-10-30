@@ -33,7 +33,7 @@ const GUIDE = [
       [["double-click"], "On the black around the video, or F: fill the display with it. Esc comes back."],
       [["C"], "Open or close Chapters, for a video that has them. While the video fills the display it opens as a sidebar beside it."],
       [["↑", "↓"], "With Chapters or the Transcript open: the previous or next chapter, or paragraph."],
-      [["T"], "Open or close the Transcript, for a video YouTube has one for: asked for once when the video is queued or played, and a green T on the History row says it is here. Readable paragraphs, a timestamp on each that plays from there; the paragraph playing is marked and scrolls to the top as the video goes, unless you have just scrolled it yourself. Chapters and Transcript take turns in the same place."],
+      [["T"], "Open or close the Transcript, for a video YouTube has one for: asked for once when the video is queued or played, and a T on the History row's thumbnail says it is here. Readable paragraphs, a timestamp on each that plays from there; the paragraph playing is marked and scrolls to the top as the video goes, unless you have just scrolled it yourself. Chapters and Transcript take turns in the same place."],
       [["S"], "With the Transcript open: show its summary instead, what to take away from the video in a line and a few points, each with a timestamp that plays from there. The first S on a video has Claude make it (a few seconds, needs ANTHROPIC_API_KEY in .env.local); after that it is the stored copy. S again goes back to the transcript; the green Summary button in the panel's header does the same."],
       [["Esc"], "Close Chapters or the Transcript."],
     ],

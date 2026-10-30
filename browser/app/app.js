@@ -50,12 +50,12 @@ const save = (key, value) => {
   } catch {}
 };
 
-const app = h("iframe", { class: "app-frame", src: "/creators", title: "AI News" });
+const app = h("iframe", { class: "app-frame", src: "/creators", "aria-label": "AI News" });
 const player = h("iframe", {
   id: "ainews-player",
   name: "ainews-player",
   src: "/player",
-  title: "Player",
+  "aria-label": "Player",
   allow: "autoplay; encrypted-media; picture-in-picture; fullscreen",
   allowFullscreen: true,
 });

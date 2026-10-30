@@ -84,7 +84,7 @@ if (restore) {
   const controls = h("div", { class: "mini-controls" }, miniButton("Back 10 seconds", "\u21ba", () => skip(-1)), miniButton("Next video", "\u203a", next));
   const stage = h("div", { class: "player-video", onclick: () => player.toggle(), ondblclick: fill }, player.frame, controls);
   document.body.append(
-    h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.column, listed.panel, read.panel), playerBar(video, [listed.button, read.button])),
+    h("div", { class: "player-page" }, h("div", { class: "player-main" }, stage, played.panel, listed.panel, read.panel), playerBar(video, [listed.button, read.button])),
   );
   played.center();
 
