@@ -41,10 +41,19 @@ export function chapters(videoId, player) {
   /** Which chapter is playing, by its place in the list. */
   const playing = () => Math.max(0, list.findLastIndex((c) => c.start <= player.time()));
 
-  /** Mark the chapter that is playing. */
-  function mark() {
+  /** The chapter marked last, so the list only moves when the playing one changes. */
+  let marked = -1;
+
+  /**
+   * Mark the chapter that is playing and hold it at the list's vertical middle, as History does (#104): the list
+   * is padded half its height at the bottom so the last chapter gets there too; near the top it simply stays put.
+   */
+  function mark(instant = false) {
     const at = playing();
+    if (at === marked && !instant) return;
+    marked = at;
     list.forEach((_, i) => rows.children[i]?.classList.toggle("current", i === at));
+    rows.children[at]?.scrollIntoView({ block: "center", behavior: instant ? "instant" : "smooth" });
   }
 
   /** Open it if closed, close it if open; nothing for a video without chapters. */
@@ -59,9 +68,8 @@ export function chapters(videoId, player) {
     if (!on) return;
     // Transcript shares the slot (#85): opening this closes that.
     document.dispatchEvent(new CustomEvent("sidebar", { detail: panel }));
-    mark();
+    mark(true);
     ticking = setInterval(mark, 500);
-    rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
   }
 
   load(`/api/player/chapters?${new URLSearchParams({ v: videoId })}`).then(
@@ -124,7 +132,6 @@ export function chapters(videoId, player) {
       if (next) {
         player.seek(next.start);
         mark();
-        rows.querySelector(".current")?.scrollIntoView({ block: "nearest" });
       }
       return true;
     },
