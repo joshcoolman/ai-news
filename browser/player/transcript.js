@@ -1,4 +1,4 @@
-import { load, post } from "../shared/api.js";
+import { load, send } from "../shared/api.js";
 import { h } from "../shared/dom.js";
 
 /** @param {number} seconds */
@@ -24,9 +24,12 @@ function clock(seconds) {
  * asks YouTube once, and says whether one came.
  *
  * With it open, S (or the header's Summary button) shows its summary instead
- * (#108): the first time for a video the server has the Claude API make one,
- * after that it is the stored copy; S again goes back to the transcript. One
- * line on what the video is about, then its takeaways, each with a timestamp.
+ * (#108); S again goes back to the transcript. One line on what the video is
+ * about, then its takeaways, each with a timestamp. With none made yet, the
+ * panel asks what the reader wants from it (#110), the box pre-filled with the
+ * guidance used last; Summarize has the server ask the Claude API. A summary
+ * made shows the guidance it was made with and Resummarize, the box again,
+ * whose summary replaces it. No summary is made without one of those presses.
  * @param {string} videoId
  * @param {{ time: () => number, seek: (seconds: number) => void }} player
  */
@@ -41,10 +44,18 @@ export function transcript(videoId, player) {
   const HANDS_OFF = 5000;
   let current = -1;
   const body = h("div", { class: "transcript-body" });
-  /** The summary, once asked for (#108); `asking` while the server makes it. */
+  /**
+   * The summary (#108) once the server has said whether there is one (`loaded`); `guidance`, the box's
+   * text, starts as the one used last (#110). `asking` while the server makes one, `editing` while the
+   * box shows over a summary already made, `error` what went wrong last.
+   */
   /** @type {Summary | undefined} */
   let made;
+  let loaded = false;
+  let guidance = "";
   let asking = false;
+  let editing = false;
+  let error = "";
   const summaryBody = h("div", { class: "transcript-body summary-body", hidden: true });
   // Two tabs over one panel; S flips between them. A tab already showing does nothing.
   const transcriptTab = h("button", { type: "button", title: "Transcript (S)", "aria-pressed": true, onclick: () => body.hidden && summarize() }, "Transcript");
@@ -107,35 +118,104 @@ export function transcript(videoId, player) {
     if (!summarized) follow(true);
   }
 
-  /** The summary, or a line saying why there is none (yet). */
-  function drawSummary(/** @type {string} */ note = "") {
-    if (note || !made) return summaryBody.replaceChildren(h("p", { class: "summary-note" }, note));
+  const note = (/** @type {string} */ text) => h("p", { class: "summary-note" }, text);
+
+  /** The guidance box (#110): pre-filled, Summarize (or Cmd/Ctrl+Enter) makes the summary with it. */
+  function guidanceForm() {
+    const box = /** @type {HTMLTextAreaElement} */ (
+      h("textarea", {
+        class: "summary-guidance",
+        rows: 4,
+        placeholder: "Optional: what you want from it. Bullets only; people and companies mentioned, with what each does; only high-signal news\u2026",
+        "aria-label": "Guidance for the summary",
+      })
+    );
+    box.value = guidance;
+    const go = () => make(box.value);
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        go();
+      }
+    });
+    const form = h(
+      "div",
+      { class: "summary-form" },
+      h("label", {}, made ? "Resummarize, with this guidance:" : "What do you want from this summary?"),
+      box,
+      h(
+        "div",
+        { class: "summary-buttons" },
+        made && h("button", { class: "summary-flip back", type: "button", onclick: () => ((editing = false), drawSummary()) }, "Cancel"),
+        h("button", { class: "summary-flip", type: "button", onclick: go }, made ? "Resummarize" : "Summarize"),
+      ),
+    );
+    requestAnimationFrame(() => box.focus());
+    return form;
+  }
+
+  /** The summary, the box to ask for one, or a line saying what is happening. */
+  function drawSummary() {
+    if (!loaded) return summaryBody.replaceChildren(note("Loading\u2026"));
+    if (asking) return summaryBody.replaceChildren(note("Summarizing\u2026"));
+    const problem = error && note(error);
+    if (!made || editing) return summaryBody.replaceChildren(...[problem, guidanceForm()].filter((n) => !!n));
     summaryBody.replaceChildren(
-      h("p", { class: "summary-gist" }, made.gist),
-      h("p", { class: "transcript-heading eyebrow" }, "Takeaways"),
-      ...made.points.map((p) => h("p", { class: "summary-point" }, h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)), h("span", {}, p.text))),
+      ...[
+        problem,
+        h("p", { class: "summary-gist" }, made.gist),
+        h("p", { class: "transcript-heading eyebrow" }, "Takeaways"),
+        ...made.points.map((p) => h("p", { class: "summary-point" }, h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)), h("span", {}, p.text))),
+        h(
+          "div",
+          { class: "summary-foot" },
+          made.guidance && h("p", { class: "summary-note" }, `Asked for: ${made.guidance}`),
+          h("button", { class: "summary-flip back", type: "button", onclick: () => ((editing = true), (error = ""), drawSummary()) }, "Resummarize"),
+        ),
+      ].filter((n) => !!n),
     );
   }
 
-  /** S: only with the transcript open. Make the summary the first time, show it after; from the summary, back to the transcript. */
+  /** Ask the server for the summary now, with this guidance; it replaces the one shown. */
+  async function make(/** @type {string} */ said) {
+    if (asking) return;
+    guidance = said.trim();
+    asking = true;
+    error = "";
+    drawSummary();
+    try {
+      const res = await send("POST", `/api/player/summary?${new URLSearchParams({ v: videoId })}`, { guidance });
+      /** @type {{ summary?: Summary, error?: string }} */
+      const found = await res.json();
+      if (found.summary) {
+        made = found.summary;
+        editing = false;
+      } else error = found.error ?? "Could not summarize the transcript.";
+    } catch {
+      error = "Could not reach the server.";
+    } finally {
+      asking = false;
+    }
+    drawSummary();
+  }
+
+  /** S: only with the transcript open. Show the summary, or the box to ask for one; from the summary, back to the transcript. */
   async function summarize() {
     if (!stored || panel.hidden) return;
     if (body.hidden) return view("transcript");
     view("summary");
-    if (made || asking) return;
-    asking = true;
-    drawSummary("Summarizing\u2026");
+    if (loaded) return drawSummary();
+    drawSummary();
     try {
-      const res = await post(`/api/player/summary?${new URLSearchParams({ v: videoId })}`);
-      /** @type {{ summary?: Summary, error?: string }} */
-      const found = await res.json();
+      /** @type {{ summary?: Summary, guidance?: string }} */
+      const found = await load(`/api/player/summary?${new URLSearchParams({ v: videoId })}`);
       made = found.summary;
-      drawSummary(made ? "" : found.error ?? "Could not summarize the transcript.");
+      guidance = found.guidance ?? "";
     } catch {
-      drawSummary("Could not reach the server.");
-    } finally {
-      asking = false;
+      error = "Could not reach the server.";
     }
+    loaded = true;
+    drawSummary();
   }
 
   /** @param {Paragraph[]} paragraphs */
@@ -166,6 +246,11 @@ export function transcript(videoId, player) {
   });
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
+    // Typing guidance (#110): the keys are letters again; Escape only leaves the box.
+    if (e.target instanceof Element && e.target.closest("input, textarea")) {
+      if (e.key === "Escape") /** @type {HTMLElement} */ (e.target).blur();
+      return;
+    }
     if (e.key === "Escape") open(false);
     else if (e.key.toLowerCase() === "t" && !e.repeat) toggle();
     else if (e.key.toLowerCase() === "s" && !e.repeat && !e.shiftKey) summarize();

@@ -39,6 +39,8 @@ type Settings = {
   creatorsWindowDays?: number;
   /** Leave members-only videos out of everything the app finds: they do not play here. Absent: on. */
   skipMembersOnly?: boolean;
+  /** The guidance the last summary was made with, to pre-fill the next (#110). Absent: none. */
+  summaryGuidance?: string;
 };
 
 type Chapter = { start: number; title: string };
@@ -59,8 +61,8 @@ type Transcript = { readAt: string; kind?: "creator" | "auto"; paragraphs?: Para
 
 /** One takeaway, with the start of the paragraph it is made in, so it seeks there. */
 type SummaryPoint = { start: number; text: string };
-/** A transcript's summary, made once when asked for: a line on what the video is about, then its takeaways. */
-type Summary = { madeAt: string; model: string; gist: string; points: SummaryPoint[] };
+/** A transcript's summary, made when asked for, with the reader's guidance if any (#110): a line on what the video is about, then its takeaways. */
+type Summary = { madeAt: string; model: string; guidance?: string; gist: string; points: SummaryPoint[] };
 
 /** What YouTube said, kept on disk so neither a restart nor a reload asks again (#67). */
 type YouTubeCache = {

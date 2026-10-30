@@ -136,9 +136,25 @@
   button[aria-pressed="true"] { background: var(--chip-hover); color: var(--fg); cursor: default; }
   button:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
 }
+/* Summarize, Resummarize and Cancel (#110): green for the one go action, plain for the way back. */
+.summary-flip { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--green); color: #0f0f0f; font: 500 13px var(--font); cursor: pointer; }
+.summary-flip:hover { filter: brightness(1.1); }
+.summary-flip.back { background: var(--chip); color: var(--fg); }
+.summary-flip.back:hover { background: var(--chip-hover); filter: none; }
 .summary-body {
   .summary-note { color: var(--muted); }
   .summary-gist { font-weight: 500; }
   .summary-point { display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.5; }
   .summary-point .transcript-time { flex: none; margin: 0; }
+  /* The guidance box (#110) and Resummarize under a summary. */
+  .summary-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .summary-form label { font-weight: 500; }
+  .summary-guidance {
+    width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--fg); font: 14px/1.4 var(--font); resize: vertical;
+  }
+  .summary-guidance:focus { outline: 2px solid var(--mark); outline-offset: -1px; }
+  .summary-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+  .summary-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .summary-foot .summary-note { margin: 0; padding: 0; font-size: 13px; }
 }

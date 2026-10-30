@@ -195,7 +195,9 @@ function onKey(e) {
     e.stopImmediatePropagation();
     return setMini(mini === null);
   }
-  if (document.fullscreenElement && e.key.toLowerCase() !== "f" && e.key !== "Escape") {
+  // Typing in a box (the summary's guidance, #110) keeps its keys, even while the video fills the display.
+  const typing = !!(/** @type {Element} */ (e.target).closest?.("input, textarea, select, [contenteditable]"));
+  if (document.fullscreenElement && !typing && e.key.toLowerCase() !== "f" && e.key !== "Escape") {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (e.shiftKey) return;
