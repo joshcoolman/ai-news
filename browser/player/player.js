@@ -98,6 +98,8 @@ if (restore) {
   */
   window.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+    // The summary's guidance box (#110): arrows, Space and Delete edit the text there.
+    if (e.target instanceof Element && e.target.closest("input, textarea")) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       const direction = e.key === "ArrowDown" ? 1 : -1;
