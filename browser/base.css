@@ -17,21 +17,25 @@
   --bg: #0f0f0f;
   --fg: #f1f1f1;
   --muted: #aaaaaa;
+  /* Labels, counts and timestamps: quieter than --muted, still 4.5:1 on the panel. */
+  --faint: #8a8a8a;
   --thumb-ink: #ffffff;
   --chip: #272727;
   --chip-hover: #3a3a3a;
+  /* A row under the pointer in a side panel: a step below the chip a current row wears. */
+  --row-hover: #222222;
   --line: #303030;
   --pick: #ff4e45;
-  /* The chapters dot on History thumbnails: the app's green. */
-  --chapters: #2fe36a;
-  /* The keyboard's marks: the highlight, the picked creator, the playing row. Dark in the half without the keyboard (shared/away.js). */
-  --mark: #2fe36a;
+  /* The app's one green: where the keyboard is, and the one loud action (Add creator, the toast). Nothing else wears it. */
+  --green: #2fe36a;
+  /* The keyboard's marks: the highlight, the picked creator, the playing row. A quiet gray in the half without the keyboard (shared/away.js). */
+  --mark: var(--green);
   --tray: #181818;
   --font: "Roboto", "Helvetica Neue", Arial, sans-serif;
   --mono: "Roboto Mono", ui-monospace, Menlo, monospace;
   color-scheme: dark;
 }
-:root.away { --mark: transparent; }
+:root.away { --mark: #4a4a4a; }
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #ffffff;
@@ -39,6 +43,8 @@
     --muted: #606060;
     --chip: #f2f2f2;
     --chip-hover: #e5e5e5;
+    --row-hover: #f6f6f6;
+    --faint: #6b6b6b;
     --line: #e5e5e5;
     --pick: #cc0000;
     --tray: #ffffff;
@@ -56,6 +62,27 @@ button, input { font: inherit; color: inherit; }
 .wrap.narrow { max-width: 1280px; margin: 0 auto; }
 .page-title { font-size: 18px; font-weight: 500; margin: 8px 0 14px; }
 .empty { color: var(--muted); font-size: 15px; }
+/* The small caps label: the History divider, a transcript's chapter heads, Takeaways. */
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+
+/*
+  A side panel's header, the same on all four (History, Creators, Chapters, Transcript): the title, a count, actions at the right.
+  Their current row is the chip with the keyboard's ring, drawn as an inset shadow so a scroll edge never clips it.
+*/
+.panel-head {
+  flex: none; display: flex; align-items: center; gap: 8px; height: 52px; padding: 0 10px 0 16px; border-bottom: 1px solid var(--line);
+
+  h2 { margin: 0; font-size: 15px; font-weight: 600; }
+  .panel-count { font: 500 12px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .panel-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+}
+.panel-close {
+  width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
+  background: none; color: var(--muted); font: 400 20px/1 var(--font); cursor: pointer;
+
+  &:hover { background: var(--chip-hover); color: var(--fg); }
+  &:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+}
 
 /* Buttons */
 .btn {

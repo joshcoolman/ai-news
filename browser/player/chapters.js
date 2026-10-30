@@ -30,10 +30,17 @@ export function chapters(videoId, player) {
   let ticking;
 
   const rows = h("ol", {});
+  const count = h("span", { class: "panel-count" });
   const panel = h(
     "aside",
     { class: "chapters", hidden: true, "aria-label": "Chapters" },
-    h("header", {}, h("span", {}, "Chapters"), h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close chapters", title: "Close" }, "×")),
+    h(
+      "header",
+      { class: "panel-head" },
+      h("h2", {}, "Chapters"),
+      count,
+      h("span", { class: "panel-actions" }, h("button", { class: "panel-close", type: "button", onclick: () => open(false), "aria-label": "Close chapters", title: "Close" }, "×")),
+    ),
     rows,
   );
   const button = h("button", { class: "btn", type: "button", hidden: true, title: "Chapters (C)", "aria-expanded": false, onclick: () => open(panel.hidden !== false) }, "Chapters");
@@ -76,6 +83,7 @@ export function chapters(videoId, player) {
     (found) => {
       list = found.chapters;
       if (!list.length) return;
+      count.textContent = String(list.length);
       rows.replaceChildren(
         ...list.map((c) =>
           h(

@@ -8,6 +8,7 @@ import { busyLine, cardEntry, playInPlayer, slotEntries } from "../shared/card.j
 import { atRightEdge, movePick, nearestPick } from "../shared/pick.js";
 
 /** X's logo, for a creator's X link (#91). */
+const GRID = '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />';
 const X_LOGO = '<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />';
 
 /*
@@ -69,18 +70,25 @@ const grid = h("div", { class: "grid" });
 const nothing = h("p", { class: "empty" });
 const rows = h("ul", { class: "rows" });
 const noCreators = h("p", { class: "empty" }, "No creators. Paste a YouTube URL above to add one.");
-/** Pinned above the list: lets go of the picked creator, back to everyone's videos. */
+const creatorCount = h("span", { class: "panel-count" });
+/** Pinned above the list, a row like the others: lets go of the picked creator, back to everyone's videos. */
 const everyone = h(
-  "button",
-  {
-    class: "creator-pick all-creators",
-    type: "button",
-    onclick: () => {
-      pickCreator(null);
-      draw();
+  "div",
+  { class: "all-creators" },
+  h(
+    "button",
+    {
+      class: "creator-pick",
+      type: "button",
+      onclick: () => {
+        pickCreator(null);
+        draw();
+      },
     },
-  },
-  "All creators",
+    h("span", { class: "avatar all-icon" }, icon(GRID, { size: 16, stroke: 1.8 })),
+    h("span", { class: "name" }, "All creators"),
+    creatorCount,
+  ),
 );
 
 document.body.append(
@@ -143,7 +151,8 @@ function draw() {
 
   noCreators.hidden = creators.length > 0;
   everyone.hidden = !creators.length;
-  everyone.setAttribute("aria-pressed", String(!selected));
+  everyone.firstElementChild?.setAttribute("aria-pressed", String(!selected));
+  creatorCount.textContent = String(creators.length);
   sync(
     rows,
     creators.map((c) => {

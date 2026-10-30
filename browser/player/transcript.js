@@ -57,12 +57,23 @@ export function transcript(videoId, player) {
   let editing = false;
   let error = "";
   const summaryBody = h("div", { class: "transcript-body summary-body", hidden: true });
-  const heading = h("span", {}, "Transcript");
-  const flip = h("button", { class: "summary-flip", type: "button", title: "Summary (S)", onclick: () => summarize() }, "Summary");
+  // Two tabs over one panel; S flips between them. A tab already showing does nothing.
+  const transcriptTab = h("button", { type: "button", title: "Transcript (S)", "aria-pressed": true, onclick: () => body.hidden && summarize() }, "Transcript");
+  const summaryTab = h("button", { type: "button", title: "Summary (S)", "aria-pressed": false, onclick: () => !body.hidden && summarize() }, "Summary");
   const panel = h(
     "aside",
     { class: "transcript", hidden: true, "aria-label": "Transcript" },
-    h("header", {}, heading, h("span", { class: "transcript-actions" }, flip, h("button", { class: "chapters-close", type: "button", onclick: () => open(false), "aria-label": "Close transcript", title: "Close" }, "×"))),
+    h(
+      "header",
+      { class: "panel-head" },
+      h("h2", {}, "Transcript"),
+      h(
+        "span",
+        { class: "panel-actions" },
+        h("span", { class: "panel-switch", role: "group", "aria-label": "Show" }, transcriptTab, summaryTab),
+        h("button", { class: "panel-close", type: "button", onclick: () => open(false), "aria-label": "Close transcript", title: "Close" }, "×"),
+      ),
+    ),
     body,
     summaryBody,
   );
@@ -102,10 +113,8 @@ export function transcript(videoId, player) {
     const summarized = which === "summary";
     summaryBody.hidden = !summarized;
     body.hidden = summarized;
-    heading.textContent = summarized ? "Summary" : "Transcript";
-    flip.textContent = summarized ? "Transcript" : "Summary";
-    flip.classList.toggle("back", summarized);
-    flip.title = `${flip.textContent} (S)`;
+    transcriptTab.setAttribute("aria-pressed", String(!summarized));
+    summaryTab.setAttribute("aria-pressed", String(summarized));
     if (!summarized) follow(true);
   }
 
@@ -155,7 +164,8 @@ export function transcript(videoId, player) {
       ...[
         problem,
         h("p", { class: "summary-gist" }, made.gist),
-        ...made.points.map((p) => h("p", {}, h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)), h("span", {}, p.text))),
+        h("p", { class: "transcript-heading eyebrow" }, "Takeaways"),
+        ...made.points.map((p) => h("p", { class: "summary-point" }, h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)), h("span", {}, p.text))),
         h(
           "div",
           { class: "summary-foot" },
@@ -216,7 +226,7 @@ export function transcript(videoId, player) {
         h(
           "p",
           {},
-          p.title && h("strong", { class: "transcript-heading" }, p.title),
+          p.title && h("strong", { class: "transcript-heading eyebrow" }, p.title),
           h("button", { class: "transcript-time", type: "button", title: "Play from here", onclick: () => player.seek(p.start) }, clock(p.start)),
           h("span", {}, p.text),
         ),

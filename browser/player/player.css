@@ -21,7 +21,7 @@
 /* I, in the one window (#93): the shell pins this frame small in a corner and sets `mini`; only the video shows,
    with back and next on hover, top left, clear of YouTube's own play button. Chapters and the Transcript keep their state underneath, hidden. */
 .mini-controls { display: none; }
-.mini :is(.player-bar, .history, .chapters, .transcript) { display: none !important; }
+.mini :is(.player-bar, .history-panel, .chapters, .transcript) { display: none !important; }
 .mini .mini-controls { display: flex; position: fixed; left: 4px; top: 4px; z-index: 1; gap: 3px; opacity: 0; transition: opacity 0.15s; }
 .mini body:hover .mini-controls { opacity: 1; }
 .mini-controls button { padding: 1px 6px; border: 0; border-radius: 4px; background: rgb(0 0 0 / 0.7); color: #fff; font: 12px/1.2 var(--font); cursor: pointer; }
@@ -38,59 +38,60 @@
   .player-note { color: var(--muted); font-size: 13px; }
   .player-star.on { color: #f5c518; }
   /* Loud on purpose: the one thing to notice on a video whose creator is not saved. */
-  .btn.add-creator { background: #2fe36a; border-color: #2fe36a; color: #000; font-weight: 700; }
+  .btn.add-creator { background: var(--green); border-color: var(--green); color: #000; font-weight: 700; }
   .btn.add-creator:hover:not(:disabled) { background: #55f088; }
 }
 
 /*
-  History: a compact column right of the video, always showing. The column is a
-  scroll container, which clips anything poking out of it, so to let the playing
-  row peek over the video the column itself is 24px wider than it looks: that
-  strip lies over the video's edge and is transparent, and only the gray part
-  reads as the sidebar.
+  History: a compact column right of the video, always showing, under its header. The list is a
+  scroll container, which clips anything poking out of it, so to let the playing row peek over the
+  video the panel is 24px wider than it looks: that strip lies over the video's edge and is
+  transparent, and only the gray part reads as the sidebar.
 */
-.history {
-  flex: none; width: 364px; margin: 0 0 0 -24px; padding: 0 6px 0 30px; overflow-y: auto; list-style: none;
+.history-panel {
+  flex: none; width: 364px; margin: 0 0 0 -24px; display: flex; flex-direction: column; min-height: 0;
   background: linear-gradient(to right, transparent 24px, var(--line) 24px, var(--line) 25px, var(--tray) 25px);
+  .panel-head { margin-left: 25px; }
+}
+.history {
+  flex: 1; min-height: 0; margin: 0; padding: 0 6px 0 30px; overflow-y: auto; list-style: none;
 
   /* Half the column's height of room at each end, so the first and last rows can sit at the center like any other. */
   &::before, &::after { content: ""; display: block; height: 50%; }
 
-  /* Rows sit inset on gray cards; the playing one spreads to the full width with a bigger thumbnail and the green outline, so it stands out like a glass over the list.
+  /* Flat rows on the panel, as in Chapters; the playing one spreads to the full width with a bigger thumbnail and the ring, so it stands out like a glass over the list.
      Nothing is dimmed: the column is read while a video plays, so every row stays as legible as the playing one. */
-  li { position: relative; padding: 2px 14px; transition: padding 0.25s; }
-  li:has(a.current) { padding: 2px 0; margin-left: -24px; }
-  a { display: flex; gap: 8px; align-items: center; padding: 5px; border-radius: 8px; text-decoration: none; color: var(--fg); background: #222; }
-  a:hover, a:focus-visible { background: var(--chip-hover); outline: none; }
-  /* The one playing: the same loud green as Add creator, so it is found at a glance. Drawn inside the row so the column's edge does not clip it. */
-  a.current, a.current:hover, a.current:focus-visible { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; padding: 7px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); cursor: default; }
+  li { position: relative; padding: 1px 0 1px 8px; transition: padding 0.25s; }
+  li:has(a.current) { padding: 1px 0; margin-left: -24px; }
+  a { display: flex; gap: 10px; align-items: center; padding: 6px; border-radius: 8px; text-decoration: none; color: var(--fg); }
+  a:hover, a:focus-visible { background: var(--row-hover); outline: none; }
+  a.current, a.current:hover, a.current:focus-visible { background: var(--chip); box-shadow: inset 0 0 0 2px var(--mark), 0 6px 20px rgb(0 0 0 / 0.6); padding: 8px; cursor: default; }
   .history-thumb { position: relative; display: flex; flex: none; }
-  img { width: 100px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
-  /* The same mark the cards wear: this video's description lists chapters. */
-  .chapters-mark { position: absolute; left: -5px; bottom: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--chapters); color: #000; font: 700 11px/20px var(--font); text-align: center; box-shadow: 0 0 0 2px #222; }
-  /* A transcript is stored (#85): the T sits right of the C, or where the C would be. */
-  .transcript-mark { left: -5px; }
-  .chapters-mark:not(.transcript-mark) + .transcript-mark { left: 18px; }
-  a.current img { width: 160px; }
-  a.current .history-title { font-size: 15px; }
+  img { width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; flex: none; background: var(--chip); transition: width 0.25s; }
+  /* This video's description lists chapters (C), its transcript is stored (T): small dark chips, like a card's duration. Green is for where the keyboard is. */
+  .history-marks { position: absolute; left: 4px; bottom: 4px; display: flex; gap: 3px; pointer-events: none; }
+  .history-mark { min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 4px; background: rgb(0 0 0 / 0.78); color: #fff; font: 700 10px/16px var(--font); text-align: center; }
+  a.current img { width: 140px; }
+  a.current .history-title { font-size: 14px; }
 
   /* The line between this sitting's rows and what an earlier opening of the window left. */
   .history-divider {
-    display: flex; align-items: center; gap: 8px; padding: 8px 14px 4px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 8px; padding: 12px 8px 6px 14px;
     &::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
   }
 
-  .history-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .history-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .history-title { font-size: 13px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .history-channel { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .history-remove {
-    position: absolute; right: 22px; top: 8px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
-    background: #4a4a4c; color: var(--fg); font: 500 16px/1 var(--font); cursor: pointer; opacity: 0;
+    position: absolute; right: 8px; top: 7px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+    background: var(--chip-hover); color: var(--fg); font: 500 16px/1 var(--font); cursor: pointer; opacity: 0;
   }
-  li:has(a.current) .history-remove { right: 8px; }
+  li:has(a.current) .history-remove { right: 10px; top: 10px; }
   li:hover .history-remove, .history-remove:focus-visible { opacity: 1; }
-  .history-remove:hover { background: var(--pick); }
+  /* Red only here: the × that takes a row away. */
+  .history-remove:hover { background: var(--pick); color: #fff; }
   .history-remove:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 }
 
@@ -101,47 +102,50 @@
   position: absolute; top: 0; right: 0; bottom: 0; width: 340px; display: flex; flex-direction: column;
   background: var(--tray); border-left: 1px solid var(--line); color: var(--fg);
 
-  header { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
-  .chapters-close {
-    width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: var(--chip); color: var(--fg); font: 500 18px/1 var(--font); cursor: pointer;
-  }
-  .chapters-close:hover { background: var(--pick); color: #fff; }
-
   /* Half the list's height below the last chapter, so it can sit at the middle like the rest (#104). */
-  ol { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 6px 6px 50cqh; }
+  ol { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 6px 6px 50cqh; display: flex; flex-direction: column; gap: 2px; }
   li button {
     display: flex; gap: 10px; align-items: baseline; width: 100%; padding: 8px; border: 0; border-radius: 8px;
-    background: none; color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+    background: none; color: var(--fg); font: inherit; font-size: 14px; line-height: 1.4; text-align: left; cursor: pointer;
   }
-  li button:hover, li button:focus-visible { background: var(--chip); outline: none; }
-  /* The chapter playing: the same green as the playing row in History. */
-  li.current button { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
-  .chapter-time { flex: none; min-width: 44px; font: 500 12px var(--mono); color: var(--muted); }
-  .chapter-title { line-height: 1.3; }
+  li button:hover, li button:focus-visible { background: var(--row-hover); outline: none; }
+  /* The chapter playing: the same ring as the playing row in History. */
+  li.current button { background: var(--chip); box-shadow: inset 0 0 0 2px var(--mark); }
+  .chapter-time { flex: none; min-width: 46px; font: 500 12px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  li.current .chapter-time { color: var(--fg); }
 }
 
 /* The transcript, readable (#85): paragraphs, a chapter heading over the first of its chapter, a timestamp that seeks. */
 .transcript-body {
-  flex: 1; overflow-y: auto; padding: 4px 14px 14px; font-size: 14px; line-height: 1.5;
-  p { margin: 12px 0 0; }
-  .transcript-heading { display: block; margin: 16px 0 4px; font-size: 13px; letter-spacing: 0.02em; color: var(--muted); text-transform: uppercase; }
-  .transcript-time { margin-right: 8px; padding: 0 5px; border: 0; border-radius: 4px; background: var(--chip); color: var(--muted); font: 500 12px/18px var(--mono); cursor: pointer; vertical-align: 1px; }
+  flex: 1; overflow-y: auto; padding: 4px 10px 14px; font-size: 15px; line-height: 1.6;
+  p { margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; scroll-margin-top: 6px; }
+  .transcript-heading { display: block; margin: 14px 0 2px; }
+  .transcript-time { margin-right: 8px; padding: 0 6px; border: 0; border-radius: 4px; background: var(--chip); color: var(--muted); font: 500 11px/18px var(--mono); cursor: pointer; vertical-align: 1px; }
   .transcript-time:hover { background: var(--chip-hover); color: var(--fg); }
-  /* The paragraph playing (#87): the same green as the playing row and chapter, so following reads as one thing. */
-  p { padding: 2px 6px; margin-inline: -6px; border-radius: 6px; scroll-margin-top: 6px; }
-  p.current { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
+  /* The paragraph playing (#87): the same ring as the playing row and chapter, so following reads as one thing; its timestamp wears the mark too. */
+  p.current { background: var(--chip); box-shadow: inset 0 0 0 2px var(--mark); }
+  p.current .transcript-time { background: var(--mark); color: #0f0f0f; }
 }
 
-/* The summary (#108): in the Transcript's panel, S or its header button flips between them. */
-.transcript-actions { display: flex; align-items: center; gap: 8px; }
-/* Green, so the summary is plain to see whenever the transcript is; plain once the summary shows and it goes back. */
-.summary-flip { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--mark); color: #0f0f0f; font: 500 13px var(--font); cursor: pointer; }
+/* The summary (#108): the header's switch, or S, flips the panel between the transcript and its summary. */
+.panel-switch {
+  display: flex; padding: 2px; border: 1px solid var(--line); border-radius: 15px; background: var(--bg);
+
+  button { height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: none; color: var(--muted); font: 500 12px var(--font); cursor: pointer; }
+  button:hover { color: var(--fg); }
+  button[aria-pressed="true"] { background: var(--chip-hover); color: var(--fg); cursor: default; }
+  button:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+}
+/* Summarize, Resummarize and Cancel (#110): green for the one go action, plain for the way back. */
+.summary-flip { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--green); color: #0f0f0f; font: 500 13px var(--font); cursor: pointer; }
 .summary-flip:hover { filter: brightness(1.1); }
 .summary-flip.back { background: var(--chip); color: var(--fg); }
 .summary-flip.back:hover { background: var(--chip-hover); filter: none; }
 .summary-body {
   .summary-note { color: var(--muted); }
   .summary-gist { font-weight: 500; }
+  .summary-point { display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.5; }
+  .summary-point .transcript-time { flex: none; margin: 0; }
   /* The guidance box (#110) and Resummarize under a summary. */
   .summary-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
   .summary-form label { font-weight: 500; }
