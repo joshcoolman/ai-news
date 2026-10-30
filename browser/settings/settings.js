@@ -41,8 +41,8 @@ const GUIDE = [
     where: "Creators",
     note: "Each creator's list is read from YouTube at most twice a day; the status line says when. A reload asks for nothing new. A creator added just now is read at once.",
     moves: [
-      [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. A marked card ignores further clicks."],
-      [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the same as its Delete, the next one plays."],
+      [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. Click a Queued one again to take it out; the Playing one ignores clicks."],
+      [["Shift", "click"], "On a queued video: take it out of the queue again, as its click. On the playing one: the same as its Delete, the next one plays."],
       [["click"], "On a creator in the sidebar: pick them. The grid shows their latest 30 videos whatever the day slider says. Click again, All creators at the top of the list, or an empty part of the page, to let go. A creator just added is picked."],
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends."],
       [["←"], "Highlight the video beside the picked creator, the nearest one on screen. From then on the arrows walk the grid, stopping at its edges; → off the right edge, or Esc, goes back to the creator list."],
@@ -54,7 +54,7 @@ const GUIDE = [
   {
     where: "Favorites",
     moves: [
-      [["click"], "On a video: as on Creators, queue or play, and the card says Queued or Playing while it is in the player's History. It stays a favorite."],
+      [["click"], "On a video: as on Creators, queue or play, and the card says Queued or Playing while it is in the player's History; click a Queued one again to take it out. It stays a favorite."],
       [["Shift", "click"], "On a queued video: take it out of the queue again. On the playing one: the next plays."],
       [["←", "→", "↑", "↓"], "Highlight the first video, then walk the grid, stopping at its edges. Esc lets go."],
       [["Enter"], "On the highlighted video: queue or play, as its click; on a Queued or Playing one: take it out again, as shift-click."],

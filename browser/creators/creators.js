@@ -36,7 +36,7 @@ const state = {
   days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? 7)),
   /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
   playing: /** @type {string | null} */ (null),
-  /** Videos in the player's History, marked Queued; clicking one again does nothing. */
+  /** Videos in the player's History, marked Queued; clicking one again takes it out (#106). */
   queued: new Set(historyIds()),
   /** The card the keyboard is on, by card id; while set the arrows walk the grid instead of the creator list (#56). */
   picked: /** @type {string | null} */ (null),
@@ -250,12 +250,13 @@ const markOf = (card) => (card.videoId === state.playing ? "playing" : state.que
 /**
  * A click on a video: the first one plays it in the player window; while the
  * player is playing, each click queues the video right under the one playing
- * and the card is marked once the player has it. A queued card, or the one
- * playing, ignores the click.
+ * and the card is marked once the player has it. A click on a queued card takes
+ * it out again (#106); the one playing ignores the click.
  * @param {Card} card
  */
 function play(card) {
   if (!state.playing) return playInPlayer(card);
+  if (markOf(card) === "queued") return unqueue(card);
   if (markOf(card)) return;
   announce({ type: "queue", videoId: card.videoId, title: card.title });
 }
