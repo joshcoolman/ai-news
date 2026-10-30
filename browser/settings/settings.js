@@ -16,7 +16,7 @@ const GUIDE = [
     moves: [
       [["Shift", "←"], "Give the keys to the left half: Creators, Favorites or Settings."],
       [["Shift", "→"], "Give the keys to the Player, while it shows."],
-      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it, T the Transcript, and ↑ ↓ walk whichever is open; Delete removes the video and the next plays in the normal view; every other key does nothing until F again, or Esc, comes back."],
+      [["F"], "From either half, while the Player shows: fill the display with the video. ← and → skip 10 seconds; C opens Chapters beside it, T the Transcript, S its summary, and ↑ ↓ walk whichever is open; Delete removes the video and the next plays in the normal view; every other key does nothing until F again, or Esc, comes back."],
       [["I"], "From either half, while a video is in the Player: shrink it to a small video in the lower right over the left half, which takes the keyboard; hover it for back 10 seconds and Next. I again puts back the view you left, filled display and Chapters included, with the keyboard in the Player."],
       [["[", "]"], "From either half: slide the split left or right a step, between the left half alone, both, and the Player alone. The arrows on the strip between the halves do the same."],
     ],
@@ -34,6 +34,7 @@ const GUIDE = [
       [["C"], "Open or close Chapters, for a video that has them. While the video fills the display it opens as a sidebar beside it."],
       [["↑", "↓"], "With Chapters or the Transcript open: the previous or next chapter, or paragraph."],
       [["T"], "Open or close the Transcript, for a video YouTube has one for: asked for once when the video is queued or played, and a green T on the History row says it is here. Readable paragraphs, a timestamp on each that plays from there; the paragraph playing is marked and scrolls to the top as the video goes, unless you have just scrolled it yourself. Chapters and Transcript take turns in the same place."],
+      [["S"], "With the Transcript open: show its summary instead, what to take away from the video in a line and a few points, each with a timestamp that plays from there. The first S on a video has Claude make it (a few seconds, needs ANTHROPIC_API_KEY in .env.local); after that it is the stored copy. S again goes back to the transcript; the green Summary button in the panel's header does the same."],
       [["Esc"], "Close Chapters or the Transcript."],
     ],
   },

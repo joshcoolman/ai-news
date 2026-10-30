@@ -127,6 +127,7 @@ if (restore) {
     if (msg.type === "skip") return skip(msg.by);
     if (msg.type === "chapters") return listed.toggle();
     if (msg.type === "transcript") return read.toggle();
+    if (msg.type === "summary") return read.summarize();
     if (msg.type === "remove") return played.removeCurrent();
     if (msg.type === "chapter") return void (listed.step(msg.by) || read.step(msg.by));
     if (msg.type === "ping") return announce({ type: "playing", videoId: v });

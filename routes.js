@@ -8,6 +8,7 @@ import { parseChapters } from "./server/youtube-parse.js";
 import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
 import { transcribed, transcript } from "./server/transcript.js";
+import { summary, SummaryUnavailable } from "./server/summary.js";
 
 /*
   Every URL the app answers, in one place. Pages are files in browser/; an API
@@ -45,6 +46,7 @@ export const routes = [
   ["GET", "/api/player/chapters", playerChapters],
   ["GET", "/api/player/marks", playerMarks],
   ["GET", "/api/player/transcript", playerTranscript],
+  ["POST", "/api/player/summary", makeSummary],
   ["POST", "/api/player/favorite", playerFavorite],
 ];
 
@@ -251,6 +253,23 @@ async function playerTranscript({ query }) {
     const found = await transcript(v);
     return json({ paragraphs: found?.paragraphs, kind: found?.kind });
   });
+}
+
+/**
+ * Summarize a video's stored transcript (`?v=<video id>`), once: the Claude API the first time, the stored copy after (#108).
+ * No key or no transcript is a 409 whose error says so; a failed ask is a 502 and is asked again next time.
+ * @param {Ctx} ctx
+ */
+async function makeSummary({ query }) {
+  const v = query.get("v") ?? "";
+  if (!VIDEO_ID.test(v)) return fail("Missing video id.", 400);
+  try {
+    return json({ summary: await summary(v) });
+  } catch (err) {
+    if (err instanceof SummaryUnavailable) return fail(err.message, 409);
+    console.error(err);
+    return fail("Could not summarize the transcript.", 502);
+  }
 }
 
 /** Favorite the video playing in the player window, by video id (Creators-page videos have no card). */

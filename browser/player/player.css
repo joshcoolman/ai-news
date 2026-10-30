@@ -131,3 +131,15 @@
   p { padding: 2px 6px; margin-inline: -6px; border-radius: 6px; scroll-margin-top: 6px; }
   p.current { background: var(--chip); outline: 2px solid var(--mark); outline-offset: -2px; }
 }
+
+/* The summary (#108): in the Transcript's panel, S or its header button flips between them. */
+.transcript-actions { display: flex; align-items: center; gap: 8px; }
+/* Green, so the summary is plain to see whenever the transcript is; plain once the summary shows and it goes back. */
+.summary-flip { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: var(--mark); color: #0f0f0f; font: 500 13px var(--font); cursor: pointer; }
+.summary-flip:hover { filter: brightness(1.1); }
+.summary-flip.back { background: var(--chip); color: var(--fg); }
+.summary-flip.back:hover { background: var(--chip-hover); filter: none; }
+.summary-body {
+  .summary-note { color: var(--muted); }
+  .summary-gist { font-weight: 500; }
+}
