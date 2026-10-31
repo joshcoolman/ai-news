@@ -158,3 +158,33 @@
   .summary-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
   .summary-foot .summary-note { margin: 0; padding: 0; font-size: 13px; }
 }
+
+/*
+  A narrow Player (#118): History is 340px and the embed will not go under 300px (an iframe's own
+  min-content width), so below 640px the video would slide under the column. From exactly there the
+  Player stacks: the video on top at full width, History under it as a thumbnail-first list, no peek
+  over the video. The Player is its own document, so the viewport is the Player. Fullscreen and mini keep their own layout.
+*/
+@media (max-width: 639.98px) {
+  :root:not(.filled, .mini) {
+    .player-main { flex-direction: column; }
+    .player-video { flex: none; }
+    .history-panel { flex: 1; width: auto; margin: 0; background: var(--tray); border-top: 1px solid var(--line); }
+    .history-panel .panel-head { margin-left: 0; }
+    .history {
+      padding: 0 6px;
+      li, li:has(a.current) { padding: 1px 0; margin-left: 0; }
+      img, a.current img { width: 176px; }
+      a.current, a.current:hover, a.current:focus-visible { padding: 6px; box-shadow: inset 0 0 0 2px var(--mark); }
+      a.current .history-title { font-size: 13px; }
+      .history-channel { display: none; }
+      /* The playing row says so on its thumbnail, as a card's Playing tag does. */
+      a.current .history-thumb::before {
+        content: "Playing"; position: absolute; left: 4px; top: 4px; padding: 0 5px; border-radius: 4px;
+        background: rgb(0 0 0 / 0.78); color: #fff; font: 700 10px/16px var(--font); letter-spacing: 0.5px; text-transform: uppercase;
+      }
+    }
+    /* Chapters and the Transcript cover History, under the video, as they cover the column when wide. */
+    :is(.chapters, .transcript) { top: calc(100vw * 9 / 16); left: 0; width: auto; border-left: 0; border-top: 1px solid var(--line); }
+  }
+}
