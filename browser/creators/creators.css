@@ -1,16 +1,9 @@
-/* The add form above the page */
-.add-form {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; padding: 12px; border: 1px solid var(--line); border-radius: 10px;
+/* The picked creator, named above the grid (#114). */
+.focus-head {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 14px;
 
-  .field.url { flex: 2 1 320px; }
-  .error { flex-basis: 100%; color: var(--pick); font-size: 13px; margin: 0; }
-  .ok { flex-basis: 100%; color: var(--muted); font-size: 13px; margin: 0; }
-}
-
-.window {
-  display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 14px; color: var(--muted);
-
-  input { width: 240px; max-width: 100%; accent-color: var(--fg); }
+  .avatar { width: 40px; height: 40px; }
+  h3 { margin: 0; font-size: 18px; font-weight: 600; }
 }
 
 /* Recent videos left, creator sidebar right. No stacking: the thumbnails always stay beside the list, shrinking to two columns before the list gives up its names. */

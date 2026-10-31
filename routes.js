@@ -5,7 +5,7 @@ import { keyWorks, resolveCreator, UserInputError, videoChapters } from "./serve
 import { cachedVideo, recentVideos } from "./server/creators/recent.js";
 import { creatorsWithLinks } from "./server/creators/links.js";
 import { parseChapters } from "./server/youtube-parse.js";
-import { clampDays, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
+import { clampDays, DEFAULT_DAYS, FEED_CAP, MAX_DAYS, MIN_DAYS } from "./server/creators/window.js";
 import { favoriteVideo, playerVideo } from "./server/player.js";
 import { transcribed, transcript } from "./server/transcript.js";
 import { storedSummary, summarize, SummaryUnavailable } from "./server/summary.js";
@@ -87,7 +87,7 @@ async function orFail(message, status, fn) {
 function config() {
   return json({
     keys: keySources(),
-    days: { min: MIN_DAYS, max: MAX_DAYS },
+    days: { min: MIN_DAYS, max: MAX_DAYS, default: DEFAULT_DAYS },
     feedCap: FEED_CAP,
   });
 }

@@ -18,3 +18,7 @@
     background: var(--chip); font: 500 12px var(--mono); text-align: center; white-space: nowrap;
   }
 }
+
+/* The Creators window: a slider and what it says (#114). */
+.window { display: flex; align-items: center; gap: 14px; font-size: 14px; color: var(--muted); }
+.window input { width: 240px; max-width: 100%; accent-color: var(--fg); }

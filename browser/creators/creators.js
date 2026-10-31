@@ -1,4 +1,4 @@
-import { boot, del, load, patch, post } from "../shared/api.js";
+import { boot, del, load } from "../shared/api.js";
 import { h, icon, sync } from "../shared/dom.js";
 import { historyIds, onHistoryChange } from "../shared/history-link.js";
 import { markAway } from "../shared/away.js";
@@ -34,7 +34,8 @@ const state = {
   /** Null while the videos load. */
   recent: /** @type {Recent | null} */ (null),
   failed: false,
-  days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? 7)),
+  /** The window, in days: set on the Settings page (#114). */
+  days: Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? config.days.default)),
   /** The video the player window is playing, if one is; a click queues instead of playing while it is set. */
   playing: /** @type {string | null} */ (null),
   /** Videos in the player's History, marked Queued; clicking one again takes it out (#106). */
@@ -51,25 +52,13 @@ function pickCreator(channelId) {
 
 /* The parts of the page that stay put; `draw` fills them. */
 
-const windowLabel = h("span");
-const range = h("input", {
-  type: "range",
-  min: config.days.min,
-  max: config.days.max,
-  step: 1,
-  value: state.days,
-  "aria-label": "Days of recent videos to show",
-  oninput: () => {
-    state.days = Number(range.value);
-    draw();
-  },
-  onchange: () => void patch("/api/settings", { creatorsWindowDays: state.days }),
-});
 const status = h("p", { class: "status creators-status", "aria-live": "polite" });
+/** The picked creator, named above the grid so the focus is plain (#114). */
+const focusHead = h("div", { class: "focus-head", hidden: true });
 const grid = h("div", { class: "grid" });
 const nothing = h("p", { class: "empty" });
 const rows = h("ul", { class: "rows" });
-const noCreators = h("p", { class: "empty" }, "No creators. Paste a YouTube URL above to add one.");
+const noCreators = h("p", { class: "empty" }, "No creators yet. Add one with the + at the top.");
 const creatorCount = h("span", { class: "panel-count" });
 /** Pinned above the list, a row like the others: lets go of the picked creator, back to everyone's videos. */
 const everyone = h(
@@ -97,20 +86,18 @@ document.body.append(
     { class: "wrap" },
     topBar("creators"),
     h("h2", { class: "page-title" }, "Creators"),
-    addCreatorForm(loadCreators),
-    h("label", { class: "window" }, windowLabel, range),
-    h("div", { class: "creators-layout" }, h("section", {}, status, nothing, grid), h("aside", {}, everyone, rows, noCreators)),
+    h("div", { class: "creators-layout" }, h("section", {}, status, focusHead, nothing, grid), h("aside", {}, everyone, rows, noCreators)),
   ),
 );
 
 const refresh = h("button", { class: "link-btn", type: "button", onclick: () => void loadVideos(true) }, "refresh");
 
-/** "read 3 hours ago": when the oldest list on the page was read. @param {string} iso */
+/** "Read 3 hours ago": when the oldest list on the page was read. @param {string} iso */
 function readAgo(iso) {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 60) return "read just now";
+  if (minutes < 60) return "Read just now";
   const hours = Math.floor(minutes / 60);
-  return `read ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  return `Read ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
 }
 
 function draw() {
@@ -125,17 +112,22 @@ function draw() {
   // A creator with nothing in the window is grayed out; how many they have does not matter.
   const active = new Set(listed.map((r) => r.channelId));
 
-  windowLabel.textContent = selected ? `Latest ${config.feedCap}` : `Last ${days} days`;
+  const focused = creators.find((c) => c.channelId === selected);
+  focusHead.hidden = !focused;
+  if (focused && focusHead.dataset.id !== focused.channelId) {
+    focusHead.dataset.id = focused.channelId;
+    focusHead.replaceChildren(
+      focused.avatarUrl ? h("img", { class: "avatar", src: focused.avatarUrl, alt: "", referrerPolicy: "no-referrer" }) : h("span", { class: "avatar" }),
+      h("h3", {}, focused.name),
+    );
+  }
 
   status.replaceChildren(
     ...(loading
       ? [busyLine(failed ? "Could not read creator feeds. Reload to try again." : `Gathering videos from ${creators.length} creators`)]
       : recent.failed
         ? [busyLine(`${recent.failed} Reload to try again.`)]
-        : [
-            `${listed.length} videos from ${new Set(listed.map((r) => r.channelId)).size} creators${recent.readAt ? ` · ${readAgo(recent.readAt)}` : ""} · `,
-            refresh,
-          ]),
+        : [recent.readAt ? `${readAgo(recent.readAt)} · ` : "", refresh]),
   );
 
   const none = !loading && shown.length === 0;
@@ -198,53 +190,6 @@ function draw() {
   );
 }
 
-/**
- * Paste a video, Shorts, youtu.be, /@handle or /channel/UC… URL.
- * @param {(channelId: string) => void} onAdded
- */
-function addCreatorForm(onAdded) {
-  const url = h("input", { class: "field url", placeholder: "Paste a YouTube video or channel URL", "aria-label": "YouTube URL" });
-  const submit = h("button", { class: "btn primary", type: "submit", disabled: true }, "Add creator");
-  const said = h("p", { hidden: true });
-  const say = (/** @type {"error" | "ok" | ""} */ kind, text = "") => {
-    said.hidden = !kind;
-    said.className = kind;
-    said.textContent = text;
-  };
-  const busy = (/** @type {boolean} */ on) => {
-    submit.disabled = on || !url.value.trim();
-    submit.textContent = on ? "Adding" : "Add creator";
-  };
-  url.oninput = () => busy(false);
-  return h(
-    "form",
-    {
-      class: "add-form",
-      onsubmit: async (/** @type {Event} */ e) => {
-        e.preventDefault();
-        busy(true);
-        say("");
-        try {
-          const res = await post("/api/creators", { url: url.value });
-          const data = await res.json();
-          if (!res.ok) say("error", data.error ?? "Could not add that creator.");
-          else {
-            say("ok", data.added ? `Added ${data.creator.name}.` : `${data.creator.name} is already listed.`);
-            url.value = "";
-            onAdded(data.creator.channelId);
-          }
-        } catch {
-          say("error", "Could not reach the server.");
-        }
-        busy(false);
-      },
-    },
-    url,
-    submit,
-    said,
-  );
-}
-
 /** @param {Creator} c */
 async function remove(c) {
   state.creators = state.creators.filter((x) => x.channelId !== c.channelId);
@@ -299,7 +244,7 @@ async function loadVideos(fresh = false) {
 }
 
 /**
- * The list of creators changed (added here, in the header, or from the player): read it and their videos again.
+ * The list of creators changed (added from the header's +, or from the player): read it and their videos again.
  * A creator just added is picked, so their videos are what the grid shows.
  * @param {string} [added]
  */
