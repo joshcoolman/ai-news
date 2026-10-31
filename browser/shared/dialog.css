@@ -23,3 +23,8 @@
   label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
   .error { color: var(--pick); min-height: 20px; margin: 10px 0 0; font-size: 13px; }
 }
+
+/* Touch screens: 16px keeps iOS from zooming the page when the URL box takes focus (#114). */
+@media (pointer: coarse) {
+  .add-dialog .field { font-size: 16px; }
+}

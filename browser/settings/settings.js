@@ -44,7 +44,7 @@ const GUIDE = [
     moves: [
       [["click"], "On a video, while the player is playing: queue it right under the one playing, and the card says Queued (the one playing says Playing). The first click, with nothing playing, plays. Click a Queued one again to take it out; the Playing one ignores clicks."],
       [["Shift", "click"], "On a queued video: take it out of the queue again, as its click. On the playing one: the same as its Delete, the next one plays."],
-      [["click"], "On a creator in the sidebar: pick them. The grid shows their latest 30 videos whatever the day slider says. Click again, All creators at the top of the list, or an empty part of the page, to let go. A creator just added is picked."],
+      [["click"], "On a creator in the sidebar: pick them. The grid shows their latest 30 videos whatever the days setting says. Click again, All creators at the top of the list, or an empty part of the page, to let go. A creator just added is picked."],
       [["↑", "↓"], "With a creator picked: move the pick up or down the list. Wraps at both ends."],
       [["←"], "Highlight the video beside the picked creator, the nearest one on screen. From then on the arrows walk the grid, stopping at its edges; → off the right edge, or Esc, goes back to the creator list."],
       [["Enter"], "On the highlighted video: queue or play, as its click; on a Queued or Playing one: take it out again, as shift-click."],
@@ -62,6 +62,35 @@ const GUIDE = [
     ],
   },
 ];
+
+/** How many days back Creators shows (#114), moved here off the Creators page. */
+function windowSetting() {
+  let days = Math.min(config.days.max, Math.max(config.days.min, settings.creatorsWindowDays ?? config.days.default));
+  const label = h("span", {}, `Last ${days} days`);
+  return h(
+    "fieldset",
+    { class: "setting" },
+    h("legend", {}, "Creators"),
+    h(
+      "label",
+      { class: "window" },
+      h("input", {
+        type: "range",
+        min: config.days.min,
+        max: config.days.max,
+        step: 1,
+        value: days,
+        "aria-label": "Days of recent videos to show",
+        oninput: (/** @type {Event} */ e) => {
+          days = Number(/** @type {HTMLInputElement} */ (e.target).value);
+          label.textContent = `Last ${days} days`;
+        },
+        onchange: () => void save({ creatorsWindowDays: days }),
+      }),
+      label,
+    ),
+  );
+}
 
 function guide() {
   return h(
@@ -96,6 +125,7 @@ document.body.append(
     { class: "wrap narrow" },
     topBar("settings"),
     h("h2", { class: "page-title" }, "Settings"),
+    windowSetting(),
     h(
       "fieldset",
       { class: "setting" },

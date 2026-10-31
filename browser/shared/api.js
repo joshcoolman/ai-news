@@ -13,7 +13,7 @@ const KEYS_PAGE = "/creators";
  * What /api/config answers: where the key comes from, and the numbers the server and the pages must agree on.
  * @typedef {{
  *   keys: Record<KeyName, "server" | "browser">,
- *   days: { min: number, max: number },
+ *   days: { min: number, max: number, default: number },
  *   feedCap: number,
  * }} Config
  */
