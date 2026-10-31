@@ -1,6 +1,6 @@
 /* The picked creator, named above the grid (#114). */
 .focus-head {
-  display: flex; align-items: center; gap: 12px; margin: 0 0 14px;
+  display: flex; align-items: center; gap: 12px;
 
   .avatar { width: 40px; height: 40px; }
   h3 { margin: 0; font-size: 18px; font-weight: 600; }
@@ -18,7 +18,8 @@
 
   /* The list scrolls by itself, so moving the pick down a long list never scrolls the videos out of view. */
   aside { position: sticky; top: var(--top-bar); max-height: calc(100vh - var(--top-bar) - 16px); overflow-y: auto; }
-  .creators-status { margin: 0 0 12px; }
+  .grid-head { position: sticky; top: var(--top-bar); z-index: 2; display: flex; align-items: center; min-height: 48px; margin: 0 0 12px; background: var(--bg); }
+  .creators-status { margin: 0; }
   .creators-status .link-btn { font-size: inherit; }
 
   /* Pinned at the top of the list as it scrolls, a row like the rest: current while nobody is picked. A hairline under it, none between creators. */

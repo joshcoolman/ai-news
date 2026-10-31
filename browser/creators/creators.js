@@ -85,8 +85,8 @@ document.body.append(
     "div",
     { class: "wrap" },
     topBar("creators"),
-    h("h2", { class: "page-title" }, "Creators"),
-    h("div", { class: "creators-layout" }, h("section", {}, status, focusHead, nothing, grid), h("aside", {}, everyone, rows, noCreators)),
+    // One line over the grid, held under the top bar as it scrolls: when the lists were read, or the picked creator (#116).
+    h("div", { class: "creators-layout" }, h("section", {}, h("div", { class: "grid-head" }, status, focusHead), nothing, grid), h("aside", {}, everyone, rows, noCreators)),
   ),
 );
 
@@ -114,6 +114,7 @@ function draw() {
 
   const focused = creators.find((c) => c.channelId === selected);
   focusHead.hidden = !focused;
+  status.hidden = !!focused;
   if (focused && focusHead.dataset.id !== focused.channelId) {
     focusHead.dataset.id = focused.channelId;
     focusHead.replaceChildren(
