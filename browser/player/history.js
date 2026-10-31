@@ -157,9 +157,11 @@ export function history(video) {
   // The playing row sits at the column's vertical middle: the column is padded half its height at both ends so the first and last rows get there too.
   // Instant until the column has been centered once on the page (a step is a page load, and the view transition does the sliding;
   // a smooth scroll here would run from the top on every step). After that, a slide when the list changes in place.
+  // Stacked under the video (#118, the width matches `player.css`) it is a plain top-down list instead (#120): the playing row only scrolls as far as it takes to show it.
+  const stacked = matchMedia("(max-width: 639.98px)");
   let settled = false;
   const center = () => {
-    column.querySelector("a.current")?.scrollIntoView({ block: "center", behavior: settled ? "smooth" : "instant" });
+    column.querySelector("a.current")?.scrollIntoView({ block: stacked.matches ? "nearest" : "center", behavior: settled ? "smooth" : "instant" });
     settled ||= column.isConnected;
   };
   draw();

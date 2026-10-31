@@ -173,6 +173,11 @@
     .history-panel .panel-head { margin-left: 0; }
     .history {
       padding: 0 6px;
+      /* A plain top-down list (#120): no half-height spacers for centering, just room under the last row. */
+      &::before { height: 6px; }
+      &::after { height: 48px; }
+      /* Stepping keeps a bit of the next row in sight. */
+      a.current { scroll-margin-block: 40px; }
       li, li:has(a.current) { padding: 1px 0; margin-left: 0; }
       img, a.current img { width: 176px; }
       a.current, a.current:hover, a.current:focus-visible { padding: 6px; box-shadow: inset 0 0 0 2px var(--mark); }
